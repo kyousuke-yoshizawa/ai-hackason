@@ -1,0 +1,34 @@
+AI Hackathon 2026 - Team Ops Skillset
+パッケージ内容一覧 (MANIFEST)
+================================
+
+[メインドキュメント]
+SKILL.md                          全体概要・セットアップ・運用フロー
+README.md                         セットアップガイド
+MANIFEST.txt                      本ファイル
+
+[references/ - 詳細マニュアル]
+references/ai-harness-core.md         AIの基本ルール・制約（AI必読）
+references/github-git-tutorial.md     GitHub & git 初心者ガイド（全員）
+references/pr-review-merge-flow.md    PR作成〜マージ完全フロー（全員+Kyosuke）
+references/issue-driven-workflow.md   Issue駆動実装フロー（PM/リード）
+references/notion-database-config.md  Notionデータベース構成・セットアップ（インフラリード）
+references/supabase-vercel-setup.md   APIキー取得・セットアップ（Kyosuke）
+
+[agents/ - 役割別サブエージェント指示書]
+agents/frontend-subagent.md       フロント実装ガイド
+agents/backend-subagent.md        バック実装ガイド
+agents/infra-subagent.md          インフラ管理ガイド
+agents/qa-subagent.md             テストガイド
+agents/reviewer-subagent.md       PRレビューガイド（全員）
+
+[github-workflows/ - 自動化]
+github-workflows/sync-notion.yml  PRマージ時のNotion自動同期ワークフロー
+
+[checklists/ - チェックリスト]
+checklists/pre-launch.md          開発開始24時間前チェックリスト
+
+================================
+総ファイル数: 16
+作成日: 2026-07-02
+対象プロジェクト: AI Hackathon 2026
