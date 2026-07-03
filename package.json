@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
