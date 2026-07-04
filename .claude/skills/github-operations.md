@@ -112,6 +112,25 @@ GitHub MCP ツール実行後、以下の情報をユーザーに報告してく
 3. **GitHub MCP ツールを実行**：選択した内容に応じて適切なツールを実行
 4. **結果を報告**：操作結果をユーザーに表示
 
+## GitHub CLI（`gh`）を使った代替手順
+
+このスキルの代わりに、GitHub CLI を使用して PR 作成・マージを行うこともできます：
+
+```bash
+# PR 作成
+gh pr create --title "タイトル" --body "説明"
+
+# PR マージ
+gh pr merge <PR番号> --merge
+```
+
+詳細は `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` の「2-B. CLI（`gh`）を使った PR 作成・マージ」を参照してください。
+
+**gh CLI が必要な場合**:
+- MCP ツールが利用できない場合
+- より細かい操作制御が必要な場合
+- 自動化スクリプトを書く場合
+
 ## 対応する操作
 
 ### PR操作

@@ -135,6 +135,30 @@ See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md`.
 - **Merge to main only via PR review** (never direct push to main)
 - **On PR merge**: GitHub Actions auto-syncs changes to Notion Database
 
+### GitHub CLI for PR Operations (Optional)
+
+If you prefer CLI over web UI for PR creation/merge:
+
+```bash
+# Install gh CLI (Ubuntu/Debian)
+sudo apt-get install gh
+
+# Authenticate (requires GitHub personal access token)
+export GH_TOKEN="ghp_your-personal-access-token-here"
+gh auth status
+
+# Create PR
+gh pr create --title "PR title" --body "PR body"
+
+# Merge PR
+gh pr merge <PR-number> --merge
+```
+
+⚠️ **Important**: 
+- Get token from https://github.com/settings/tokens (scopes: `repo`, `workflow`)
+- Never commit token to code; use environment variable only
+- See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` section 2-B for full details
+
 ### GitHub Codespaces
 
 - **Time budget**: Free tier = 60 hours/month for team. Stop when done (don't leave running).
