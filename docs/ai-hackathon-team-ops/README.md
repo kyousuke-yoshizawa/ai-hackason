@@ -64,15 +64,21 @@ claude
 sudo apt-get install -y gh
 ```
 
-初回認証（Personal Access Token が必要）:
+初回認証設定（Personal Access Token を `.env.local` に保存）:
 
 ```bash
-export GH_TOKEN="ghp_your-personal-access-token"
-gh auth status  # 認証確認
+echo 'GH_TOKEN=ghp_your-personal-access-token' >> /mnt/c/Develop/Projects/ai-hackason/.env.local
 ```
 
-> トークンは https://github.com/settings/tokens で発行（スコープ: `repo`, `workflow`）。
-> `.bashrc` には書かない（セキュリティ上の理由）。都度 export して使う。
+`.bashrc` が自動的にトークンを読み込むよう設定済み。新しいターミナルを開くと自動認証されます。
+認証確認:
+
+```bash
+gh auth status
+```
+
+> トークンは https://github.com/settings/tokens で発行（スコープ: `repo`, `workflow`）。  
+> `.env.local` は `.gitignore` 対象のため、コミットされません。
 
 ### 毎日の起動手順
 
