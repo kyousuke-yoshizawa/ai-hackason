@@ -35,6 +35,41 @@ Closes #番号
 5. 右側の「Reviewers」でKyosuke（またはreviewer-subagent.mdに従うレビュアー）を指定
 6. 「Create pull request」
 
+### 2-B. CLI（`gh`）を使った PR 作成・マージ（オプション）
+
+**前提**: GitHub CLI (`gh`) がインストールされていること
+
+```bash
+# gh のインストール（初回のみ）
+# Ubuntu/Debian:
+sudo apt-get install gh
+
+# または手動インストール:
+cd /tmp
+curl -L https://github.com/cli/cli/releases/download/v2.52.0/gh_2.52.0_linux_amd64.tar.gz -o gh.tar.gz
+tar xzf gh.tar.gz
+/tmp/gh_2.52.0_linux_amd64/bin/gh --version
+
+# GitHub 認証（初回のみ）
+gh auth login
+# または環境変数で認証:
+export GH_TOKEN="ghp_your-personal-access-token"
+gh auth status  # 確認
+
+# PR 作成
+gh pr create \
+  --title "PR のタイトル（日本語可）" \
+  --body "PR の説明"
+
+# PR マージ
+gh pr merge <PR番号> --merge
+```
+
+**注意**:
+- `GH_TOKEN` は GitHub 設定 → [Personal access tokens](https://github.com/settings/tokens) で生成できます
+- スコープは `repo` と `workflow` が必須です
+- トークンを環境変数で設定する場合、`.bashrc` や `.zshrc` に記載せず、使用時のみ `export` してください
+
 ## 3. レビューの基準（reviewer-subagent.md と共通）
 
 - [ ] コードが動く（Vercel Preview Deployで確認できる場合はそちらも見る）
