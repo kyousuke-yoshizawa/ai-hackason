@@ -130,7 +130,12 @@ Tailwind CSS + PostCSS. Configuration in:
 
 See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md`.
 
-- **Branch naming**: `feature/<description>-<role>` (e.g., `feature/login-page-yoshizawa`)
+⚠️ **STRICT BRANCH STRATEGY** (Mandatory):
+- **Only 5 branches allowed**: `main`, `feature/yoshizawa`, `feature/itagaki`, `feature/sato`, `feature/takayanagi`
+- **Before any branch creation**: Always ask "どなたが作業されていますか？" (Which team member is this for?)
+- **One branch per person**: Each member works in their own feature branch throughout the hackathon
+- **Branch name is fixed**: Use exactly `feature/<name>` (e.g., `feature/itagaki`) — no descriptions or variations
+- **No other branches**: Do NOT create develop, hotfix, release, or any other branch variants
 - **PR titles & descriptions**: Japanese; concise, include context
 - **Merge to main only via PR review** (never direct push to main)
 - **On PR merge**: GitHub Actions auto-syncs changes to Notion Database
