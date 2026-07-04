@@ -29,11 +29,21 @@
    - **.gitignore:** `Node` テンプレートを選択
 3. 「Create repository」をクリック
 
-### 1-2. Codespaces設定の確認
+### 1-2. Claude CLI インストール確認
 
-1. 作成したリポジトリの `Settings` → `Codespaces` を開く
-2. 特別な設定は不要（GitHub Freeでは自動的に月60時間まで利用可能）
-3. 動作確認: リポジトリトップの緑色「Code」ボタン → 「Codespaces」タブ → 「Create codespace on main」で起動できるか確認
+1. Ubuntu ターミナルで Claude CLI がインストール済みか確認:
+
+```bash
+claude --version
+```
+
+2. 未インストールの場合:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+3. 動作確認: `claude` を実行し、認証フローが起動することを確認
 
 ---
 
@@ -162,7 +172,7 @@ Teamsの通知やGitHub上のレビューで「どこに何が書いてあるか
 まずはリポジトリ内に配置します。
 
 1. `ai-hackathon-team-ops-ultimate.tar.gz` をダウンロード
-2. Codespaces上、またはローカルで展開し `docs/ai-hackathon-team-ops/` に配置
+2. WSL2 Ubuntu ターミナル上で展開し `docs/ai-hackathon-team-ops/` に配置
 
 ```bash
 mkdir -p docs/ai-hackathon-team-ops
@@ -261,10 +271,9 @@ gitコマンドを任せたい場合は次の9-1に進んでください。
 
 ### 9-1. Claude Codeローカル利用のためのWSL2 + Ubuntuセットアップ
 
-本プロジェクトは環境設定として「Windows + WSL2 + Ubuntu」をすでに採用しているため、
-Claude Codeをローカルで使う場合もコマンドプロンプトやPowerShellではなく、
-WSL2上のUbuntuターミナルを使うことを推奨します。Codespacesと同じLinux系環境になり、
-Git/npm系ツールとの相性が良く、チーム全員の環境も揃うためです。
+本プロジェクトは全員が WSL2 上の Ubuntu + Claude CLI で作業する環境に統一しています。
+コマンドプロンプトやPowerShellではなく、WSL2上のUbuntuターミナルを使用してください。
+Linux系環境でGit/npm系ツールとの相性が良く、チーム全員の環境が揃うためです。
 
 #### 手順
 
@@ -352,7 +361,7 @@ PCでの追加設定。特に問題なければ上記の範囲に収まること
 ## 完了確認チェックリスト
 
 - [ ] `ai-hackathon` リポジトリ作成済み、4名がCollaboratorsに表示されている
-- [ ] 全員がCodespacesを起動できることを確認済み
+- [ ] 全員がWSL2 Ubuntuターミナルから `claude` を起動できることを確認済み
 - [ ] Supabaseプロジェクト作成済み、3つのキーを取得済み
 - [ ] Vercelでビルド・デプロイが成功している
 - [ ] Notion Integration作成済み、4つのDBに接続済み

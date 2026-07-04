@@ -29,18 +29,30 @@
 - **データベース:** Supabase (PostgreSQL)
 - **デプロイ:** Vercel（自動デプロイ）
 - **ドキュメント:** Notion Database（PRマージ時に自動同期）
-- **開発環境:** GitHub Codespaces
+- **開発環境:** Ubuntu (WSL2) + Claude CLI
 
 ## 💻 開発環境の起動
 
-1. 上部の緑色「**Code**」ボタン →「**Codespaces**」タブ
-2. 「**Create codespace on main**」をクリック
-3. Codespaces内のターミナルで:
+1. WSL2 Ubuntu ターミナルを開く
+2. リポジトリに移動:
+
+```bash
+cd /mnt/c/Develop/Projects/ai-hackason
+```
+
+3. 依存関係をインストール（初回のみ）:
 
 ```bash
 npm install
+```
+
+4. 開発サーバーを起動:
+
+```bash
 npm run dev
 ```
+
+5. ブラウザで http://localhost:5173 を開く
 
 ## 📁 リポジトリ構成
 
@@ -59,7 +71,3 @@ npm run dev
 質問・相談は Microsoft Teams のチームチャネルへ（Slackは使用していません）。
 インフラ（Supabase/Vercel/GitHub設定）に関することは Kyosuke まで。
 
-## ⏱️ Codespaces利用時間について
-
-GitHub Freeプランは月60時間まで無料です。4人で共有するリソースのため、使い終わったら
-Codespaceは明示的に「Stop」してください。詳しくは `docs/ai-hackathon-team-ops/README.md` を参照。

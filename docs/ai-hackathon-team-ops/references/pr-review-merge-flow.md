@@ -25,7 +25,7 @@
 Closes #番号
 
 ## 動作確認
-- [ ] ローカル（Codespaces）で動作確認済み
+- [ ] ローカル（WSL2 Ubuntu）で動作確認済み
 - [ ] Vercel Preview Deployで確認済み
 
 ## レビューしてほしいポイント

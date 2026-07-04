@@ -164,11 +164,11 @@ gh pr merge <PR-number> --merge
 - Never commit token to code; use environment variable only
 - See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` section 2-B for full details
 
-### GitHub Codespaces
+### Local Development (Ubuntu + Claude CLI)
 
-- **Time budget**: Free tier = 60 hours/month for team. Stop when done (don't leave running).
-- **Setup**: Code → Codespaces → Create codespace on main
-- **Inside Codespaces**: `npm install && npm run dev`
+- **Environment**: WSL2 + Ubuntu + Claude CLI (Windows PC)
+- **Setup**: WSL2 install Ubuntu → `nvm install --lts` → `npm install -g @anthropic-ai/claude-code`
+- **Daily startup**: Ubuntu terminal → `cd /mnt/c/Develop/Projects/ai-hackason` → `npm run dev` + `claude`
 
 For details, see `docs/ai-hackathon-team-ops/README.md`.
 
@@ -218,7 +218,7 @@ Quick lookup for specific topics:
 
 | Topic | Location |
 |-------|----------|
-| Team setup, roles, Codespaces | `docs/ai-hackathon-team-ops/README.md` |
+| Team setup, roles, local dev env | `docs/ai-hackathon-team-ops/README.md` |
 | Git/GitHub & PR workflow | `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` |
 | Issue-driven task breakdown | `docs/ai-hackathon-team-ops/references/issue-driven-workflow.md` |
 | AI agent constraints & rules | `docs/ai-hackathon-team-ops/references/ai-harness-core.md` |

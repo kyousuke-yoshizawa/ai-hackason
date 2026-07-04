@@ -25,8 +25,8 @@
 ## 環境確認（全員）
 
 - [ ] 自分のGitHubアカウントでCollaborator招待を承諾済み
-- [ ] Codespacesを起動できることを確認済み
-- [ ] Codespaces上で `npm install` が成功することを確認済み
+- [ ] WSL2 Ubuntuターミナルから `claude` を起動できることを確認済み
+- [ ] Ubuntu上で `npm install` が成功することを確認済み
 - [ ] `npm run dev` でローカル起動できることを確認済み
 - [ ] Vercel Preview Deployのリンクを開いて動作確認済み
 
@@ -40,7 +40,6 @@
 
 - [ ] 各自、自分の担当領域（frontend / backend / infra / qa）を認識している
 - [ ] Sprint分割（0.5-8h / 8-15h / 15-20h）のスケジュール感を共有している
-- [ ] Codespaces時間（月60時間、4人で共有）の意識を全員が持っている
 
 ---
 

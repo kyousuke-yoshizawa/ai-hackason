@@ -46,19 +46,14 @@ ANTHROPIC_API_KEY
 - `github-workflows/sync-notion.yml` が正しく動いているか、PRマージ後に毎回Actionsタブで確認
 - ワークフローが失敗した場合、まずSecrets名の綴りミスを疑う（最も多い原因）
 
-## 5. Codespaces利用状況の監視
-
-- `Settings` → `Billing and plans` → `Codespaces` の使用時間を定期的に確認
-- 60時間に近づいたらTeamsで全員に注意喚起
-
-## 6. インシデント対応（本番障害時）
+## 5. インシデント対応（本番障害時）
 
 1. Vercelの直前の安定デプロイに即座にロールバック（Promote to Production）
 2. 原因PRを特定し `git revert`
 3. Teamsで状況共有（何が起きた・今の対応状況・見込み）
 4. 落ち着いてから再発防止（該当箇所のテスト追加等）を検討
 
-## 7. インフラ変更時の注意（ai-harness-core.mdと共通）
+## 6. インフラ変更時の注意（ai-harness-core.mdと共通）
 
 - 本番のSupabase/Vercel設定変更は必ず人間の確認を取ってから実行
 - Secretsのローテーション（キー変更）を行う場合、影響範囲（どのワークフロー・デプロイが使っているか）を先に洗い出す

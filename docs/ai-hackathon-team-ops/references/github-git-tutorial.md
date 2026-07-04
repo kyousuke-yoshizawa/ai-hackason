@@ -34,9 +34,9 @@ git push origin feature/login-form   # 初回はorigin名を明示
 | `fix/xxx` | バグ修正 |
 | `chore/xxx` | 設定変更・雑務 |
 
-## 3. Codespacesでの基本フロー
+## 3. Ubuntu（WSL2）での基本フロー
 
-1. Codespacesを起動
+1. Ubuntu ターミナルを開き、リポジトリのディレクトリに移動
 2. `git checkout -b feature/xxx` でブランチ作成
 3. コード編集
 4. ターミナルで `git add . && git commit -m "説明"`
@@ -83,7 +83,7 @@ git reset --hard origin/main   # mainを元の状態に戻す
 | 用語 | 説明 |
 |---|---|
 | リポジトリ (repo) | プロジェクトのファイル一式を管理する場所 |
-| クローン (clone) | リポジトリをローカル（またはCodespaces）にコピーすること |
+| クローン (clone) | リポジトリをローカルにコピーすること |
 | コミット (commit) | 変更の記録・スナップショット |
 | プッシュ (push) | ローカルの変更をGitHubに反映すること |
 | プル (pull) | GitHub側の変更をローカルに取り込むこと |
