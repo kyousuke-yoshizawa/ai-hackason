@@ -45,6 +45,30 @@ npm install -g @anthropic-ai/claude-code
 
 3. 動作確認: `claude` を実行し、認証フローが起動することを確認
 
+### 1-3. gh CLI インストール
+
+1. Ubuntu ターミナルで gh CLI をインストール:
+
+```bash
+sudo apt-get install -y gh
+```
+
+2. インストール確認:
+
+```bash
+gh --version
+```
+
+3. 認証設定（Personal Access Token を使用）:
+
+```bash
+export GH_TOKEN="ghp_your-personal-access-token"
+gh auth status
+```
+
+> トークンは https://github.com/settings/tokens で発行（スコープ: `repo`, `workflow`）。  
+> `.bashrc` に書かず、作業開始時に都度 export する。
+
 ---
 
 ## Step 2. Collaboratorsへの招待

@@ -28,6 +28,7 @@
 - [ ] WSL2 Ubuntuターミナルから `claude` を起動できることを確認済み
 - [ ] Ubuntu上で `npm install` が成功することを確認済み
 - [ ] `npm run dev` でローカル起動できることを確認済み
+- [ ] `gh auth status` で GitHub 認証が通ることを確認済み
 - [ ] Vercel Preview Deployのリンクを開いて動作確認済み
 
 ## コミュニケーション

@@ -58,6 +58,22 @@ npm install -g @anthropic-ai/claude-code
 claude
 ```
 
+5. GitHub CLI をインストール（PR・マージ操作に使用）:
+
+```bash
+sudo apt-get install -y gh
+```
+
+初回認証（Personal Access Token が必要）:
+
+```bash
+export GH_TOKEN="ghp_your-personal-access-token"
+gh auth status  # 認証確認
+```
+
+> トークンは https://github.com/settings/tokens で発行（スコープ: `repo`, `workflow`）。
+> `.bashrc` には書かない（セキュリティ上の理由）。都度 export して使う。
+
 ### 毎日の起動手順
 
 1. Ubuntu ターミナルを開く
