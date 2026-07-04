@@ -25,7 +25,7 @@
 Closes #番号
 
 ## 動作確認
-- [ ] ローカル（Codespaces）で動作確認済み
+- [ ] ローカル（WSL2 Ubuntu）で動作確認済み
 - [ ] Vercel Preview Deployで確認済み
 
 ## レビューしてほしいポイント
@@ -35,7 +35,7 @@ Closes #番号
 5. 右側の「Reviewers」でKyosuke（またはreviewer-subagent.mdに従うレビュアー）を指定
 6. 「Create pull request」
 
-### 2-B. CLI（`gh`）を使った PR 作成・マージ（オプション）
+### 2-B. CLI（`gh`）を使った PR 作成・マージ
 
 **前提**: GitHub CLI (`gh`) がインストールされていること
 

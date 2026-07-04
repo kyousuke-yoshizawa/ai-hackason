@@ -75,7 +75,7 @@ app.post('/api/messages', async (req, res) => {
 
 ## 6. 環境変数管理
 
-- ローカル（Codespaces）では `.env`（`.gitignore` 対象）を使用
+- ローカル（WSL2 Ubuntu）では `.env`（`.gitignore` 対象）を使用
 - 本番（Vercel）はVercelの環境変数設定を使用
 - 使う変数は `server/lib/env.ts` 等に一箇所にまとめ、`process.env` を各所に直書きしない
 

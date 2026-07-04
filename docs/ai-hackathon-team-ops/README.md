@@ -9,7 +9,7 @@
 
 1. このドキュメントの目的
 2. 事前に必要なもの
-3. 開発環境（Codespaces）の使い方
+3. 開発環境（Ubuntu + Claude CLI）の使い方
 4. 日々の開発フロー
 5. 役割別ガイドの読み方
 6. トラブルシューティング
@@ -33,27 +33,69 @@ AI Hackathon 2026では、4人チームで20時間以内に「動く本番アプ
 インフラ（Supabase / Vercel / GitHub Secrets）のセットアップはKyosukeが
 `setup-guide-github-to-secrets.md` に沿って先に完了させます。
 
-## 3. 開発環境（Codespaces）の使い方
+## 3. 開発環境（Ubuntu + Claude CLI）の使い方
 
-### 起動方法
+### セットアップ（初回のみ）
 
-1. GitHubで `ai-hackathon` リポジトリを開く
-2. 緑色の「Code」ボタン → 「Codespaces」タブ → 「Create codespace on main」
-3. ブラウザ上にVS Code風の画面が開く（1分ほどで起動）
-
-### 初回セットアップ（Codespaces内のターミナルで実行）
+1. WSL2 を有効化し、Ubuntu を Microsoft Store からインストール
+2. Node.js をインストール（nvm 推奨）:
 
 ```bash
-npm install
-cp .env.example .env   # 環境変数はGitHub Secretsから自動注入される想定
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+nvm install --lts
+```
+
+3. Claude CLI をインストール:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+4. 初回認証（初回起動時に案内に従って認証）:
+
+```bash
+claude
+```
+
+5. GitHub CLI をインストール（PR・マージ操作に使用）:
+
+```bash
+sudo apt-get install -y gh
+```
+
+初回認証（Personal Access Token が必要）:
+
+```bash
+export GH_TOKEN="ghp_your-personal-access-token"
+gh auth status  # 認証確認
+```
+
+> トークンは https://github.com/settings/tokens で発行（スコープ: `repo`, `workflow`）。
+> `.bashrc` には書かない（セキュリティ上の理由）。都度 export して使う。
+
+### 毎日の起動手順
+
+1. Ubuntu ターミナルを開く
+2. プロジェクトディレクトリへ移動:
+
+```bash
+cd /mnt/c/Develop/Projects/ai-hackason
+```
+
+3. 開発サーバーを起動:
+
+```bash
 npm run dev
 ```
 
-### 注意: Codespaces時間の節約
+4. AI 支援を開始（別タブ推奨）:
 
-- GitHub Freeプランは **月60時間まで無料**。4人で共有するリソースです。
-- 作業しないときは必ずCodespacesを停止（Stop）してください（自動的に一定時間で止まりますが、手動停止を推奨）。
-- 目安: 1人あたり15時間以内（4人で合計60時間）
+```bash
+claude
+```
+
+5. ブラウザで http://localhost:5173 を確認
 
 ## 4. 日々の開発フロー
 
@@ -87,7 +129,7 @@ npm run dev
 
 | 症状 | 対処 |
 |---|---|
-| Codespacesが起動しない | 60時間の上限に達していないか確認（GitHub側の使用量画面） |
+| `claude` コマンドが見つからない | `npm install -g @anthropic-ai/claude-code` を再実行 / Node.js バージョン確認（`node -v`） |
 | `npm install` が失敗する | Node.jsのバージョン確認（`node -v`。18系を想定） |
 | PRがマージできない（コンフリクト） | `references/pr-review-merge-flow.md` の「コンフリクト解消」セクション参照 |
 | Vercelのデプロイが失敗する | 環境変数（Supabaseキー等）がVercel側に登録されているか確認 |
@@ -95,7 +137,7 @@ npm run dev
 
 ## 7. 用語集
 
-- **Codespaces:** GitHubが提供するブラウザ上の開発環境
+- **Claude CLI:** Anthropic が提供する AI 支援 CLI ツール。Ubuntu ターミナルから `claude` コマンドで起動する
 - **PR（Pull Request）:** 変更を統合するためのレビュー依頼
 - **Secrets:** GitHubリポジトリに安全に保存するAPIキー等の機密情報
 - **Collaborator:** リポジトリへの書き込み権限を持つメンバー
