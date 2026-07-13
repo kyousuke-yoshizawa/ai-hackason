@@ -10,6 +10,14 @@ jest.mock('../../server/db', () => {
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
+// server/middleware/auth.ts は api/_lib/authz.ts 経由で api/_lib/supabaseAdmin.ts を
+// 使う。本来同一のSupabase接続を指すため、テストでも上と同じfakeインスタンスを共有する
+jest.mock('../../api/_lib/supabaseAdmin', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { supabaseAdmin } = require('../../server/db')
+  return { supabaseAdmin }
+})
+
 import request from 'supertest'
 import { supabaseAdmin } from '../../server/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
@@ -22,10 +30,11 @@ beforeEach(() => {
   fakeClient.seed('stores', [{ id: 'store-1', name: 'テスト店舗', deleted_at: null }])
   fakeClient.seed('users', [
     { id: 'admin-1', role: 'admin', is_active: true },
-    { id: 'manager-1', role: 'store_manager', store_id: 'store-1', is_active: true },
-    { id: 'manager-2', role: 'store_manager', store_id: 'store-2', is_active: true },
+    { id: 'manager-1', role: 'store_manager', is_active: true },
+    { id: 'manager-2', role: 'store_manager', is_active: true },
     { id: 'user-1', role: 'user', is_active: true },
   ])
+  fakeClient.seed('store_managers', [{ store_id: 'store-1', manager_id: 'manager-1' }])
 })
 
 // TC_301_1: ファイルアップロード成功（admin 権限）
@@ -62,6 +71,18 @@ describe('POST /api/stores/:storeId/media (TC_301_1)', () => {
   it('returns 401 when x-user-id header is missing', async () => {
     const res = await request(app)
       .post('/api/stores/store-1/media')
+      .attach('file', Buffer.from('bytes'), 'photo.png')
+
+    expect(res.status).toBe(401)
+  })
+
+  // T04: is_active=false のユーザは admin ロールでも拒否される
+  it('returns 401 for a deactivated admin (is_active=false)', async () => {
+    fakeClient.seed('users', [{ id: 'inactive-admin', role: 'admin', is_active: false }])
+
+    const res = await request(app)
+      .post('/api/stores/store-1/media')
+      .set('x-user-id', 'inactive-admin')
       .attach('file', Buffer.from('bytes'), 'photo.png')
 
     expect(res.status).toBe(401)

@@ -1,9 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from './supabaseAdmin.js'
-import { isStoreManager } from './crowd/repository.js'
+import { requireStoreAccess as requireStoreAccessUser } from './authz.js'
 
-// ⚠️ requireAdmin.ts と同じ既知の制約：x-user-id ヘッダーをそのまま信頼している
-// プロトタイプ実装。本番運用前に Supabase Auth + JWT 検証への切り替えが必須。
 export const requireStoreAccess = async (
   req: VercelRequest,
   res: VercelResponse,
@@ -16,21 +13,11 @@ export const requireStoreAccess = async (
     return null
   }
 
-  const { data, error } = await supabaseAdmin.from('users').select('id, role').eq('id', userId).single()
-
-  if (error || !data) {
+  const user = await requireStoreAccessUser(userId, storeId)
+  if (!user) {
     res.status(403).json({ error: 'store manager or admin role required' })
     return null
   }
 
-  if (data.role === 'admin') {
-    return data.id
-  }
-
-  if (await isStoreManager(storeId, data.id)) {
-    return data.id
-  }
-
-  res.status(403).json({ error: 'store manager or admin role required' })
-  return null
+  return user.id
 }

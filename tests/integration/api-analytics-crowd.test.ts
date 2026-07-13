@@ -66,9 +66,9 @@ describe('runCrowdAnalyticsAggregationJob (TC-205-INT-01)', () => {
 describe('GET /api/analytics/crowd/:store_id', () => {
   beforeEach(() => {
     fakeClient.seed('users', [
-      { id: 'admin-1', role: 'admin' },
-      { id: 'manager-1', role: 'store_manager' },
-      { id: 'manager-2', role: 'store_manager' },
+      { id: 'admin-1', role: 'admin', is_active: true },
+      { id: 'manager-1', role: 'store_manager', is_active: true },
+      { id: 'manager-2', role: 'store_manager', is_active: true },
     ])
     fakeClient.seed('store_managers', [{ store_id: 'store-1', manager_id: 'manager-1' }])
     fakeClient.seed('crowd_analytics', [

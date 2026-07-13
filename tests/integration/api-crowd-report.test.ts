@@ -118,7 +118,7 @@ describe('GET /api/crowd/report (TC-109-03)', () => {
 // TC-110-01: crowd_snapshots（本実装では crowd_status/crowd_history）への報告記録検証
 describe('POST /api/crowd/report (TC-110-01)', () => {
   beforeEach(() => {
-    fakeClient.seed('users', [{ id: 'manager-1', role: 'user' }])
+    fakeClient.seed('users', [{ id: 'manager-1', role: 'user', is_active: true }])
     fakeClient.seed('store_managers', [{ store_id: 'store-1', manager_id: 'manager-1' }])
   })
 
@@ -138,7 +138,7 @@ describe('POST /api/crowd/report (TC-110-01)', () => {
   })
 
   it('rejects a caller who is neither admin nor the assigned store manager', async () => {
-    fakeClient.seed('users', [{ id: 'other-user', role: 'user' }])
+    fakeClient.seed('users', [{ id: 'other-user', role: 'user', is_active: true }])
     const res = createMockJsonRes()
 
     await handler(

@@ -1,12 +1,8 @@
 import { NextFunction, Request, Response } from 'express'
-import { supabaseAdmin } from '../db.js'
+import { getActiveUser, type AuthedUser } from '../../api/_lib/authz.js'
+import { isStoreManager } from '../../api/_lib/crowd/repository.js'
 
-export interface AuthedUser {
-  id: string
-  email: string
-  role: string
-  store_id: string | null
-}
+export type { AuthedUser }
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -21,18 +17,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: '認証が必要です' })
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .select('id, email, role, store_id')
-    .eq('id', userId)
-    .eq('is_active', true)
-    .single()
-
-  if (error || !data) {
+  const user = await getActiveUser(userId)
+  if (!user) {
     return res.status(401).json({ error: '認証情報が無効です' })
   }
 
-  req.authedUser = data
+  req.authedUser = user
   next()
 }
 
@@ -53,14 +43,17 @@ export const requireAdminOrSelf = (paramName = 'id') => {
   }
 }
 
+// 店舗管理者判定は store_managers テーブルを正とする（users.store_id は使わない。
+// api/_lib/authz.ts の requireStoreAccess と同じ判定ソース）
 export const requireAdminOrStoreManager = (storeIdParam = 'id') => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const storeId = req.params[storeIdParam]
-    const isOwningManager =
-      req.authedUser?.role === 'store_manager' && req.authedUser?.store_id === storeId
-    if (req.authedUser?.role !== 'admin' && !isOwningManager) {
-      return res.status(403).json({ error: '権限がありません' })
+    if (req.authedUser?.role === 'admin') {
+      return next()
     }
-    next()
+    if (req.authedUser && (await isStoreManager(storeId, req.authedUser.id))) {
+      return next()
+    }
+    return res.status(403).json({ error: '権限がありません' })
   }
 }
