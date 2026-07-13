@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../supabaseAdmin.js'
-import type { CongestionLevel } from '../email/templates.js'
+import { supabaseAdmin } from '../../db.js'
+import type { CongestionLevel } from '../crowd/types.js'
 import type { CrowdAnalyticsResult, CrowdHistoryEntry } from './aggregate.js'
 
 export async function getAllCrowdHistory(): Promise<CrowdHistoryEntry[]> {

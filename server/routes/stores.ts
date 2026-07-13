@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { supabaseAdmin } from '../db.js'
+import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdmin, requireAdminOrStoreManager, requireAuth } from '../middleware/auth.js'
 
 export const storesRouter = Router()

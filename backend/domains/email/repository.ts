@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../supabaseAdmin.js'
-import type { CongestionLevel } from './templates.js'
+import { supabaseAdmin } from '../../db.js'
+import type { CongestionLevel } from '../crowd/types.js'
 
 export interface DueNotification {
   id: string

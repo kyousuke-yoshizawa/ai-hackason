@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import multer from 'multer'
-import { supabaseAdmin } from '../db.js'
+import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdminOrStoreManager, requireAuth } from '../middleware/auth.js'
 
 export const storeMediaRouter = Router()

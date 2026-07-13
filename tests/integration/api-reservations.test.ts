@@ -1,16 +1,16 @@
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import createHandler from '../../api/reservations/index'
 import cancelHandler from '../../api/reservations/[id]'
 import availabilityHandler from '../../api/reservations/availability'
-import { validateReservationRequest } from '../../api/_lib/reservations/validation'
+import { validateReservationRequest } from '../../backend/domains/reservations/validation'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 

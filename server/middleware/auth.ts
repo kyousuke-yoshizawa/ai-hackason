@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
-import { getActiveUser, type AuthedUser } from '../../api/_lib/authz.js'
-import { isStoreManager } from '../../api/_lib/crowd/repository.js'
+import { getActiveUser, type AuthedUser } from '../../backend/auth/authz.js'
+import { isStoreManager } from '../../backend/domains/crowd/repository.js'
 
 export type { AuthedUser }
 
@@ -44,7 +44,7 @@ export const requireAdminOrSelf = (paramName = 'id') => {
 }
 
 // 店舗管理者判定は store_managers テーブルを正とする（users.store_id は使わない。
-// api/_lib/authz.ts の requireStoreAccess と同じ判定ソース）
+// backend/auth/authz.ts の requireStoreAccess と同じ判定ソース）
 export const requireAdminOrStoreManager = (storeIdParam = 'id') => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const storeId = req.params[storeIdParam]

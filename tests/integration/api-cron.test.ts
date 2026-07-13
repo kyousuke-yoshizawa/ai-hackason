@@ -1,19 +1,19 @@
 process.env.LINK_TOKEN_SECRET = 'test-secret'
 
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-jest.mock('../../api/_lib/email/mailer', () => ({
+jest.mock('../../backend/domains/email/mailer', () => ({
   sendEmail: jest.fn(),
 }))
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
-import { sendEmail } from '../../api/_lib/email/mailer'
+import { supabaseAdmin } from '../../backend/db'
+import { sendEmail } from '../../backend/domains/email/mailer'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { runCongestionNotificationCycle } from '../../api/_lib/cron/congestionNotificationJob'
+import { runCongestionNotificationCycle } from '../../backend/domains/notifications/congestionNotificationJob'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 

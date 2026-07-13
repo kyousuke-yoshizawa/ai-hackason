@@ -1,5 +1,5 @@
 import cron from 'node-cron'
-import { runCongestionNotificationCycle } from '../api/_lib/cron/congestionNotificationJob'
+import { runCongestionNotificationCycle } from '../backend/domains/notifications/congestionNotificationJob'
 
 // ローカル開発用：Vercel Cron の代わりに node-cron で30分おきに実行する。
 // 本番は vercel.json の crons（/api/cron/notify-congestion）を使用する。

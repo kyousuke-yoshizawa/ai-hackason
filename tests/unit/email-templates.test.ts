@@ -1,4 +1,4 @@
-import { renderCongestionReportHtml, renderCongestionReportSubject } from '../../api/_lib/email/templates'
+import { renderCongestionReportHtml, renderCongestionReportSubject } from '../../backend/domains/email/templates'
 
 describe('congestion report email template', () => {
   const base = {

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../supabaseAdmin.js'
+import { supabaseAdmin } from '../../db.js'
 
 export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled'
 

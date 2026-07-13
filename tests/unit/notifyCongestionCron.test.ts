@@ -1,10 +1,10 @@
 jest.mock('node-cron', () => ({ schedule: jest.fn() }))
-jest.mock('../../api/_lib/cron/congestionNotificationJob', () => ({
+jest.mock('../../backend/domains/notifications/congestionNotificationJob', () => ({
   runCongestionNotificationCycle: jest.fn().mockResolvedValue({ scheduledCount: 0, processedCount: 0 }),
 }))
 
 import cron from 'node-cron'
-import { runCongestionNotificationCycle } from '../../api/_lib/cron/congestionNotificationJob'
+import { runCongestionNotificationCycle } from '../../backend/domains/notifications/congestionNotificationJob'
 
 // TC-109-01: cron ジョブが 30 分間隔（営業時間帯）で実行されるか検証
 describe('local dev cron registration (TC-109-01)', () => {

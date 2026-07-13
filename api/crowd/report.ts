@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyLinkToken, type LinkTokenPayload } from '../_lib/email/linkToken.js'
-import { getNotificationById, markNotificationLinkUsed } from '../_lib/email/repository.js'
-import { upsertCrowdStatus, insertCrowdHistory } from '../_lib/crowd/repository.js'
-import { requireStoreAccess } from '../_lib/requireStoreAccess.js'
-import type { CongestionLevel } from '../_lib/email/templates.js'
+import { verifyLinkToken, type LinkTokenPayload } from '../../backend/domains/email/linkToken.js'
+import { getNotificationById, markNotificationLinkUsed } from '../../backend/domains/email/repository.js'
+import { upsertCrowdStatus, insertCrowdHistory } from '../../backend/domains/crowd/repository.js'
+import { requireStoreAccess } from '../_http/requireStoreAccess.js'
+import type { CongestionLevel } from '../../backend/domains/crowd/types.js'
 
 const VALID_LEVELS: CongestionLevel[] = ['low', 'medium', 'high']
 

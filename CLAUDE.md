@@ -62,9 +62,14 @@ src/
 server/                  # Express（auth/users/stores/media）。ローカル開発と
                           #   Vercel本番の両方で使用（api/index.ts が re-export）
 api/                     # Vercel Functions（reservations/crowd/analytics/
-                          #   errors/cron/mail）+ api/_lib/ に共有ロジック
+                          #   errors/cron/mail）。api/_http/ に Vercel専用の
+                          #   HTTPアダプタ（requireAdmin/requireStoreAccess）
+backend/                 # api/ と server/ が共有するドメインロジック
+                          #   db.ts（supabaseAdmin唯一の定義）
+                          #   auth/authz.ts（認可: is_active + store_managers判定）
+                          #   domains/{crowd,crowdAnalytics,email,reservations,notifications}/
 scripts/                 # ローカル開発用cron（node-cron。本番はvercel.jsonのcrons）
-tests/                   # unit(6) + integration(10) + e2e(2) = 18ファイル
+tests/                   # unit(7) + integration(10) + e2e(2) = 19ファイル
 docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 ```
 
