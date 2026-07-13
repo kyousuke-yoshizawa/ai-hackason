@@ -10,7 +10,9 @@ import { sendError } from '../backend/http/respond.js'
 export const app = express()
 
 // 本番は Vercel の自ドメインを CORS_ALLOWED_ORIGINS に設定する（カンマ区切りで複数可）
-const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:5173').split(',')
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
 
 app.use(cors({ origin: allowedOrigins }))
 app.use(express.json())
