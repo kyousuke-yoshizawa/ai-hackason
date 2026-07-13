@@ -2,5 +2,11 @@
   "rewrites": [
     { "source": "/api/(auth|users|stores|health)(/.*)?", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/notify-congestion",
+      "schedule": "*/30 9-21 * * *"
+    }
   ]
 }

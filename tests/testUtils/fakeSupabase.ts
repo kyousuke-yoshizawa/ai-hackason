@@ -18,7 +18,7 @@ class FakeTable {
 }
 
 class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message: string } | null }> {
-  private op: 'select' | 'insert' | 'update' | 'delete' = 'select'
+  private op: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select'
   private filters: Filter[] = []
   private insertObj: Row | null = null
   private updateObj: Row | null = null
@@ -31,6 +31,12 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
 
   insert(obj: Row): this {
     this.op = 'insert'
+    this.insertObj = obj
+    return this
+  }
+
+  upsert(obj: Row): this {
+    this.op = 'upsert'
     this.insertObj = obj
     return this
   }
@@ -104,6 +110,19 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
       const matched = this.table.rows.filter((row) => this.matches(row))
       this.table.rows = this.table.rows.filter((row) => !this.matches(row))
       return { data: matched, error: null }
+    }
+
+    if (this.op === 'upsert' && this.insertObj) {
+      const matchKey = 'store_id' in this.insertObj ? 'store_id' : 'id'
+      const existing = this.table.rows.find((row) => row[matchKey] === this.insertObj![matchKey])
+      if (existing) {
+        Object.assign(existing, this.insertObj)
+        return { data: this.singleMode ? existing : [existing], error: null }
+      }
+      const now = new Date().toISOString()
+      const row: Row = { id: this.table.generateId(), created_at: now, ...this.insertObj }
+      this.table.rows.push(row)
+      return { data: this.singleMode ? row : [row], error: null }
     }
 
     let rows = this.table.rows.filter((row) => this.matches(row))

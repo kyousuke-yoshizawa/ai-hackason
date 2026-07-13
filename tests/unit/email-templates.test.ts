@@ -15,12 +15,24 @@ describe('congestion report email template', () => {
     const html = renderCongestionReportHtml(base)
     expect(html).toContain('渋谷店')
     expect(html).toContain('非常に混雑しています')
-    expect(html).not.toContain('混雑状況を更新する')
+    expect(html).not.toContain('混雑状態を報告してください')
   })
 
-  it('renders an action button when actionUrl is provided', () => {
-    const html = renderCongestionReportHtml({ ...base, actionUrl: 'https://example.com/update?token=abc' })
-    expect(html).toContain('https://example.com/update?token=abc')
-    expect(html).toContain('混雑状況を更新する')
+  it('renders the 3 report buttons when reportLinks are provided', () => {
+    const html = renderCongestionReportHtml({
+      ...base,
+      reportLinks: [
+        { level: 'high', url: 'https://example.com/api/crowd/report?level=high&token=abc' },
+        { level: 'medium', url: 'https://example.com/api/crowd/report?level=medium&token=abc' },
+        { level: 'low', url: 'https://example.com/api/crowd/report?level=low&token=abc' },
+      ],
+    })
+    expect(html).toContain('混雑状態を報告してください')
+    expect(html).toContain('混んでる')
+    expect(html).toContain('普通')
+    expect(html).toContain('空いてる')
+    expect(html).toContain('level=high&token=abc')
+    expect(html).toContain('level=medium&token=abc')
+    expect(html).toContain('level=low&token=abc')
   })
 })
