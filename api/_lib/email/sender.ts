@@ -1,4 +1,4 @@
-import { renderCongestionReportHtml, renderCongestionReportSubject } from './templates'
+import { renderCongestionReportHtml, renderCongestionReportSubject, type CongestionReportLink } from './templates'
 import { sendEmail } from './mailer'
 import {
   listDueNotifications,
@@ -9,10 +9,15 @@ import {
   type DueNotification,
 } from './repository'
 
-function buildActionUrl(linkToken: string | null): string | undefined {
-  if (!linkToken) return undefined
-  const baseUrl = process.env.VITE_APP_URL ?? ''
-  return baseUrl ? `${baseUrl}/crowd-status/update?token=${linkToken}` : undefined
+const REPORT_LEVELS = ['high', 'medium', 'low'] as const
+
+function buildReportLinks(storeId: string, linkToken: string | null): CongestionReportLink[] {
+  if (!linkToken) return []
+  const baseUrl = process.env.APP_BASE_URL ?? 'https://ai-hackason.vercel.app'
+  return REPORT_LEVELS.map((level) => ({
+    level,
+    url: `${baseUrl}/api/crowd/report?store_id=${storeId}&level=${level}&token=${encodeURIComponent(linkToken)}`,
+  }))
 }
 
 export async function processNotification(notification: DueNotification): Promise<void> {
@@ -27,7 +32,7 @@ export async function processNotification(notification: DueNotification): Promis
       storeName: recipient.storeName,
       level: recipient.level,
       updatedAt: new Date().toISOString(),
-      actionUrl: buildActionUrl(notification.linkToken),
+      reportLinks: buildReportLinks(notification.storeId, notification.linkToken),
     })
     const subject = renderCongestionReportSubject({
       storeName: recipient.storeName,

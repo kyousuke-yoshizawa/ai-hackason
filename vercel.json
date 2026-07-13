@@ -1,5 +1,11 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/notify-congestion",
+      "schedule": "*/30 9-21 * * *"
+    }
   ]
 }

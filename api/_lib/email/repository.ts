@@ -94,6 +94,95 @@ export async function recordNotificationFailure(
   }
 }
 
+export interface StoreManager {
+  storeId: string
+  managerId: string
+}
+
+export async function listStoreManagers(): Promise<StoreManager[]> {
+  const { data, error } = await supabaseAdmin.from('store_managers').select('store_id, manager_id')
+
+  if (error) {
+    throw new Error(`Failed to list store managers: ${error.message}`)
+  }
+
+  return (data ?? []).map((row) => ({ storeId: row.store_id, managerId: row.manager_id }))
+}
+
+export async function insertNotification(storeId: string, managerId: string): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from('email_notifications')
+    .insert({
+      store_id: storeId,
+      manager_id: managerId,
+      notification_type: 'crowd_update',
+      scheduled_time: new Date().toISOString(),
+      is_sent: false,
+      retry_count: 0,
+      max_retries: 3,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) {
+    throw new Error(`Failed to insert email notification: ${error?.message ?? 'unknown error'}`)
+  }
+
+  return data.id
+}
+
+export async function setNotificationLinkToken(
+  id: string,
+  linkToken: string,
+  expiresAt: Date,
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('email_notifications')
+    .update({ link_token: linkToken, link_token_expires_at: expiresAt.toISOString() })
+    .eq('id', id)
+
+  if (error) {
+    throw new Error(`Failed to set notification link token: ${error.message}`)
+  }
+}
+
+export interface NotificationLinkState {
+  id: string
+  storeId: string
+  managerId: string
+  linkUsedAt: string | null
+}
+
+export async function getNotificationById(id: string): Promise<NotificationLinkState | null> {
+  const { data, error } = await supabaseAdmin
+    .from('email_notifications')
+    .select('id, store_id, manager_id, link_used_at')
+    .eq('id', id)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return {
+    id: data.id,
+    storeId: data.store_id,
+    managerId: data.manager_id,
+    linkUsedAt: data.link_used_at,
+  }
+}
+
+export async function markNotificationLinkUsed(id: string): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('email_notifications')
+    .update({ link_used_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) {
+    throw new Error(`Failed to mark notification link as used: ${error.message}`)
+  }
+}
+
 export interface RecordSendLogInput {
   notificationId: string
   recipientEmail: string

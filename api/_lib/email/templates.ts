@@ -1,16 +1,27 @@
 export type CongestionLevel = 'low' | 'medium' | 'high'
 
+export interface CongestionReportLink {
+  level: CongestionLevel
+  url: string
+}
+
 export interface CongestionReportData {
   storeName: string
   level: CongestionLevel
   updatedAt: string
-  actionUrl?: string
+  reportLinks?: CongestionReportLink[]
 }
 
 const LEVEL_LABEL: Record<CongestionLevel, string> = {
   low: '空いています',
   medium: '混雑しています',
   high: '非常に混雑しています',
+}
+
+const REPORT_BUTTON_LABEL: Record<CongestionLevel, string> = {
+  low: '空いてる',
+  medium: '普通',
+  high: '混んでる',
 }
 
 const LEVEL_COLOR: Record<CongestionLevel, string> = {
@@ -24,11 +35,16 @@ export function renderCongestionReportSubject(data: CongestionReportData): strin
 }
 
 export function renderCongestionReportHtml(data: CongestionReportData): string {
-  const actionButton = data.actionUrl
-    ? `<p style="margin:24px 0 0;">
-         <a href="${data.actionUrl}" style="display:inline-block;padding:10px 20px;background:#18181b;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;">
-           混雑状況を更新する
-         </a>
+  const reportButtons = data.reportLinks?.length
+    ? `<p style="margin:24px 0 0;font-size:13px;color:#3f3f46;">混雑状態を報告してください</p>
+       <p style="margin:8px 0 0;">
+         ${data.reportLinks
+           .map(
+             (link) => `<a href="${link.url}" style="display:inline-block;margin:0 4px 8px 0;padding:10px 16px;background:${LEVEL_COLOR[link.level]};color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;">
+           ${REPORT_BUTTON_LABEL[link.level]}
+         </a>`,
+           )
+           .join('')}
        </p>`
     : ''
 
@@ -46,7 +62,7 @@ export function renderCongestionReportHtml(data: CongestionReportData): string {
           <p style="font-size:12px;margin:16px 0 0;color:#71717a;">
             レポート時刻: ${data.updatedAt}
           </p>
-          ${actionButton}
+          ${reportButtons}
         </td>
       </tr>
     </table>
