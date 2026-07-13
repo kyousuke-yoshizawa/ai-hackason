@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../lib/api'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
 
-interface StoresPageProps {
-  onBack: () => void
-  onViewReservations: () => void
-}
-
-export default function StoresPage({ onBack, onViewReservations }: StoresPageProps) {
+export default function StoresPage() {
+  const navigate = useNavigate()
   const [stores, setStores] = useState<AdminStore[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -26,7 +23,11 @@ export default function StoresPage({ onBack, onViewReservations }: StoresPagePro
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button type="button" onClick={onBack} className="text-sm text-indigo-600 hover:underline">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="text-sm text-indigo-600 hover:underline"
+          >
             ← ダッシュボードに戻る
           </button>
           <h1 className="text-xl font-bold text-gray-900">店舗一覧</h1>
@@ -74,7 +75,7 @@ export default function StoresPage({ onBack, onViewReservations }: StoresPagePro
           storeName={reservingStore.name}
           openTime={reservingStore.open_time}
           closeTime={reservingStore.close_time}
-          onViewReservations={onViewReservations}
+          onViewReservations={() => navigate('/reservations')}
         />
       )}
     </div>

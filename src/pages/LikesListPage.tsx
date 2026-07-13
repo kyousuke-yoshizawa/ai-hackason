@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUserLikes } from '../lib/likes'
 
@@ -12,11 +13,8 @@ interface LikedStoreRow {
   likedAt: string
 }
 
-interface LikesListPageProps {
-  onBack: () => void
-}
-
-export default function LikesListPage({ onBack }: LikesListPageProps) {
+export default function LikesListPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [rows, setRows] = useState<LikedStoreRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -69,7 +67,11 @@ export default function LikesListPage({ onBack }: LikesListPageProps) {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button type="button" onClick={onBack} className="text-sm text-indigo-600 hover:underline">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="text-sm text-indigo-600 hover:underline"
+          >
             ← ダッシュボードに戻る
           </button>
           <h1 className="text-xl font-bold text-gray-900">いいね一覧</h1>

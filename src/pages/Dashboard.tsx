@@ -1,18 +1,9 @@
-import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from '../hooks/useNavigate'
-import AdminPage from './AdminPage'
-import ErrorManagementDashboard from './ErrorManagementDashboard'
-import LikesListPage from './LikesListPage'
-import StoresPage from './StoresPage'
-import ReservationsListPage from './ReservationsListPage'
 
 export default function Dashboard() {
   const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
-  const [view, setView] = useState<'dashboard' | 'admin' | 'errors' | 'likes' | 'stores' | 'reservations'>(
-    'dashboard'
-  )
 
   const handleLogout = async () => {
     await logout()
@@ -27,27 +18,6 @@ export default function Dashboard() {
     )
   }
 
-  if (view === 'admin' && user.role === 'admin') {
-    return <AdminPage onBack={() => setView('dashboard')} />
-  }
-
-  // Issue #38: エラー管理ダッシュボードは admin のみアクセス可能
-  if (view === 'errors' && hasPermission('users', 'delete')) {
-    return <ErrorManagementDashboard onBack={() => setView('dashboard')} />
-  }
-
-  if (view === 'likes') {
-    return <LikesListPage onBack={() => setView('dashboard')} />
-  }
-
-  if (view === 'stores') {
-    return <StoresPage onBack={() => setView('dashboard')} onViewReservations={() => setView('reservations')} />
-  }
-
-  if (view === 'reservations') {
-    return <ReservationsListPage onBack={() => setView('dashboard')} />
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -58,43 +28,43 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600">ダッシュボード</p>
           </div>
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setView('likes')}
+            <Link
+              to="/likes"
               className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
             >
               ♥ いいね一覧
-            </button>
-            <button
-              onClick={() => setView('stores')}
+            </Link>
+            <Link
+              to="/stores"
               className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
             >
               店舗一覧・予約
-            </button>
-            <button
-              onClick={() => setView('reservations')}
+            </Link>
+            <Link
+              to="/reservations"
               className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
             >
               予約一覧
-            </button>
+            </Link>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-600">{user.email}</p>
             </div>
             {user.role === 'admin' && (
-              <button
-                onClick={() => setView('admin')}
+              <Link
+                to="/admin"
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
               >
                 管理画面
-              </button>
+              </Link>
             )}
             {hasPermission('users', 'delete') && (
-              <button
-                onClick={() => setView('errors')}
+              <Link
+                to="/admin/errors"
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
               >
                 エラー管理
-              </button>
+              </Link>
             )}
             <button
               onClick={handleLogout}

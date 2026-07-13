@@ -44,18 +44,19 @@ src/
 ├── pages/               # 7画面: LoginPage, Dashboard, StoresPage,
 │                         #   ReservationsListPage, LikesListPage,
 │                         #   AdminPage, ErrorManagementDashboard
-├── components/           # 15コンポーネント: フォーム(StoreForm/UserForm)、
+├── components/           # 16コンポーネント: フォーム(StoreForm/UserForm)、
 │                         #   パネル(StoreManagementPanel/UserManagementPanel/
 │                         #   StoreMediaPanel)、モーダル(ReservationModal/
-│                         #   ReviewFormModal/Modal)、汎用UI(Toast/StarRating等)
+│                         #   ReviewFormModal/Modal)、汎用UI(Toast/StarRating等)、
+│                         #   ProtectedRoute(認証・権限ガード)
 ├── context/
 │   └── AuthContext.tsx   # 認証状態(login/logout/isAuthenticated/permissions)
-├── hooks/
-│   └── useNavigate.ts    # ナビゲーション（react-router未導入。window.location操作の簡易実装）
 ├── lib/                  # api.ts(REST共通クライアント) + likes/reviews/
-│                         #   reservations/storeMedia(機能別) + supabase.ts
+│                         #   reservations/storeMedia(機能別)
 ├── types/                # reservation.ts, social.ts
-├── App.tsx               # ルーティング（認証状態での画面出し分け。URLベースではない）
+├── App.tsx               # react-router-dom (T10導入) によるURLベースルーティング
+│                         #   （/login /dashboard /stores /reservations /likes
+│                         #   /admin /admin/errors）。ProtectedRouteで認証・権限ガード
 ├── main.tsx
 └── index.css
 
@@ -69,7 +70,7 @@ backend/                 # api/ と server/ が共有するドメインロジッ
                           #   auth/authz.ts（認可: is_active + store_managers判定）
                           #   domains/{crowd,crowdAnalytics,email,reservations,notifications}/
 scripts/                 # ローカル開発用cron（node-cron。本番はvercel.jsonのcrons）
-tests/                   # unit(8) + integration(13) + e2e(2) = 23ファイル
+tests/                   # unit(9) + integration(13) + e2e(2) = 24ファイル
 docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 ```
 
@@ -81,7 +82,7 @@ docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 - Stores user session in localStorage（トークンレス。`x-user-id` ヘッダで認証 — 既知の制約。詳細は手順書 T04/T21）
 - Provides `useAuth()` hook for components
 - Login: REST 経由（`src/lib/api.ts` → `server/routes/auth.ts` の `POST /login`）／Logout: ローカル状態クリアのみ（サーバー呼び出しなし）
-- Permission fetch: Supabase 直接（`role_permissions` テーブル）
+- Permission fetch: REST 経由（`GET /api/auth/permissions`。ロールはサーバー側が `x-user-id` から解決）
 
 Components consume auth via:
 ```typescript
@@ -92,12 +93,11 @@ const { user, login, logout, isAuthenticated, permissions, hasPermission } = use
 
 | File | Purpose |
 |------|---------|
-| `src/lib/api.ts` | REST共通クライアント（`x-user-id` ヘッダ付与、`VITE_API_URL` or `localhost:3000`） |
-| `src/lib/supabase.ts` | Supabase クライアント（フロントでは likes/reviews/権限取得に使用） |
+| `src/lib/api.ts` | REST共通クライアント（`x-user-id` ヘッダ付与、`VITE_API_URL` or `localhost:3000`）。フロントの全データアクセスがここを経由（T08でSupabase直接呼び出しを廃止） |
 | `src/context/AuthContext.tsx` | Auth state (login, logout, user, permissions), localStorage persistence |
 | `src/pages/LoginPage.tsx` | Email/password login form; test account info display |
-| `src/pages/Dashboard.tsx` | Post-login dashboard; 画面切り替え(store/reservation/like/admin等) |
-| `src/App.tsx` | 認証状態による Dashboard/LoginPage の出し分け |
+| `src/pages/Dashboard.tsx` | Post-login dashboard（`/dashboard`）; 他画面への `<Link>` ナビゲーション |
+| `src/App.tsx` | react-router-dom によるURLベースルーティング＋`ProtectedRoute`での認証・権限ガード（T10） |
 
 ### Database Schema
 
@@ -261,7 +261,7 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 - **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
 - **Type checking**: `npm run build`（`src/` のみ、tsc -b）と `npm run typecheck`（`api/server/scripts/tests/src` 全体、tsconfig.backend.json）の2種類。strict mode 有効
-- **Tests**: `npm test`（Jest, 21 suites / 162 tests）+ `npm run test:e2e`（Playwright）
+- **Tests**: `npm test`（Jest, 22 suites / 170 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints
 
