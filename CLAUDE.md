@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**AI Hackathon 2026** — A 20-hour team project (Kyosuke + 3 members) building a production application using React + TypeScript + Tailwind / Node.js + Express + Claude API / Supabase PostgreSQL / Vercel.
+**AI Hackathon 2026** — A 20-hour team project (Kyosuke + 3 members) building 「ことこと町」お出かけプラン AI アシスタント using React + TypeScript + Tailwind / Node.js + Express + Vercel Functions / Supabase PostgreSQL.
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
-- **Backend**: Node.js + Express (Claude API integration)
+- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media）+ Vercel Functions（`api/`, reservations/crowd/analytics/errors/cron/mail）
+- **AI**: Claude API によるお出かけプラン生成 — **統合作業中**（設計は `docs/architecture-audit/refactoring-handbook.md` T12 を参照。現時点で `@anthropic-ai/sdk` 依存・呼び出しコードは未実装）
 - **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel (auto-deploy on main)
 - **Documentation Sync**: Notion Database (auto-sync on PR merge via GitHub Actions)
@@ -40,47 +41,74 @@ npm run preview
 
 ```
 src/
-├── pages/
-│   ├── LoginPage.tsx         # Authentication UI (email/password input)
-│   └── Dashboard.tsx         # Main app after login (user info, stats, activity)
+├── pages/               # 7画面: LoginPage, Dashboard, StoresPage,
+│                         #   ReservationsListPage, LikesListPage,
+│                         #   AdminPage, ErrorManagementDashboard
+├── components/           # 15コンポーネント: フォーム(StoreForm/UserForm)、
+│                         #   パネル(StoreManagementPanel/UserManagementPanel/
+│                         #   StoreMediaPanel)、モーダル(ReservationModal/
+│                         #   ReviewFormModal/Modal)、汎用UI(Toast/StarRating等)
 ├── context/
-│   └── AuthContext.tsx       # User auth state (login/logout/isAuthenticated)
+│   └── AuthContext.tsx   # 認証状態(login/logout/isAuthenticated/permissions)
 ├── hooks/
-│   └── useNavigate.ts        # Navigation utility
-├── lib/
-│   └── supabase.ts           # Supabase client (connection + auth queries)
-├── App.tsx                   # Root routing component
-├── main.tsx                  # Entry point (React DOM mount)
-└── index.css                 # Global styles (Tailwind directives)
+│   └── useNavigate.ts    # ナビゲーション（react-router未導入。window.location操作の簡易実装）
+├── lib/                  # api.ts(REST共通クライアント) + likes/reviews/
+│                         #   reservations/storeMedia(機能別) + supabase.ts
+├── types/                # reservation.ts, social.ts
+├── App.tsx               # ルーティング（認証状態での画面出し分け。URLベースではない）
+├── main.tsx
+└── index.css
+
+server/                  # Express（auth/users/stores/media）。ローカル開発と
+                          #   Vercel本番の両方で使用（api/index.ts が re-export）
+api/                     # Vercel Functions（reservations/crowd/analytics/
+                          #   errors/cron/mail）+ api/_lib/ に共有ロジック
+scripts/                 # ローカル開発用cron（node-cron。本番はvercel.jsonのcrons）
+tests/                   # unit(6) + integration(10) + e2e(2) = 18ファイル
+docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 ```
+
+詳細な依存関係・既知の技術課題は `docs/architecture-audit/refactoring-handbook.md` を参照。
 
 ### Authentication & State Management
 
 **AuthContext.tsx** is the central auth state manager. It:
-- Stores user session in localStorage
+- Stores user session in localStorage（トークンレス。`x-user-id` ヘッダで認証 — 既知の制約。詳細は手順書 T04/T21）
 - Provides `useAuth()` hook for components
-- Integrates with Supabase via `src/lib/supabase.ts`
-- Manages login/logout/isAuthenticated flags
+- Login/logout: REST 経由（`src/lib/api.ts` → `server/routes/auth.ts`）
+- Permission fetch: Supabase 直接（`role_permissions` テーブル）
 
 Components consume auth via:
 ```typescript
-const { user, login, logout, isAuthenticated } = useAuth()
+const { user, login, logout, isAuthenticated, permissions, hasPermission } = useAuth()
 ```
 
 ### Key Files & Responsibilities
 
 | File | Purpose |
 |------|---------|
-| `src/lib/supabase.ts` | Supabase client initialization; queries users table |
-| `src/context/AuthContext.tsx` | Auth state (login, logout, user), localStorage persistence |
+| `src/lib/api.ts` | REST共通クライアント（`x-user-id` ヘッダ付与、`VITE_API_URL` or `localhost:3000`） |
+| `src/lib/supabase.ts` | Supabase クライアント（フロントでは likes/reviews/権限取得に使用） |
+| `src/context/AuthContext.tsx` | Auth state (login, logout, user, permissions), localStorage persistence |
 | `src/pages/LoginPage.tsx` | Email/password login form; test account info display |
-| `src/pages/Dashboard.tsx` | Post-login dashboard; user info, stats, activity |
-| `src/App.tsx` | Routing; protected Dashboard vs LoginPage based on auth state |
+| `src/pages/Dashboard.tsx` | Post-login dashboard; 画面切り替え(store/reservation/like/admin等) |
+| `src/App.tsx` | 認証状態による Dashboard/LoginPage の出し分け |
 
 ### Database Schema
 
-See `docs/database/USER_TABLE_README.md` for the full `users` table schema. Key columns:
-- `id`, `email`, `password_hash`, `role` (admin/user), timestamps
+主要テーブル（`docs/database/*.sql` 参照）:
+
+| Table | 役割 |
+|-------|------|
+| `users` / `role_permissions` | ユーザー・権限（RBAC） |
+| `stores` / `store_media` | 店舗マスタ・写真 |
+| `reservations` | 予約 |
+| `likes` / `reviews` | いいね・レビュー |
+| `crowd_status` / `crowd_history` / `crowd_patterns` | 混雑度（現況・履歴・パターン） |
+| `email_notifications` / `email_send_logs` | 通知メール |
+| `error_logs` | エラー記録 |
+
+`users` テーブルの詳細は `docs/database/USER_TABLE_README.md` を参照。Key columns: `id`, `email`, `password_hash`, `role` (admin/store_manager/user), timestamps
 
 Current test accounts:
 ```

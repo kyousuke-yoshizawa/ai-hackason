@@ -43,7 +43,7 @@ ANTHROPIC_API_KEY
 
 ## 4. GitHub Actionsの保守
 
-- `github-workflows/sync-notion.yml` が正しく動いているか、PRマージ後に毎回Actionsタブで確認
+- `.github/workflows/sync-notion.yml` が正しく動いているか、PRマージ後に毎回Actionsタブで確認
 - ワークフローが失敗した場合、まずSecrets名の綴りミスを疑う（最も多い原因）
 
 ## 5. インシデント対応（本番障害時）
