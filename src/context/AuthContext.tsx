@@ -8,18 +8,43 @@ interface User {
   role: string
 }
 
+interface Permission {
+  resource: string
+  action: string
+}
+
 interface AuthContextType {
   user: User | null
+  permissions: Permission[]
   isLoading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
   isAuthenticated: boolean
+  hasPermission: (resource: string, action: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// role 名から role_permissions 経由で resource/action 一覧を取得（Issue #22）
+const fetchPermissions = async (role: string): Promise<Permission[]> => {
+  const { data, error } = await supabase
+    .from('role_permissions')
+    .select('permissions(resource, action), roles!inner(name)')
+    .eq('roles.name', role)
+
+  if (error || !data) {
+    console.error('Permission fetch error:', error)
+    return []
+  }
+
+  return (data as unknown as { permissions: Permission | null }[])
+    .map((row) => row.permissions)
+    .filter((p): p is Permission => p !== null)
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [permissions, setPermissions] = useState<Permission[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -27,7 +52,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const storedUser = localStorage.getItem('user')
         if (storedUser) {
-          setUser(JSON.parse(storedUser))
+          const parsedUser = JSON.parse(storedUser) as User
+          setUser(parsedUser)
+          setPermissions(await fetchPermissions(parsedUser.role))
         }
       } catch (error) {
         console.error('Auth check error:', error)
@@ -62,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ✅ 簡易実装：実環境ではバックエンドでパスワード検証
       localStorage.setItem('user', JSON.stringify(userData))
       setUser(userData)
+      setPermissions(await fetchPermissions(userData.role))
 
       return { success: true }
     } catch (error) {
@@ -73,14 +101,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     localStorage.removeItem('user')
     setUser(null)
+    setPermissions([])
   }
+
+  const hasPermission = (resource: string, action: string) =>
+    permissions.some((p) => p.resource === resource && p.action === action)
 
   const value: AuthContextType = {
     user,
+    permissions,
     isLoading,
     login,
     logout,
     isAuthenticated: !!user,
+    hasPermission,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
