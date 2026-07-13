@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { cancelReservation, getReservationById } from '../_lib/reservations/repository'
-import { requireStoreAccess } from '../_lib/requireStoreAccess'
+import { cancelReservation, getReservationById } from '../_lib/reservations/repository.js'
+import { requireStoreAccess } from '../_lib/requireStoreAccess.js'
 
 // PUT /api/reservations/:id — 予約キャンセル（本人、店舗責任者、adminのみ）
 export default async function handler(req: VercelRequest, res: VercelResponse) {

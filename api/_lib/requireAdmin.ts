@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from './supabaseAdmin'
+import { supabaseAdmin } from './supabaseAdmin.js'
 
 // ⚠️ 既知の制約：本アプリは Supabase Auth を使わず client 側で users テーブルを
 // 直接照会するプロトタイプ実装のため、正規の JWT セッションが存在しない。

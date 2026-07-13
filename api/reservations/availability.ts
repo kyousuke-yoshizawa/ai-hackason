@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { validateReservationRequest } from '../_lib/reservations/validation'
+import { validateReservationRequest } from '../_lib/reservations/validation.js'
 
 // GET /api/reservations/availability?store_id=X&reservation_date=YYYY-MM-DD&reservation_time=HH:MM&party_size=N
 export default async function handler(req: VercelRequest, res: VercelResponse) {

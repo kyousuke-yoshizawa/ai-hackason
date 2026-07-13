@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { runCongestionNotificationCycle } from '../_lib/cron/congestionNotificationJob'
+import { runCongestionNotificationCycle } from '../_lib/cron/congestionNotificationJob.js'
 
 // GET /api/cron/notify-congestion
 // Vercel Cron（vercel.json の crons）から30分おきに呼び出される想定。

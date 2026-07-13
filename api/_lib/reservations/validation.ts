@@ -2,7 +2,7 @@ import {
   getConfirmedPartySizeForSlot,
   getReservationSettings,
   getStoreBusinessHours,
-} from './repository'
+} from './repository.js'
 
 export type ReservationValidationError =
   | 'invalid_input'

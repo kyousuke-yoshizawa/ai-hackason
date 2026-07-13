@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createReservation } from '../_lib/reservations/repository'
-import { validateReservationRequest } from '../_lib/reservations/validation'
+import { createReservation } from '../_lib/reservations/repository.js'
+import { validateReservationRequest } from '../_lib/reservations/validation.js'
 
 // POST /api/reservations { store_id, user_id, reservation_date, reservation_time, party_size }
 export default async function handler(req: VercelRequest, res: VercelResponse) {

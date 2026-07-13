@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { runCrowdAnalyticsAggregationJob } from '../_lib/crowdAnalytics/aggregationJob'
+import { runCrowdAnalyticsAggregationJob } from '../_lib/crowdAnalytics/aggregationJob.js'
 
 // GET /api/cron/aggregate-crowd-analytics
 // Vercel Cron（vercel.json の crons）から毎日23:00に呼び出される想定。
