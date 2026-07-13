@@ -1,6 +1,6 @@
 process.env.LINK_TOKEN_SECRET = 'test-secret'
 
-import { generateLinkToken, verifyLinkToken } from '../../api/_lib/email/linkToken'
+import { generateLinkToken, verifyLinkToken } from '../../backend/domains/email/linkToken'
 
 describe('signed one-time link token', () => {
   const payload = {

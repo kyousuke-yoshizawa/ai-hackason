@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireAdmin } from '../_lib/requireAdmin.js'
-import { processDueNotifications } from '../_lib/email/sender.js'
+import { requireAdmin } from '../_http/requireAdmin.js'
+import { processDueNotifications } from '../../backend/domains/email/sender.js'
 
 // POST /api/mail/process-due — 配信予定時刻を過ぎた email_notifications を送信する（admin のみ）
 // #25（定期実行）から一定間隔で呼び出されることを想定した内部トリガー。

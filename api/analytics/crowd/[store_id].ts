@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getCrowdAnalyticsForStore } from '../../_lib/crowdAnalytics/repository.js'
-import { requireStoreAccess } from '../../_lib/requireStoreAccess.js'
+import { getCrowdAnalyticsForStore } from '../../../backend/domains/crowdAnalytics/repository.js'
+import { requireStoreAccess } from '../../_http/requireStoreAccess.js'
 
 // GET /api/analytics/crowd/:store_id?days=N — 日別の混雑分析データ取得（店舗管理者 or admin のみ）
 // days を省略した場合は保存済みの全期間を返す。

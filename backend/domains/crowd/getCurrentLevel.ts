@@ -1,5 +1,5 @@
 import { getCrowdPattern, getCurrentCrowdStatus } from './repository.js'
-import type { CongestionLevel } from '../email/templates.js'
+import type { CongestionLevel } from './types.js'
 
 const FRESHNESS_WINDOW_MS = 30 * 60 * 1000 // 30分
 

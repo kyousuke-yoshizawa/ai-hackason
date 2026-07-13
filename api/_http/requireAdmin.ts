@@ -1,10 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireStoreAccess as requireStoreAccessUser } from './authz.js'
+import { requireAdmin as requireAdminUser } from '../../backend/auth/authz.js'
 
-export const requireStoreAccess = async (
+export const requireAdmin = async (
   req: VercelRequest,
   res: VercelResponse,
-  storeId: string,
 ): Promise<string | null> => {
   const userId = req.headers['x-user-id']
 
@@ -13,9 +12,9 @@ export const requireStoreAccess = async (
     return null
   }
 
-  const user = await requireStoreAccessUser(userId, storeId)
+  const user = await requireAdminUser(userId)
   if (!user) {
-    res.status(403).json({ error: 'store manager or admin role required' })
+    res.status(403).json({ error: 'admin role required' })
     return null
   }
 

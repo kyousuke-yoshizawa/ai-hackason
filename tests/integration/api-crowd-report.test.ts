@@ -1,15 +1,15 @@
 process.env.LINK_TOKEN_SECRET = 'test-secret'
 
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { generateLinkToken } from '../../api/_lib/email/linkToken'
+import { generateLinkToken } from '../../backend/domains/email/linkToken'
 import handler from '../../api/crowd/report'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient

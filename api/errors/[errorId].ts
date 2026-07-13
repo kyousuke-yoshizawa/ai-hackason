@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../_lib/supabaseAdmin.js'
-import { requireAdmin } from '../_lib/requireAdmin.js'
+import { supabaseAdmin } from '../../backend/db.js'
+import { requireAdmin } from '../_http/requireAdmin.js'
 
 const VALID_STATUSES = ['new', 'reviewing', 'resolved']
 

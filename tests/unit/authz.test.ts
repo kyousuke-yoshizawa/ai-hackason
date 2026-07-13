@@ -1,12 +1,12 @@
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { getActiveUser, requireAdmin, requireStoreAccess } from '../../api/_lib/authz'
+import { getActiveUser, requireAdmin, requireStoreAccess } from '../../backend/auth/authz'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 

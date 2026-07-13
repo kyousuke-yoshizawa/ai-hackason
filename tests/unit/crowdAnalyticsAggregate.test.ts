@@ -1,5 +1,5 @@
-import { aggregateCrowdAnalyticsForDate } from '../../api/_lib/crowdAnalytics/aggregate'
-import type { CrowdHistoryEntry } from '../../api/_lib/crowdAnalytics/aggregate'
+import { aggregateCrowdAnalyticsForDate } from '../../backend/domains/crowdAnalytics/aggregate'
+import type { CrowdHistoryEntry } from '../../backend/domains/crowdAnalytics/aggregate'
 
 // TC-205-01: バッチジョブが正確に集計するか検証
 describe('aggregateCrowdAnalyticsForDate (TC-205-01)', () => {

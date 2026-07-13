@@ -1,4 +1,4 @@
-import type { CongestionLevel } from '../email/templates.js'
+import type { CongestionLevel } from '../crowd/types.js'
 
 export interface CrowdHistoryEntry {
   storeId: string

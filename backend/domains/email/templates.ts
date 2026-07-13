@@ -1,4 +1,4 @@
-export type CongestionLevel = 'low' | 'medium' | 'high'
+import type { CongestionLevel } from '../crowd/types.js'
 
 export interface CongestionReportLink {
   level: CongestionLevel

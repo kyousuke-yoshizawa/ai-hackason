@@ -1,12 +1,12 @@
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { runCrowdAnalyticsAggregationJob } from '../../api/_lib/crowdAnalytics/aggregationJob'
+import { runCrowdAnalyticsAggregationJob } from '../../backend/domains/crowdAnalytics/aggregationJob'
 import handler from '../../api/analytics/crowd/[store_id]'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 

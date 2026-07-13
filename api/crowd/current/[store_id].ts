@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { resolveCurrentCrowdLevel } from '../../_lib/crowd/getCurrentLevel.js'
+import { resolveCurrentCrowdLevel } from '../../../backend/domains/crowd/getCurrentLevel.js'
 
 // GET /api/crowd/current/:store_id — 直近30分以内のリアルタイム報告があれば優先し、
 // 無ければ時間帯別の事前設定パターン（crowd_patterns）を返す。

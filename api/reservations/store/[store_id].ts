@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { listStoreReservations } from '../../_lib/reservations/repository.js'
-import { requireStoreAccess } from '../../_lib/requireStoreAccess.js'
+import { listStoreReservations } from '../../../backend/domains/reservations/repository.js'
+import { requireStoreAccess } from '../../_http/requireStoreAccess.js'
 
 // GET /api/reservations/store/:store_id （店舗責任者またはadminのみ）
 export default async function handler(req: VercelRequest, res: VercelResponse) {

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../_lib/supabaseAdmin.js'
-import { requireAdmin } from '../_lib/requireAdmin.js'
+import { supabaseAdmin } from '../../backend/db.js'
+import { requireAdmin } from '../_http/requireAdmin.js'
 
 // GET  /api/errors  — エラー一覧取得（admin のみ）
 // POST /api/errors  — エラーログ記録（内部用、認証不要）

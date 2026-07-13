@@ -4,22 +4,16 @@
 // API Integration Tests for Store Media Attachment (Issue #35)
 // supertest（内部でformidable/cuid2を使用）はjsdom環境のTextEncoder欠如と衝突するためnode環境を指定
 
-jest.mock('../../server/db', () => {
+// server/routes/*.ts と server/middleware/auth.ts（backend/auth/authz.ts 経由）は
+// いずれも backend/db.ts の同一 supabaseAdmin を使うため、モックは1つで足りる
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-// server/middleware/auth.ts は api/_lib/authz.ts 経由で api/_lib/supabaseAdmin.ts を
-// 使う。本来同一のSupabase接続を指すため、テストでも上と同じfakeインスタンスを共有する
-jest.mock('../../api/_lib/supabaseAdmin', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { supabaseAdmin } = require('../../server/db')
-  return { supabaseAdmin }
-})
-
 import request from 'supertest'
-import { supabaseAdmin } from '../../server/db'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import { app } from '../../server/app'
 

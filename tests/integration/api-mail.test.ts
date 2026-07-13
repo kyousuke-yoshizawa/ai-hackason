@@ -1,15 +1,15 @@
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-jest.mock('../../api/_lib/email/mailer', () => ({
+jest.mock('../../backend/domains/email/mailer', () => ({
   sendEmail: jest.fn(),
 }))
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
-import { sendEmail } from '../../api/_lib/email/mailer'
+import { supabaseAdmin } from '../../backend/db'
+import { sendEmail } from '../../backend/domains/email/mailer'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import {
   listDueNotifications,
@@ -17,8 +17,8 @@ import {
   recordNotificationFailure,
   recordSendLog,
   resolveRecipient,
-} from '../../api/_lib/email/repository'
-import { processDueNotifications } from '../../api/_lib/email/sender'
+} from '../../backend/domains/email/repository'
+import { processDueNotifications } from '../../backend/domains/email/sender'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 

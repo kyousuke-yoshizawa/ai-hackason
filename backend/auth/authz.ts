@@ -1,5 +1,5 @@
-import { supabaseAdmin } from './supabaseAdmin.js'
-import { isStoreManager } from './crowd/repository.js'
+import { supabaseAdmin } from '../db.js'
+import { isStoreManager } from '../domains/crowd/repository.js'
 
 // 認可ロジックの単一の窓口。Express（server/）と Vercel Functions（api/）の
 // 両方がここを経由することで、is_active チェックと店舗管理者判定を一本化する。
