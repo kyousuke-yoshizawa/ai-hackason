@@ -5,6 +5,8 @@ import { authRouter } from './routes/auth.js'
 import { storeMediaRouter } from './routes/storeMedia.js'
 import { storesRouter } from './routes/stores.js'
 import { usersRouter } from './routes/users.js'
+import { likesRouter, storeLikesRouter } from './routes/likes.js'
+import { reviewsRouter, storeReviewsRouter } from './routes/reviews.js'
 import { sendError } from '../backend/http/respond.js'
 
 export const app = express()
@@ -21,6 +23,10 @@ app.use('/api/auth', authRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/stores', storesRouter)
 app.use('/api/stores', storeMediaRouter)
+app.use('/api/stores', storeLikesRouter)
+app.use('/api/stores', storeReviewsRouter)
+app.use('/api/likes', likesRouter)
+app.use('/api/reviews', reviewsRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

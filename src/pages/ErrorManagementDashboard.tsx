@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { api, ApiError } from '../lib/api'
 
 interface ErrorLog {
   id: string
@@ -39,15 +40,9 @@ export default function ErrorManagementDashboard({ onBack }: { onBack: () => voi
     setErrorMessage(null)
     try {
       const query = statusFilter === 'all' ? '' : `?status=${statusFilter}`
-      const res = await fetch(`/api/errors${query}`, {
-        headers: { 'x-user-id': user.id },
-      })
-      if (!res.ok) {
-        throw new Error(`エラー一覧の取得に失敗しました（${res.status}）`)
-      }
-      setErrors(await res.json())
+      setErrors(await api.get<ErrorLog[]>(`/api/errors${query}`))
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'エラー一覧の取得に失敗しました')
+      setErrorMessage(err instanceof ApiError ? err.message : 'エラー一覧の取得に失敗しました')
     } finally {
       setIsLoading(false)
     }
@@ -61,19 +56,11 @@ export default function ErrorManagementDashboard({ onBack }: { onBack: () => voi
   const updateStatus = async (errorId: string, status: ErrorLog['status']) => {
     if (!user) return
     try {
-      const res = await fetch(`/api/errors/${errorId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-        body: JSON.stringify({ status }),
-      })
-      if (!res.ok) {
-        throw new Error(`ステータス更新に失敗しました（${res.status}）`)
-      }
-      const updated = await res.json()
+      const updated = await api.patch<ErrorLog>(`/api/errors/${errorId}`, { status })
       setErrors((prev) => prev.map((e) => (e.id === errorId ? updated : e)))
       setSelected((prev) => (prev && prev.id === errorId ? updated : prev))
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'ステータス更新に失敗しました')
+      setErrorMessage(err instanceof ApiError ? err.message : 'ステータス更新に失敗しました')
     }
   }
 

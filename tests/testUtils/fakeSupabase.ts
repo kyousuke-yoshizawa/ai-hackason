@@ -1,6 +1,6 @@
 type Row = Record<string, unknown>
 
-type FilterOp = 'eq' | 'lte' | 'is'
+type FilterOp = 'eq' | 'lte' | 'is' | 'in'
 
 interface Filter {
   op: FilterOp
@@ -10,6 +10,7 @@ interface Filter {
 
 class FakeTable {
   rows: Row[] = []
+  uniqueColumns: string[][] = []
   private nextId = 1
 
   generateId(): string {
@@ -17,7 +18,9 @@ class FakeTable {
   }
 }
 
-class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message: string } | null }> {
+type FakeError = { message: string; code?: string }
+
+class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError | null; count?: number }> {
   private op: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select'
   private filters: Filter[] = []
   private insertObj: Row | null = null
@@ -26,6 +29,9 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
   private orderAscending = true
   private limitCount: number | undefined
   private singleMode = false
+  private maybeMode = false
+  private countMode = false
+  private headMode = false
 
   constructor(private table: FakeTable) {}
 
@@ -41,7 +47,9 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
     return this
   }
 
-  select(): this {
+  select(_columns?: string, options?: { count?: 'exact'; head?: boolean }): this {
+    this.countMode = options?.count === 'exact'
+    this.headMode = options?.head === true
     return this
   }
 
@@ -71,6 +79,11 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
     return this
   }
 
+  in(column: string, values: unknown[]): this {
+    this.filters.push({ op: 'in', column, value: values })
+    return this
+  }
+
   order(column: string, opts?: { ascending?: boolean }): this {
     this.orderColumn = column
     this.orderAscending = opts?.ascending !== false
@@ -87,6 +100,12 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
     return this
   }
 
+  maybeSingle(): this {
+    this.singleMode = true
+    this.maybeMode = true
+    return this
+  }
+
   private matches(row: Row): boolean {
     return this.filters.every((filter) => {
       const rowValue = row[filter.column] as string | number
@@ -94,12 +113,25 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
       if (filter.op === 'eq') return rowValue === filterValue
       if (filter.op === 'lte') return rowValue <= filterValue
       if (filter.op === 'is') return (rowValue ?? null) === filterValue
+      if (filter.op === 'in') return (filter.value as unknown[]).includes(rowValue)
       return true
     })
   }
 
-  private execute(): { data: unknown; error: { message: string } | null } {
+  private findUniqueConflict(candidate: Row): boolean {
+    return this.table.uniqueColumns.some((columns) =>
+      this.table.rows.some((row) => columns.every((column) => row[column] === candidate[column])),
+    )
+  }
+
+  private execute(): { data: unknown; error: FakeError | null; count?: number } {
     if (this.op === 'insert' && this.insertObj) {
+      if (this.findUniqueConflict(this.insertObj)) {
+        return {
+          data: null,
+          error: { message: 'duplicate key value violates unique constraint', code: '23505' },
+        }
+      }
       const now = new Date().toISOString()
       const row: Row = { id: this.table.generateId(), created_at: now, ...this.insertObj }
       this.table.rows.push(row)
@@ -132,6 +164,7 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
     }
 
     let rows = this.table.rows.filter((row) => this.matches(row))
+    const matchedCount = rows.length
     if (this.orderColumn) {
       const column = this.orderColumn
       rows = [...rows].sort((a, b) => {
@@ -146,15 +179,24 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
       rows = rows.slice(0, this.limitCount)
     }
 
-    if (this.singleMode) {
-      return { data: rows[0] ?? null, error: rows[0] ? null : { message: 'not found' } }
+    const count = this.countMode ? matchedCount : undefined
+
+    if (this.headMode) {
+      return { data: null, error: null, count }
     }
-    return { data: rows, error: null }
+
+    if (this.singleMode) {
+      if (this.maybeMode) {
+        return { data: rows[0] ?? null, error: null, count }
+      }
+      return { data: rows[0] ?? null, error: rows[0] ? null : { message: 'not found' }, count }
+    }
+    return { data: rows, error: null, count }
   }
 
   then<TResult1, TResult2 = never>(
     onfulfilled?:
-      | ((value: { data: unknown; error: { message: string } | null }) => TResult1 | PromiseLike<TResult1>)
+      | ((value: { data: unknown; error: FakeError | null; count?: number }) => TResult1 | PromiseLike<TResult1>)
       | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2> {
@@ -200,19 +242,39 @@ class FakeStorage {
 
 export class FakeSupabaseClient {
   private tables = new Map<string, FakeTable>()
+  // reset() をまたいで保持する制約定義（テーブル自体は reset で作り直されるため分離）
+  private uniqueConstraints = new Map<string, string[][]>()
   storage = new FakeStorage()
 
-  from(name: string): FakeQueryBuilder {
+  private getOrCreateTable(name: string): FakeTable {
     if (!this.tables.has(name)) {
-      this.tables.set(name, new FakeTable())
+      const table = new FakeTable()
+      table.uniqueColumns = this.uniqueConstraints.get(name) ?? []
+      this.tables.set(name, table)
     }
-    return new FakeQueryBuilder(this.tables.get(name)!)
+    return this.tables.get(name)!
+  }
+
+  from(name: string): FakeQueryBuilder {
+    return new FakeQueryBuilder(this.getOrCreateTable(name))
   }
 
   seed(name: string, rows: Row[]): void {
     const table = new FakeTable()
+    table.uniqueColumns = this.uniqueConstraints.get(name) ?? []
     table.rows = rows.map((row) => ({ ...row }))
     this.tables.set(name, table)
+  }
+
+  // 実DBのUNIQUE制約をシミュレートする（insertで一致する行があると23505エラーを返す）。
+  // reset() をまたいで有効（テーブル定義そのものではなくクライアント設定の一部という想定）
+  setUniqueConstraint(name: string, columns: string[]): void {
+    const existing = this.uniqueConstraints.get(name) ?? []
+    existing.push(columns)
+    this.uniqueConstraints.set(name, existing)
+    if (this.tables.has(name)) {
+      this.tables.get(name)!.uniqueColumns = existing
+    }
   }
 
   reset(): void {

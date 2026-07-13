@@ -1,76 +1,57 @@
-import { supabase } from './supabase'
+import { api, ApiError } from './api'
 import type { ApiResult, Like, LikeWithStore } from '../types/social'
 
-const UNIQUE_VIOLATION = '23505'
-
 export async function addLike(userId: string, storeId: string): Promise<ApiResult & { like?: Like }> {
-  const { data, error } = await supabase
-    .from('likes')
-    .insert({ user_id: userId, store_id: storeId })
-    .select()
-    .single()
-
-  if (error) {
-    if (error.code === UNIQUE_VIOLATION) {
-      return { success: false, message: 'すでにいいね済みです' }
-    }
-    return { success: false, message: error.message }
+  try {
+    const like = await api.post<Like>('/api/likes', { store_id: storeId })
+    return { success: true, like }
+  } catch (error) {
+    return { success: false, message: error instanceof ApiError ? error.message : 'いいねに失敗しました' }
   }
-
-  return { success: true, like: data as Like }
 }
 
 export async function removeLikeByStore(userId: string, storeId: string): Promise<ApiResult> {
-  const { error } = await supabase
-    .from('likes')
-    .delete()
-    .eq('user_id', userId)
-    .eq('store_id', storeId)
-
-  if (error) return { success: false, message: error.message }
-  return { success: true }
+  try {
+    await api.delete<void>(`/api/likes/${storeId}`)
+    return { success: true }
+  } catch (error) {
+    return { success: false, message: error instanceof ApiError ? error.message : 'いいねの取消に失敗しました' }
+  }
 }
 
-export async function removeLike(likeId: string): Promise<ApiResult> {
-  const { error } = await supabase.from('likes').delete().eq('id', likeId)
-  if (error) return { success: false, message: error.message }
-  return { success: true }
-}
-
-export async function getUserLikes(
-  userId: string
-): Promise<ApiResult & { likes: LikeWithStore[] }> {
-  const { data, error } = await supabase
-    .from('likes')
-    .select('*, stores(*)')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) return { success: false, message: error.message, likes: [] }
-  return { success: true, likes: (data ?? []) as unknown as LikeWithStore[] }
+export async function getUserLikes(userId: string): Promise<ApiResult & { likes: LikeWithStore[] }> {
+  try {
+    const { data } = await api.get<{ data: LikeWithStore[] }>(`/api/likes/user/${userId}`)
+    return { success: true, likes: data }
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof ApiError ? error.message : 'いいね一覧の取得に失敗しました',
+      likes: [],
+    }
+  }
 }
 
 export async function getStoreLikeCount(storeId: string): Promise<ApiResult & { count: number }> {
-  const { count, error } = await supabase
-    .from('likes')
-    .select('*', { count: 'exact', head: true })
-    .eq('store_id', storeId)
-
-  if (error) return { success: false, message: error.message, count: 0 }
-  return { success: true, count: count ?? 0 }
+  try {
+    const { count } = await api.get<{ count: number }>(`/api/stores/${storeId}/likes/count`)
+    return { success: true, count }
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof ApiError ? error.message : 'いいね数の取得に失敗しました',
+      count: 0,
+    }
+  }
 }
 
 export async function isStoreLikedByUser(
   userId: string,
   storeId: string
 ): Promise<{ liked: boolean; likeId: string | null }> {
-  const { data, error } = await supabase
-    .from('likes')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('store_id', storeId)
-    .maybeSingle()
-
-  if (error || !data) return { liked: false, likeId: null }
-  return { liked: true, likeId: data.id as string }
+  try {
+    return await api.get<{ liked: boolean; likeId: string | null }>(`/api/stores/${storeId}/likes/mine`)
+  } catch {
+    return { liked: false, likeId: null }
+  }
 }
