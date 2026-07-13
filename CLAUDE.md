@@ -75,7 +75,7 @@ docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 **AuthContext.tsx** is the central auth state manager. It:
 - Stores user session in localStorage（トークンレス。`x-user-id` ヘッダで認証 — 既知の制約。詳細は手順書 T04/T21）
 - Provides `useAuth()` hook for components
-- Login/logout: REST 経由（`src/lib/api.ts` → `server/routes/auth.ts`）
+- Login: REST 経由（`src/lib/api.ts` → `server/routes/auth.ts` の `POST /login`）／Logout: ローカル状態クリアのみ（サーバー呼び出しなし）
 - Permission fetch: Supabase 直接（`role_permissions` テーブル）
 
 Components consume auth via:
@@ -108,7 +108,7 @@ const { user, login, logout, isAuthenticated, permissions, hasPermission } = use
 | `email_notifications` / `email_send_logs` | 通知メール |
 | `error_logs` | エラー記録 |
 
-`users` テーブルの詳細は `docs/database/USER_TABLE_README.md` を参照。Key columns: `id`, `email`, `password_hash`, `role` (admin/store_manager/user), timestamps
+`users` テーブルの詳細は `docs/database/USER_TABLE_README.md` を参照。Key columns: `id`, `email`, `password`, `role` (admin/store_manager/user), timestamps
 
 Current test accounts:
 ```
