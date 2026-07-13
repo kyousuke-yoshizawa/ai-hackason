@@ -102,9 +102,10 @@ export async function updateReview(
   return data as Review
 }
 
-export async function deleteReview(reviewId: string, userId: string, isAdmin: boolean): Promise<void> {
+export async function deleteReview(reviewId: string, userId: string, isAdmin: boolean): Promise<boolean> {
   const query = supabaseAdmin.from('reviews').delete().eq('id', reviewId)
-  const { error } = isAdmin ? await query : await query.eq('user_id', userId)
+  const { data, error } = isAdmin ? await query.select() : await query.eq('user_id', userId).select()
 
   if (error) throw new Error(error.message)
+  return Array.isArray(data) && data.length > 0
 }

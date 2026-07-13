@@ -261,7 +261,7 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 - **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
 - **Type checking**: `npm run build`（`src/` のみ、tsc -b）と `npm run typecheck`（`api/server/scripts/tests/src` 全体、tsconfig.backend.json）の2種類。strict mode 有効
-- **Tests**: `npm test`（Jest, 21 suites / 161 tests）+ `npm run test:e2e`（Playwright）
+- **Tests**: `npm test`（Jest, 21 suites / 162 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints
 

@@ -49,7 +49,10 @@ reviewsRouter.put('/:id', requireAuth, async (req, res) => {
 reviewsRouter.delete('/:id', requireAuth, async (req, res) => {
   try {
     const isAdmin = req.authedUser!.role === 'admin'
-    await deleteReview(req.params.id, req.authedUser!.id, isAdmin)
+    const deleted = await deleteReview(req.params.id, req.authedUser!.id, isAdmin)
+    if (!deleted) {
+      return sendError(res, 404, 'not_found', 'レビューが見つかりません')
+    }
     res.json({ message: 'レビューを削除しました' })
   } catch (error) {
     sendError(res, 500, 'internal_error', error instanceof Error ? error.message : 'unknown error')

@@ -169,6 +169,18 @@ describe('POST/PUT/DELETE /api/reviews', () => {
     expect(res.status).toBe(200)
     expect(fakeClient.getRows('reviews')).toHaveLength(0)
   })
+
+  it('returns 404 when deleting a review owned by another user, and leaves it intact', async () => {
+    const created = await request(app)
+      .post('/api/reviews')
+      .set('x-user-id', 'user-1')
+      .send({ store_id: 'store-1', rating: 3, comment: '普通' })
+
+    const res = await request(app).delete(`/api/reviews/${created.body.id}`).set('x-user-id', 'user-2')
+
+    expect(res.status).toBe(404)
+    expect(fakeClient.getRows('reviews')).toHaveLength(1)
+  })
 })
 
 describe('GET /api/stores/:storeId/reviews と /reviews/stats', () => {

@@ -270,7 +270,12 @@ export class FakeSupabaseClient {
   // reset() をまたいで有効（テーブル定義そのものではなくクライアント設定の一部という想定）
   setUniqueConstraint(name: string, columns: string[]): void {
     const existing = this.uniqueConstraints.get(name) ?? []
-    existing.push(columns)
+    const isDuplicate = existing.some(
+      (group) => group.length === columns.length && group.every((column, i) => column === columns[i]),
+    )
+    if (!isDuplicate) {
+      existing.push(columns)
+    }
     this.uniqueConstraints.set(name, existing)
     if (this.tables.has(name)) {
       this.tables.get(name)!.uniqueColumns = existing
