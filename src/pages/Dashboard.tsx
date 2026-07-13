@@ -4,11 +4,15 @@ import { useNavigate } from '../hooks/useNavigate'
 import AdminPage from './AdminPage'
 import ErrorManagementDashboard from './ErrorManagementDashboard'
 import LikesListPage from './LikesListPage'
+import StoresPage from './StoresPage'
+import ReservationsListPage from './ReservationsListPage'
 
 export default function Dashboard() {
   const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
-  const [view, setView] = useState<'dashboard' | 'admin' | 'errors' | 'likes'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'admin' | 'errors' | 'likes' | 'stores' | 'reservations'>(
+    'dashboard'
+  )
 
   const handleLogout = async () => {
     await logout()
@@ -36,6 +40,14 @@ export default function Dashboard() {
     return <LikesListPage onBack={() => setView('dashboard')} />
   }
 
+  if (view === 'stores') {
+    return <StoresPage onBack={() => setView('dashboard')} onViewReservations={() => setView('reservations')} />
+  }
+
+  if (view === 'reservations') {
+    return <ReservationsListPage onBack={() => setView('dashboard')} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -51,6 +63,18 @@ export default function Dashboard() {
               className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
             >
               ♥ いいね一覧
+            </button>
+            <button
+              onClick={() => setView('stores')}
+              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
+            >
+              店舗一覧・予約
+            </button>
+            <button
+              onClick={() => setView('reservations')}
+              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
+            >
+              予約一覧
             </button>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
