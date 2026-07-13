@@ -1,6 +1,6 @@
 type Row = Record<string, unknown>
 
-type FilterOp = 'eq' | 'lte'
+type FilterOp = 'eq' | 'lte' | 'is'
 
 interface Filter {
   op: FilterOp
@@ -66,6 +66,11 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
     return this
   }
 
+  is(column: string, value: unknown): this {
+    this.filters.push({ op: 'is', column, value })
+    return this
+  }
+
   order(column: string, opts?: { ascending?: boolean }): this {
     this.orderColumn = column
     this.orderAscending = opts?.ascending !== false
@@ -88,6 +93,7 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
       const filterValue = filter.value as string | number
       if (filter.op === 'eq') return rowValue === filterValue
       if (filter.op === 'lte') return rowValue <= filterValue
+      if (filter.op === 'is') return (rowValue ?? null) === filterValue
       return true
     })
   }
@@ -156,8 +162,45 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: { message:
   }
 }
 
+class FakeStorageBucket {
+  uploads: { path: string; body: unknown; contentType?: string }[] = []
+  removed: string[] = []
+
+  constructor(private bucketName: string) {}
+
+  async upload(path: string, body: unknown, options?: { contentType?: string }) {
+    this.uploads.push({ path, body, contentType: options?.contentType })
+    return { data: { path }, error: null }
+  }
+
+  async remove(paths: string[]) {
+    this.removed.push(...paths)
+    return { data: paths, error: null }
+  }
+
+  getPublicUrl(path: string) {
+    return {
+      data: {
+        publicUrl: `https://fake.supabase.co/storage/v1/object/public/${this.bucketName}/${path}`,
+      },
+    }
+  }
+}
+
+class FakeStorage {
+  private buckets = new Map<string, FakeStorageBucket>()
+
+  from(bucket: string): FakeStorageBucket {
+    if (!this.buckets.has(bucket)) {
+      this.buckets.set(bucket, new FakeStorageBucket(bucket))
+    }
+    return this.buckets.get(bucket)!
+  }
+}
+
 export class FakeSupabaseClient {
   private tables = new Map<string, FakeTable>()
+  storage = new FakeStorage()
 
   from(name: string): FakeQueryBuilder {
     if (!this.tables.has(name)) {
@@ -174,6 +217,7 @@ export class FakeSupabaseClient {
 
   reset(): void {
     this.tables.clear()
+    this.storage = new FakeStorage()
   }
 
   getRows(name: string): Row[] {

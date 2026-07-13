@@ -23,6 +23,9 @@ const config: Config = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // server/ 配下はESM形式で拡張子付き相対import（./foo.js）を使うため、
+    // ts-jestのCommonJS解決に合わせて拡張子を取り除く
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
