@@ -11,7 +11,11 @@ describe('local dev cron registration (TC-109-01)', () => {
   it('registers a 30-minute business-hours schedule that invokes the congestion notification cycle', async () => {
     await import('../../scripts/notifyCongestionCron')
 
-    expect(cron.schedule).toHaveBeenCalledWith('*/30 9-21 * * *', expect.any(Function))
+    expect(cron.schedule).toHaveBeenCalledWith(
+      '*/30 9-21 * * *',
+      expect.any(Function),
+      { timezone: 'Asia/Tokyo' }
+    )
 
     const [, callback] = (cron.schedule as jest.Mock).mock.calls[0]
     await callback()

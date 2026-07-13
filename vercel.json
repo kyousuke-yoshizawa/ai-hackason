@@ -6,11 +6,11 @@
   "crons": [
     {
       "path": "/api/cron/notify-congestion",
-      "schedule": "*/30 9-21 * * *"
+      "schedule": "*/30 0-12 * * *"
     },
     {
       "path": "/api/cron/aggregate-crowd-analytics",
-      "schedule": "0 23 * * *"
+      "schedule": "0 14 * * *"
     }
   ]
 }
