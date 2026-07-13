@@ -297,6 +297,17 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 See `.github/workflows/sync-notion.yml` for PR → Notion sync pipeline.
 
+### Cron スケジュール（UTC/JST 変換に注意）
+
+**Vercel Cron（`vercel.json` の `crons`）は UTC で解釈される。** JST（日本時間）表記のまま書くと実行時刻が9時間ずれる（既知の過去バグ、`docs/architecture-audit/refactoring-handbook.md` T18 参照）。
+
+| 用途 | JST（意図） | `vercel.json`（UTC 表記） |
+|---|---|---|
+| 混雑通知（30分おき・営業時間中） | 9:00–21:30 | `*/30 0-12 * * *` |
+| 混雑分析集計（毎日・営業終了後） | 23:00 | `0 14 * * *` |
+
+ローカル開発用の `scripts/*.ts`（`npm run cron:dev` / `cron:dev:analytics`）は `node-cron` の `timezone: 'Asia/Tokyo'` オプションで JST のまま実行されるため、上記の変換は不要。
+
 ## Documentation & References
 
 Quick lookup for specific topics:
