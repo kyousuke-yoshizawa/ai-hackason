@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 CREATE INDEX IF NOT EXISTS idx_reviews_store_id ON reviews(store_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating);
 
 COMMENT ON TABLE reviews IS '店舗レビュー・評価';
 COMMENT ON COLUMN reviews.rating IS '評価（1〜5）';

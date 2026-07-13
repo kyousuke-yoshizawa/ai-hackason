@@ -60,6 +60,13 @@ Expressバックエンドは存在しないため、`docs`内の他実装（`src
 2. Table Editor で `likes` / `reviews` / `review_stats` が作成されていることを確認
 3. レビューを1件INSERTし、`review_stats` が自動更新されることを確認
 
+## 重複実装の解消について（2026年7月13日）
+
+mainに並行してマージされていた `docs/database/002_create_new_features_schema.sql` と `src/lib/api-stubs.ts` にも、`likes` / `reviews` / `review_stats` の同名テーブル定義・`likesApi` / `reviewsApi` が存在していた。ただしそちらは `auth.users`（Supabase Auth）を前提にしており、本アプリの実際の認証（`public.users` テーブル + localStorage、`src/context/AuthContext.tsx` 参照）と一致しないため、以下の対応で本実装に一本化した。
+
+- `docs/database/002_create_new_features_schema.sql` から `likes` / `reviews` / `review_stats` のテーブル定義・RLSポリシーを削除し、本ファイルを参照するコメントに置き換え
+- `src/lib/api-stubs.ts` から未使用だった `likesApi` / `reviewsApi` / `updateReviewStats` を削除
+
 ---
 
 **作成日**：2026年7月13日

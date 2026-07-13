@@ -88,39 +88,12 @@ WHERE is_sent = false;
 -- PHASE 2: MEDIUM PRIORITY
 -- ========================================
 
--- Issue #27: Likes Feature
-CREATE TABLE likes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, store_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_likes_store ON likes(store_id);
-CREATE INDEX IF NOT EXISTS idx_likes_user ON likes(user_id);
-
--- Issue #29: Reviews Feature
-CREATE TABLE reviews (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_reviews_store ON reviews(store_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id);
-
-CREATE TABLE review_stats (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  store_id UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE UNIQUE,
-  total_reviews INTEGER DEFAULT 0,
-  average_rating DECIMAL(3,2) DEFAULT 0,
-  last_updated TIMESTAMP DEFAULT NOW()
-);
+-- Issue #27 & #29: Likes / Reviews Feature
+-- ⚠️ likes / reviews / review_stats はこのファイルでは定義しない。
+-- 実際にフロントエンド（src/lib/likes.ts, src/lib/reviews.ts）から使われている
+-- 正式なスキーマは docs/database/002_create_likes_reviews_tables.sql を参照。
+-- （このファイルの旧定義は auth.users を前提としていたが、本アプリの実際の認証は
+--   public.users テーブル + localStorage によるカスタム実装のため不整合だった）
 
 -- Issue #31: Crowd Analytics
 CREATE TABLE crowd_analytics (
@@ -208,9 +181,6 @@ ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crowd_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crowd_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE review_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crowd_analytics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reservations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_media ENABLE ROW LEVEL SECURITY;
@@ -230,26 +200,6 @@ CREATE POLICY crowd_status_update ON crowd_status
       AND (r.name = 'admin' OR store_id = ANY(ur.assigned_store_ids::uuid[]))
     )
   );
-
--- Likes RLS: Users can only modify their own likes
-CREATE POLICY likes_select ON likes
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY likes_insert ON likes
-  FOR INSERT WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY likes_delete ON likes
-  FOR DELETE USING (user_id = auth.uid());
-
--- Reviews RLS: Users can see all, modify only their own
-CREATE POLICY reviews_select ON reviews
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY reviews_insert ON reviews
-  FOR INSERT WITH CHECK (user_id = auth.uid());
-
-CREATE POLICY reviews_update ON reviews
-  FOR UPDATE USING (user_id = auth.uid());
 
 -- Reservations RLS: Users see own, managers see their stores
 CREATE POLICY reservations_select ON reservations
@@ -303,5 +253,4 @@ CREATE POLICY store_media_select ON store_media
 -- ========================================
 
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating);
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
