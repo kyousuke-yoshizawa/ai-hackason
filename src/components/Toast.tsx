@@ -5,6 +5,7 @@ interface ToastState {
   type: 'success' | 'error'
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- useToast の分離は T14 (feature-first 再構成) で対応
 export function useToast() {
   const [toast, setToast] = useState<ToastState | null>(null)
 

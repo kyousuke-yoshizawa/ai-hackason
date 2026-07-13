@@ -74,7 +74,7 @@ describe('Reviews Feature API - TC_29_1', () => {
   // TC_29_2: Validate rating range
   it('should validate rating is between 1-5', () => {
     const validateReview = (data: any) => {
-      return (
+      return Boolean(
         data.rating >= 1 &&
         data.rating <= 5 &&
         data.text &&
@@ -146,7 +146,7 @@ describe('Crowd Analytics API - TC_31_1', () => {
 
     const generateAnalytics = (storeId: string, history: any[]) => {
       const storeData = history.filter(h => h.store_id === storeId)
-      const levelCounts = { low: 0, medium: 0, high: 0 }
+      const levelCounts: Record<string, number> = { low: 0, medium: 0, high: 0 }
       storeData.forEach(h => {
         levelCounts[h.level]++
       })
@@ -176,7 +176,7 @@ describe('Crowd Analytics API - TC_31_1', () => {
     ]
 
     const getPeakHours = (storeId: string, history: any[]) => {
-      const hourCounts = {}
+      const hourCounts: Record<number, number> = {}
       history
         .filter(h => h.store_id === storeId)
         .forEach(h => {
@@ -215,7 +215,7 @@ describe('Reservations API - TC_33_1', () => {
   // TC_33_2: Validate party size
   it('should validate party size is reasonable', () => {
     const validateReservation = (data: any) => {
-      return (
+      return Boolean(
         data.party_size > 0 &&
         data.party_size <= 20 &&
         data.reservation_date &&

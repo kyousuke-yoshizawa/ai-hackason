@@ -28,7 +28,7 @@ npm run dev
 npm run build
 
 # Lint TypeScript and TSX (reports unused directives, max 0 warnings)
-npm lint
+npm run lint
 
 # Preview production build
 npm run preview
@@ -226,9 +226,9 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 ## Testing & Quality
 
-- **Linting**: `npm lint` (ESLint with TypeScript/TSX; max 0 warnings)
-- **Type checking**: TypeScript in strict mode; enforced at build time
-- **No test framework configured yet** — manual testing recommended for this 20-hour sprint
+- **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
+- **Type checking**: TypeScript in strict mode; enforced at build time for `src/`（`api/`/`server/`/`tests/` は未対応。監査手順書 T03 で対応予定）
+- **Tests**: `npm test`（Jest, 16 suites / 116 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints
 

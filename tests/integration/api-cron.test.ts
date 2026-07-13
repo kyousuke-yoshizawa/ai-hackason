@@ -29,7 +29,7 @@ beforeEach(() => {
 // TC-109-02: メール送信フロー（キュー → SendGrid → ログ）
 describe('runCongestionNotificationCycle (TC-109-02)', () => {
   it('schedules a notification per store manager, sends it, and logs the result', async () => {
-    ;(sendEmail as jest.Mock).mockResolvedValueOnce({ success: true, providerMessageId: 'sg-1' })
+    (sendEmail as jest.Mock).mockResolvedValueOnce({ success: true, providerMessageId: 'sg-1' })
 
     const result = await runCongestionNotificationCycle()
 
