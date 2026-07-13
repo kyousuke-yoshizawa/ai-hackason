@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { api, ApiError } from '../lib/api'
 
 interface User {
   id: string
@@ -41,30 +41,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('is_active', true)
-        .single()
+      const userData = await api.post<User>('/api/auth/login', { email, password })
 
-      if (error || !data) {
-        return { success: false, message: 'メールアドレスが見つかりません' }
-      }
-
-      const userData: User = {
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        role: data.role,
-      }
-
-      // ✅ 簡易実装：実環境ではバックエンドでパスワード検証
       localStorage.setItem('user', JSON.stringify(userData))
       setUser(userData)
 
       return { success: true }
     } catch (error) {
+      if (error instanceof ApiError) {
+        return { success: false, message: error.message }
+      }
       console.error('Login error:', error)
       return { success: false, message: 'ログインに失敗しました' }
     }
