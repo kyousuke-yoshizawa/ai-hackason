@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdmin } from '../_http/requireAdmin.js'
-
-const VALID_STATUSES = ['new', 'reviewing', 'resolved']
+import { updateErrorStatusSchema } from '../../backend/domains/errors/schema.js'
+import { sendError, zodError } from '../../backend/http/respond.js'
 
 // GET   /api/errors/:errorId — エラー詳細取得（admin のみ）
 // PATCH /api/errors/:errorId — エラー状態更新（admin のみ）
@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { errorId } = req.query
   if (typeof errorId !== 'string') {
-    return res.status(400).json({ error: 'errorId is required' })
+    return sendError(res, 400, 'validation_error', 'errorId is required')
   }
 
   if (req.method === 'GET') {
@@ -22,18 +22,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single()
 
     if (error || !data) {
-      return res.status(404).json({ error: 'error log not found' })
+      return sendError(res, 404, 'not_found', 'error log not found')
     }
 
     return res.status(200).json(data)
   }
 
   if (req.method === 'PATCH') {
-    const { status } = req.body ?? {}
-
-    if (!VALID_STATUSES.includes(status)) {
-      return res.status(400).json({ error: `status must be one of ${VALID_STATUSES.join(', ')}` })
+    const parsed = updateErrorStatusSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return zodError(res, parsed.error)
     }
+    const { status } = parsed.data
 
     const { data, error } = await supabaseAdmin
       .from('error_logs')
@@ -43,12 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single()
 
     if (error || !data) {
-      return res.status(404).json({ error: 'error log not found' })
+      return sendError(res, 404, 'not_found', 'error log not found')
     }
 
     return res.status(200).json(data)
   }
 
   res.setHeader('Allow', 'GET, PATCH')
-  return res.status(405).json({ error: 'Method not allowed' })
+  return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
 }

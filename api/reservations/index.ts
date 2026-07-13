@@ -1,33 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createReservation } from '../../backend/domains/reservations/repository.js'
 import { validateReservationRequest } from '../../backend/domains/reservations/validation.js'
+import { createReservationBodySchema } from '../../backend/domains/reservations/schema.js'
+import { sendError, zodError } from '../../backend/http/respond.js'
 
 // POST /api/reservations { store_id, user_id, reservation_date, reservation_time, party_size }
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
-    return res.status(405).json({ error: 'Method not allowed' })
+    return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
   }
 
+  const parsed = createReservationBodySchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
+  }
   const {
     store_id: storeId,
     user_id: userId,
     reservation_date: reservationDate,
     reservation_time: reservationTime,
     party_size: partySize,
-  } = req.body ?? {}
-
-  if (
-    typeof storeId !== 'string' ||
-    typeof userId !== 'string' ||
-    typeof reservationDate !== 'string' ||
-    typeof reservationTime !== 'string' ||
-    typeof partySize !== 'number'
-  ) {
-    return res.status(400).json({
-      error: 'store_id, user_id, reservation_date, reservation_time, party_size are required',
-    })
-  }
+  } = parsed.data
 
   const validation = await validateReservationRequest({
     storeId,
@@ -44,15 +38,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       too_soon: 422,
       capacity_exceeded: 409,
     }
-    return res
-      .status(statusByReason[validation.reason] ?? 422)
-      .json({ error: validation.reason, message: validation.message })
+    return sendError(res, statusByReason[validation.reason] ?? 422, validation.reason, validation.message)
   }
 
   try {
     const reservation = await createReservation({ storeId, userId, reservationDate, reservationTime, partySize })
     return res.status(201).json(reservation)
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : 'unknown error' })
+    return sendError(res, 500, 'internal_error', error instanceof Error ? error.message : 'unknown error')
   }
 }
