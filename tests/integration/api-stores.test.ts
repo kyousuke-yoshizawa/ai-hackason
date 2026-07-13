@@ -31,7 +31,7 @@ describe('Store Management API - Phase 1', () => {
 
       // Validation should fail
       const validateStore = (data: any) => {
-        return data.name && typeof data.x_coord === 'number' && typeof data.y_coord === 'number'
+        return Boolean(data.name) && typeof data.x_coord === 'number' && typeof data.y_coord === 'number'
       }
 
       expect(validateStore(invalidStore)).toBe(false)
