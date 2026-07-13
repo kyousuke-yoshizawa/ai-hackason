@@ -2,7 +2,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate } from '../hooks/useNavigate'
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -75,6 +75,16 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
+
+        {/* 管理者専用メニュー（Issue #22: role に応じたコンディショナルレンダリング） */}
+        {hasPermission('users', 'delete') && (
+          <div className="bg-white rounded-lg p-6 shadow mb-8 border-2 border-indigo-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">管理者メニュー</h3>
+            <p className="text-sm text-gray-600">
+              このセクションは admin 権限を持つユーザにのみ表示されます。
+            </p>
+          </div>
+        )}
 
         {/* アクティビティセクション */}
         <div className="bg-white rounded-lg p-6 shadow">
