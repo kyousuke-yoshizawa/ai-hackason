@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { AdminStore, StoreForm } from './StoreForm'
+import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 
 export function StoreManagementPanel({
   onNotify,
@@ -11,6 +12,7 @@ export function StoreManagementPanel({
   const [isLoading, setIsLoading] = useState(true)
   const [categoryFilter, setCategoryFilter] = useState('')
   const [formMode, setFormMode] = useState<'create' | AdminStore | null>(null)
+  const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
 
   const loadStores = async (category: string) => {
     setIsLoading(true)
@@ -107,6 +109,12 @@ export function StoreManagementPanel({
                       編集
                     </button>
                     <button
+                      onClick={() => setAnalyticsStore(s)}
+                      className="font-medium text-emerald-600 hover:underline"
+                    >
+                      混雑分析
+                    </button>
+                    <button
                       onClick={() => handleDelete(s)}
                       className="font-medium text-red-600 hover:underline"
                     >
@@ -132,6 +140,14 @@ export function StoreManagementPanel({
           initialStore={formMode === 'create' ? undefined : formMode}
           onSubmit={handleSubmit}
           onCancel={() => setFormMode(null)}
+        />
+      )}
+
+      {analyticsStore && (
+        <CrowdAnalyticsDashboard
+          storeId={analyticsStore.id}
+          storeName={analyticsStore.name}
+          onClose={() => setAnalyticsStore(null)}
         />
       )}
     </div>
