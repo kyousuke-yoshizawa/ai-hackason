@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from '../hooks/useNavigate'
+import AdminPage from './AdminPage'
 import ErrorManagementDashboard from './ErrorManagementDashboard'
 import LikesListPage from './LikesListPage'
 
 export default function Dashboard() {
   const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
-  const [view, setView] = useState<'dashboard' | 'errors' | 'likes'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'admin' | 'errors' | 'likes'>('dashboard')
 
   const handleLogout = async () => {
     await logout()
@@ -20,6 +21,10 @@ export default function Dashboard() {
         <p className="text-gray-600">ログインしてください</p>
       </div>
     )
+  }
+
+  if (view === 'admin' && user.role === 'admin') {
+    return <AdminPage onBack={() => setView('dashboard')} />
   }
 
   // Issue #38: エラー管理ダッシュボードは admin のみアクセス可能
@@ -51,6 +56,14 @@ export default function Dashboard() {
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-600">{user.email}</p>
             </div>
+            {user.role === 'admin' && (
+              <button
+                onClick={() => setView('admin')}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                管理画面
+              </button>
+            )}
             {hasPermission('users', 'delete') && (
               <button
                 onClick={() => setView('errors')}
