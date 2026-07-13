@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
-import { supabase } from '../lib/supabase'
 
 interface User {
   id: string
@@ -27,21 +26,17 @@ interface AuthContextType {
 // eslint-disable-next-line react-refresh/only-export-components -- テスト（tests/unit/auth.test.tsx）が Provider を直接使うために公開
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// role 名から role_permissions 経由で resource/action 一覧を取得（Issue #22）
-const fetchPermissions = async (role: string): Promise<Permission[]> => {
-  const { data, error } = await supabase
-    .from('role_permissions')
-    .select('permissions(resource, action), roles!inner(name)')
-    .eq('roles.name', role)
-
-  if (error || !data) {
+// ログイン中ユーザのロールに対する resource/action 一覧を取得（Issue #22）。
+// ロールはサーバー側で x-user-id ヘッダから認証済みユーザを解決して判定するため、
+// 呼び出し側からロールを渡す必要はない
+const fetchPermissions = async (): Promise<Permission[]> => {
+  try {
+    const { data } = await api.get<{ data: Permission[] }>('/api/auth/permissions')
+    return data
+  } catch (error) {
     console.error('Permission fetch error:', error)
     return []
   }
-
-  return (data as unknown as { permissions: Permission | null }[])
-    .map((row) => row.permissions)
-    .filter((p): p is Permission => p !== null)
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -56,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser) as User
           setUser(parsedUser)
-          setPermissions(await fetchPermissions(parsedUser.role))
+          setPermissions(await fetchPermissions())
         }
       } catch (error) {
         console.error('Auth check error:', error)
@@ -74,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       localStorage.setItem('user', JSON.stringify(userData))
       setUser(userData)
-      setPermissions(await fetchPermissions(userData.role))
+      setPermissions(await fetchPermissions())
 
       return { success: true }
     } catch (error) {
