@@ -64,7 +64,28 @@ code .
 - 問題があれば、ファイルを修正 → `git add` → `git commit`
 - 問題なければ、次のステップへ
 
-### 0-5. push
+### 0-5. Marp 資料の更新確認
+
+**重要**: 機能実装・修正ごとに、発表資料を更新してください。
+
+```bash
+# 資料を確認
+cat docs/presentation/presentation.md
+
+# または Marp で プレビュー
+marp docs/presentation/presentation.md
+```
+
+**チェックリスト** — 以下のいずれかに該当する場合、資料を更新：
+- [ ] UI/UX を変更した
+- [ ] 新しい機能を追加した
+- [ ] システムアーキテクチャを変更した
+- [ ] API エンドポイントを追加・変更した
+- [ ] 技術選定や工夫した点がある場合
+
+詳細は `CLAUDE.md` の「Presentation & Documentation」セクションを参照。
+
+### 0-6. push
 
 ある程度コミットが溜まったら（通常は機能単位で3〜5コミット程度）：
 

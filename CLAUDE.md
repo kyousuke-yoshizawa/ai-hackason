@@ -134,7 +134,7 @@ git pull → branch feature/<name> → 修正（こまめにコミット） → 
   git push → PR作成 → AI レビュー → 修正サイクル → マージ
 ```
 
-**Full details**: See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` (section 0-5 for local dev, section 2-C for AI review cycle).
+**Full details**: See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` (section 0-6 for local dev, section 2-C for AI review cycle).
 
 ⚠️ **STRICT BRANCH STRATEGY** (Mandatory):
 - **Only 5 branches allowed**: `main`, `feature/yoshizawa`, `feature/itagaki`, `feature/sato`, `feature/takayanagi`
@@ -177,6 +177,52 @@ gh pr merge <PR-number> --merge
 - **Daily startup**: Ubuntu terminal → `cd /mnt/c/Develop/Projects/ai-hackason` → `npm run dev` + `claude`
 
 For details, see `docs/ai-hackathon-team-ops/README.md`.
+
+### Presentation & Documentation (Continuous Update)
+
+**重要**: 発表資料は最後にまとめるのではなく、作業のたびに更新してください。常に「今この瞬間に発表できる状態」を維持することが目標です。
+
+#### 発表資料の場所
+
+- **Marp 形式**: `docs/presentation/presentation.md`
+- **目的**: 7月25日の約10分間のプレゼンテーション資料
+- **形式**: Markdown ベースで VS Code や Marp CLI でプレビュー可能
+
+#### 各タスク完了時の更新チェックリスト
+
+**必須**: 機能実装・バグ修正後、以下の項目を確認して Marp 資料を更新してください。
+
+```
+☐ 何を変更したか → presentation.md の該当セクション（「システム全体構成」「アーキテクチャ」など）を更新
+☐ なぜ変更したか → 「解決したい課題」「工夫した点」セクションに理由を記載
+☐ 得られた効果 → 「今後の展望」「まとめ」に効果を記載
+☐ デモで説明する内容 → 「デモで説明する内容」セクションに UI/UX の変化を記載
+☐ 図表・アーキテクチャ更新 → 必要に応じて `docs/presentation/` に画像・図を追加
+```
+
+#### 更新が不要な場合
+
+以下のような変更の場合は、資料更新をスキップ可能です：
+
+- ドキュメント修正のみ（実装変更なし）
+- 内部リファクタリング（UI/API 変更なし）
+- 単純なバグ修正（既存機能の安定化のみ）
+
+#### Marp CLI でのプレビュー
+
+```bash
+# インストール（初回のみ）
+npm install -g marp-cli
+
+# プレビュー
+marp docs/presentation/presentation.md
+
+# HTML 出力
+marp docs/presentation/presentation.md -o docs/presentation/presentation.html
+
+# PDF 出力
+marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
+```
 
 ## Testing & Quality
 
