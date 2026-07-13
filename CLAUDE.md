@@ -128,7 +128,13 @@ Tailwind CSS + PostCSS. Configuration in:
 
 ### Branches & PRs
 
-See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md`.
+**Quick Flow**:
+```
+git pull → branch feature/<name> → 修正（こまめにコミット） → 自レビュー → 
+  git push → PR作成 → AI レビュー → 修正サイクル → マージ
+```
+
+**Full details**: See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` (section 0-5 for local dev, section 2-C for AI review cycle).
 
 ⚠️ **STRICT BRANCH STRATEGY** (Mandatory):
 - **Only 5 branches allowed**: `main`, `feature/yoshizawa`, `feature/itagaki`, `feature/sato`, `feature/takayanagi`
