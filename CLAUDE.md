@@ -69,7 +69,7 @@ backend/                 # api/ と server/ が共有するドメインロジッ
                           #   auth/authz.ts（認可: is_active + store_managers判定）
                           #   domains/{crowd,crowdAnalytics,email,reservations,notifications}/
 scripts/                 # ローカル開発用cron（node-cron。本番はvercel.jsonのcrons）
-tests/                   # unit(7) + integration(12) + e2e(2) = 21ファイル
+tests/                   # unit(8) + integration(12) + e2e(2) = 22ファイル
 docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 ```
 
@@ -261,7 +261,7 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 - **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
 - **Type checking**: `npm run build`（`src/` のみ、tsc -b）と `npm run typecheck`（`api/server/scripts/tests/src` 全体、tsconfig.backend.json）の2種類。strict mode 有効
-- **Tests**: `npm test`（Jest, 19 suites / 141 tests）+ `npm run test:e2e`（Playwright）
+- **Tests**: `npm test`（Jest, 20 suites / 143 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints
 
