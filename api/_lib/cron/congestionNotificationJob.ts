@@ -1,10 +1,10 @@
-import { generateLinkToken } from '../email/linkToken'
+import { generateLinkToken } from '../email/linkToken.js'
 import {
   insertNotification,
   listStoreManagers,
   setNotificationLinkToken,
-} from '../email/repository'
-import { processDueNotifications } from '../email/sender'
+} from '../email/repository.js'
+import { processDueNotifications } from '../email/sender.js'
 
 const LINK_TOKEN_TTL_MS = 30 * 60 * 1000 // 30分
 

@@ -1,5 +1,5 @@
-import { renderCongestionReportHtml, renderCongestionReportSubject, type CongestionReportLink } from './templates'
-import { sendEmail } from './mailer'
+import { renderCongestionReportHtml, renderCongestionReportSubject, type CongestionReportLink } from './templates.js'
+import { sendEmail } from './mailer.js'
 import {
   listDueNotifications,
   markNotificationSent,
@@ -7,7 +7,7 @@ import {
   recordSendLog,
   resolveRecipient,
   type DueNotification,
-} from './repository'
+} from './repository.js'
 
 const REPORT_LEVELS = ['high', 'medium', 'low'] as const
 

@@ -1,6 +1,6 @@
-import { supabaseAdmin } from '../supabaseAdmin'
-import type { CongestionLevel } from '../email/templates'
-import type { CrowdAnalyticsResult, CrowdHistoryEntry } from './aggregate'
+import { supabaseAdmin } from '../supabaseAdmin.js'
+import type { CongestionLevel } from '../email/templates.js'
+import type { CrowdAnalyticsResult, CrowdHistoryEntry } from './aggregate.js'
 
 export async function getAllCrowdHistory(): Promise<CrowdHistoryEntry[]> {
   const { data, error } = await supabaseAdmin.from('crowd_history').select('store_id, level, recorded_at')

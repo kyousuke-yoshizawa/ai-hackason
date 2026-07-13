@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../supabaseAdmin'
-import type { CongestionLevel } from '../email/templates'
+import { supabaseAdmin } from '../supabaseAdmin.js'
+import type { CongestionLevel } from '../email/templates.js'
 
 export async function upsertCrowdStatus(
   storeId: string,

@@ -1,5 +1,5 @@
-import { aggregateCrowdAnalyticsForDate } from './aggregate'
-import { getAllCrowdHistory, upsertCrowdAnalytics } from './repository'
+import { aggregateCrowdAnalyticsForDate } from './aggregate.js'
+import { getAllCrowdHistory, upsertCrowdAnalytics } from './repository.js'
 
 export interface CrowdAnalyticsJobResult {
   datePeriod: string
