@@ -1,7 +1,11 @@
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from '../hooks/useNavigate'
 
-export default function Dashboard() {
+interface DashboardProps {
+  onNavigateLikes?: () => void
+}
+
+export default function Dashboard({ onNavigateLikes }: DashboardProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -28,6 +32,14 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600">ダッシュボード</p>
           </div>
           <div className="flex items-center gap-4">
+            {onNavigateLikes && (
+              <button
+                onClick={onNavigateLikes}
+                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
+              >
+                ♥ いいね一覧
+              </button>
+            )}
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-600">{user.email}</p>

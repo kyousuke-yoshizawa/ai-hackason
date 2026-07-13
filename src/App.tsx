@@ -1,9 +1,14 @@
+import { useState } from 'react'
 import { useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
+import LikesListPage from './pages/LikesListPage'
+
+type View = 'dashboard' | 'likes'
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth()
+  const [view, setView] = useState<View>('dashboard')
 
   if (isLoading) {
     return (
@@ -17,7 +22,10 @@ function App() {
   }
 
   if (isAuthenticated) {
-    return <Dashboard />
+    if (view === 'likes') {
+      return <LikesListPage onBack={() => setView('dashboard')} />
+    }
+    return <Dashboard onNavigateLikes={() => setView('likes')} />
   }
 
   return <LoginPage />
