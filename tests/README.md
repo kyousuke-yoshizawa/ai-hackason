@@ -189,26 +189,18 @@ jest.mock('../src/lib/supabase')  // Database client
 
 ## CI/CD Integration
 
-### GitHub Actions
-- Runs on every push and PR
-- Timeout: 10 minutes
-- Parallel execution: 4 workers
-- Reports coverage to GitHub
+**現状: CI は未導入です。** `.github/workflows/` には Notion 同期用の1本（PRマージ時のみ発火）しかなく、push/PR で lint・typecheck・test を自動実行する仕組みはまだありません（`docs/architecture-audit/refactoring-handbook.md` T02 で対応予定）。
 
-### Test Execution Flow
+### 手動実行フロー（現状）
 ```
-Event: Push/PR
+git push → PR作成
   ↓
-npm install
+（ローカルで）npm run lint && npm run typecheck && npm test
   ↓
-npm run test (unit)
-  ↓
-npm run test:e2e (if passed)
-  ↓
-Generate coverage report
-  ↓
-Report results to GitHub
+AIレビュー → 修正 → マージ
 ```
+
+CI導入後は、上記フローの手動ステップが自動化される想定です。
 
 ## Debugging Tests
 

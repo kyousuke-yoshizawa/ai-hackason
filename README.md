@@ -25,7 +25,8 @@
 ## 🛠️ 技術スタック
 
 - **フロントエンド:** React 18 + TypeScript + Tailwind CSS + Vite
-- **バックエンド:** Node.js + Express + Claude API
+- **バックエンド:** Node.js + Express（`server/`）+ Vercel Functions（`api/`）
+- **AI:** Claude API によるお出かけプラン生成 — 統合作業中（詳細: `docs/architecture-audit/refactoring-handbook.md` T12）
 - **データベース:** Supabase (PostgreSQL)
 - **デプロイ:** Vercel（自動デプロイ）
 - **ドキュメント:** Notion Database（PRマージ時に自動同期）
@@ -58,12 +59,19 @@ npm run dev
 
 ```
 .
+├─ src/                        ← フロントエンド（React）
+├─ server/                     ← バックエンド（Express: auth/users/stores/media）
+├─ api/                        ← バックエンド（Vercel Functions: reservations/crowd/analytics/errors/cron/mail）
+├─ scripts/                    ← ローカル開発用cron
+├─ tests/                      ← unit/integration/e2e（jest + playwright）
 ├─ docs/
-│  └─ ai-hackathon-team-ops/   ← チーム運用ドキュメント一式（16ファイル）
-├─ .github/
-│  └─ workflows/
-│     └─ sync-notion.yml       ← PRマージ時のNotion自動同期
-└─ （アプリ本体のソースコード）
+│  ├─ ai-hackathon-team-ops/   ← チーム運用ドキュメント一式
+│  ├─ architecture-audit/      ← アーキテクチャ監査報告・実装手順書
+│  ├─ presentation/            ← 発表資料（Marp）
+│  └─ database/                ← DBスキーマ・マイグレーション
+└─ .github/
+   └─ workflows/
+      └─ sync-notion.yml       ← PRマージ時のNotion自動同期
 ```
 
 ## 💬 連絡先

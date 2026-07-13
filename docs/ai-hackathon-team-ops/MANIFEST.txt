@@ -22,13 +22,14 @@ agents/infra-subagent.md          インフラ管理ガイド
 agents/qa-subagent.md             テストガイド
 agents/reviewer-subagent.md       PRレビューガイド（全員）
 
-[github-workflows/ - 自動化]
-github-workflows/sync-notion.yml  PRマージ時のNotion自動同期ワークフロー
-
 [checklists/ - チェックリスト]
 checklists/pre-launch.md          開発開始24時間前チェックリスト
 
+注: GitHub Actions ワークフローの正本は `.github/workflows/` にあります
+（このディレクトリに以前あった `github-workflows/sync-notion.yml` は
+実行されないコピーだったため削除済み）。
+
 ================================
-総ファイル数: 16
+総ファイル数: 15
 作成日: 2026-07-02
 対象プロジェクト: AI Hackathon 2026
