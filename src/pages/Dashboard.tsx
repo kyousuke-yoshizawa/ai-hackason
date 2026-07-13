@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from '../hooks/useNavigate'
+import ErrorManagementDashboard from './ErrorManagementDashboard'
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
+  const [view, setView] = useState<'dashboard' | 'errors'>('dashboard')
 
   const handleLogout = async () => {
     await logout()
@@ -16,6 +19,11 @@ export default function Dashboard() {
         <p className="text-gray-600">ログインしてください</p>
       </div>
     )
+  }
+
+  // Issue #38: エラー管理ダッシュボードは admin のみアクセス可能
+  if (view === 'errors' && hasPermission('users', 'delete')) {
+    return <ErrorManagementDashboard onBack={() => setView('dashboard')} />
   }
 
   return (
@@ -32,6 +40,14 @@ export default function Dashboard() {
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-600">{user.email}</p>
             </div>
+            {hasPermission('users', 'delete') && (
+              <button
+                onClick={() => setView('errors')}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                エラー管理
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
@@ -75,6 +91,16 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
+
+        {/* 管理者専用メニュー（Issue #22: role に応じたコンディショナルレンダリング） */}
+        {hasPermission('users', 'delete') && (
+          <div className="bg-white rounded-lg p-6 shadow mb-8 border-2 border-indigo-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">管理者メニュー</h3>
+            <p className="text-sm text-gray-600">
+              このセクションは admin 権限を持つユーザにのみ表示されます。
+            </p>
+          </div>
+        )}
 
         {/* アクティビティセクション */}
         <div className="bg-white rounded-lg p-6 shadow">
