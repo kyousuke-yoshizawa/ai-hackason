@@ -673,7 +673,8 @@ DBスキーマ作成時に Supabase の雛形（Supabase Auth 利用を前提と
    ```
    - `error_logs.resolved_by` 等 NULL 許容カラムは `ON DELETE CASCADE` ではなく `ON DELETE SET NULL` を検討
 3. 制約名は Postgres のデフォルト命名規則（`<table>_<column>_fkey`）を前提にしているため、実際の Supabase 環境で `\d <table>` 等で制約名を確認してから実行すること
-4. **Marp 資料更新**
+4. ⚠️ **`error_logs` テーブルは `002_create_new_features_schema.sql`（`error_message`/`resolved_by`列、`auth.users`参照）と `004_create_error_logs_table.sql`（`message`列、`resolved_by`列なし、`users`参照済み、`CREATE TABLE IF NOT EXISTS`）に矛盾する2つの定義が存在する（T17が扱うマイグレーション番号衝突問題の一種）。実行前に実際のSupabase環境で `\d error_logs` を確認し、`resolved_by` 列が実在する場合のみ本タスクでFK修正を行うこと。存在しない場合はT17側でスキーマ定義の重複解消を先に行う
+5. **Marp 資料更新**
 
 **完了条件**
 - `grep -rn "auth.users" docs/database/*.sql` で新規マイグレーション適用後に残るのは、既に修正済みの箇所を除去した履歴コメントのみ
