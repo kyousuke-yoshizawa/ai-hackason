@@ -17,31 +17,36 @@ footer: "AI Hackathon 2026 - Team Project"
 
 ## プロジェクト概要
 
-### アウティング管理・AI提案システム
+### お出かけプラン AI アシスタント「ことこと町」
 
-社内のアウティング（親睦活動）を効率的に企画・管理し、AI が参加者の過去の参加履歴や好みから最適なアウティングプランを提案するシステム。
+架空エリア「ことこと町」を舞台に、複数の欲求（「ランチもしたい、映画も見たい、子連れで」）を1回の入力で解決する、まったり系お出かけプランナー。
 
-**主な機能**:
-- ユーザー認証（ログイン・登録）
-- 過去のアウティング履歴管理
-- AI が参加者に最適なプラン提案
-- ユーザーダッシュボード
+**実装済みの機能**:
+- ユーザー認証・権限管理（admin / store_manager / user）
+- 店舗管理（登録・編集・地図配置・写真管理）
+- 予約（空き確認・作成・キャンセル）
+- いいね・レビュー、混雑度の報告と分析ダッシュボード
+- 混雑通知メール（cron）、エラー管理ダッシュボード
+
+**統合作業中**: Claude API によるお出かけプラン自動生成（本プロジェクトの核）
 
 ---
 
 ## 解決したい課題
 
-### Before：人手で対応していた課題
+### ユーザー側の課題
 
-1. **計画の立案が属人的** — 企画担当者が毎回イチから計画
-2. **参加者の嗜好が反映されていない** — 過去の参加履歴が活用されていない
-3. **提案に時間がかかる** — 複数の候補を検討するのに手作業
+- 複数の欲求を満たす店舗・時間帯の組み合わせを**手動で探すのは煩雑**
+- 混雑や営業時間を考慮した「今から行ける」プランは自力では作りにくい
 
-### After：AI による自動化
+### 店舗側の課題
 
-- **AI が参加者ごとに提案** — 過去データから最適なプランを自動提案
-- **迅速な意思決定** — AI が複数候補を瞬時に生成
-- **データドリブン** — 履歴データを活用した客観的な提案
+- 混雑の偏り（ピーク集中・閑散時間の空席）が収益を不安定にする
+
+### アプローチ
+
+- LLM（Claude API）で欲求を自然言語から解析し、店舗DB × 混雑度 × 営業時間から最適ルートを提案
+- 架空エリア採用で商標・実在店舗リスクをゼロにし、デモの再現性を完全にコントロール
 
 ---
 
@@ -54,13 +59,14 @@ footer: "AI Hackathon 2026 - Team Project"
 └────────────────────┬────────────────────────────────┘
                      │ HTTP/REST API
 ┌────────────────────▼────────────────────────────────┐
-│      Backend (Node.js + Express)                    │
-│    (Claude API 統合・ビジネスロジック)                 │
+│  Backend (Node.js + Express / Vercel Functions)     │
+│  (ビジネスロジック / Claude API 統合作業中)            │
 └────────────────────┬────────────────────────────────┘
                      │ SQL
 ┌────────────────────▼────────────────────────────────┐
 │    Database (Supabase / PostgreSQL)                 │
-│    (users, outings, likes, reviews, etc.)          │
+│  (users, stores, reservations, likes, reviews,      │
+│   crowd_*, email_*, error_logs, store_media)        │
 └─────────────────────────────────────────────────────┘
                      │
          Deploy to Vercel (Auto)
@@ -71,33 +77,31 @@ footer: "AI Hackathon 2026 - Team Project"
 
 ## ディレクトリ構成・アーキテクチャ
 
-### Frontend (`src/`)
+### リポジトリ構成
 
 ```
-src/
-├── pages/
-│   ├── LoginPage.tsx          # 認証UI
-│   └── Dashboard.tsx          # メインダッシュボード
-├── context/
-│   └── AuthContext.tsx        # 認証状態管理
-├── hooks/
-│   └── useNavigate.ts         # ナビゲーション
-├── lib/
-│   └── supabase.ts            # Supabase クライアント
-├── App.tsx                    # ルーティング
-├── main.tsx                   # エントリーポイント
-└── index.css                  # Tailwind CSS
+src/          # フロントエンド（React）
+├── pages/    #   7画面（Login/Dashboard/Stores/Reservations/Likes/Admin/Errors）
+├── components/ # 15コンポーネント（フォーム・パネル・モーダル等）
+├── context/  #   認証状態管理（AuthContext）
+└── lib/      #   API クライアント層
+server/       # Express（auth/users/stores/media）— ローカル & Vercel 両対応
+api/          # Vercel Functions（reservations/crowd/analytics/errors/cron/mail）
+scripts/      # ローカル開発用 cron
+tests/        # unit / integration / e2e（jest + playwright、18本）
+docs/         # 要件定義・DB・チーム運用・発表資料・監査手順書
 ```
 
-### Database Schema
+### Database Schema（主要テーブル）
 
 | Table | 役割 |
 |-------|------|
-| `users` | ユーザー情報（認証・プロフィール） |
-| `outings` | アウティング計画 |
-| `likes` | ユーザーがいいねしたアウティング |
-| `reviews` | ユーザーがレビューしたアウティング |
-| `store_media` | アウティング写真・動画 |
+| `users` / `role_permissions` | ユーザー・権限（RBAC） |
+| `stores` / `store_media` | ことこと町の店舗マスタ・写真 |
+| `reservations` | 予約（空き状況・キャンセル） |
+| `likes` / `reviews` | いいね・レビュー（星評価+コメント） |
+| `crowd_status` / `crowd_history` / `crowd_patterns` | 混雑度（現況・履歴・パターン） |
+| `email_notifications` / `error_logs` | 通知メール・エラー記録 |
 
 ---
 
@@ -110,7 +114,7 @@ src/
 - 架空エリア「ことこと町」の店舗DB × 混雑度 × 営業時間からプラン生成
 - API 呼び出しは1回に統合、スコアリングで複数案を提示
 
-**実装**: `backend/domains/plan/`（プロンプト構築・スコアリング・Claude クライアントを分離した設計）
+**実装予定の配置**: `backend/domains/plan/`（プロンプト構築・スコアリング・Claude クライアントを分離。設計は `docs/architecture-audit/` 手順書 T12 に記載）
 
 ### 2. 開発プロセス: AI エージェントによる並列開発（実績）
 
@@ -201,6 +205,10 @@ src/
 
 💡 **効果**: 最後になって資料をまとめる苦労がない、常に発表可能な状態を維持
 
+---
+
+## 工夫した点（続き）
+
 ### 4. 敵対的アーキテクチャ監査（AI が AI の成果物を疑う）
 
 🔍 **実装**:
@@ -276,30 +284,27 @@ src/
 
 ### Demo Scenario
 
-**シーン**: ユーザーログイン → ダッシュボード表示 → AI 提案確認
+**シーン**: ログイン → 店舗一覧 → 予約 → 混雑分析（→ AI プラン提案は統合後に追加）
 
-#### 1. ログイン画面
+#### 1. ログイン
 ```
-📧 Email: yoshizawa@ai-hackason.example
-🔐 Password: （テストアカウント）
-→ ダッシュボードへ遷移
-```
-
-#### 2. ダッシュボード
-- ✅ **ユーザー情報表示** — ログイン済みユーザーの名前・役職
-- 📊 **過去のアウティング履歴** — 参加したアウティング一覧
-- 👍 **いいね・レビュー** — ユーザーのフィードバック一覧
-
-#### 3. AI 提案（ハイライト）
-```
-🤖 "You might like: 富士登山トレッキング（初心者向け）"
-理由: 過去 3 回の登山系イベント参加から推奨
+📧 Email: yoshizawa@ai-hackason.example（テストアカウント）
+→ ダッシュボードへ遷移（role に応じた画面出し分け）
 ```
 
-#### 4. リアルタイム UI
-- Tailwind CSS による洗練されたデザイン
-- 型安全な React Component
-- 迅速なレスポンス（Supabase × Vercel の高速性）
+#### 2. ことこと町の店舗を探す・予約する
+- 🏪 **店舗一覧** — のんびり亭・ことりカフェ等8店舗（カテゴリ・価格帯・営業時間）
+- 📅 **予約** — 空き確認 → 予約作成 → 予約一覧でキャンセル
+
+#### 3. 店舗管理者・管理者の画面
+- 📊 **混雑分析ダッシュボード** — 時間帯別の混雑パターン可視化
+- 🛠 **店舗・ユーザー管理、エラー管理**（admin のみ）
+
+#### 4. AI プラン提案 🚧（Claude API 統合後にデモへ追加予定）
+```
+入力: 「ランチして映画も見たい。子連れで13時から」
+出力: のんびり亭(空いてる時間帯) → つきみ座 の順路プラン＋理由
+```
 
 ---
 
@@ -324,7 +329,7 @@ src/
 ### 💡 学習成果
 
 - **フルスタック開発** — Frontend + Backend + DB の統合
-- **AI 活用** — Claude API を実装に組み込む実践経験
+- **AI 活用** — AI エージェントを開発プロセスに組み込む実践経験（プロダクト内 Claude API 統合は作業中）
 - **チーム開発** — AI エージェントを含む分業管理
 
 ---
@@ -340,10 +345,11 @@ src/
 ## 附録: 技術スタック一覧
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
-- **Backend**: Node.js, Express, Claude API
+- **Backend**: Node.js, Express, Vercel Functions, Claude API（統合作業中）
 - **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel, GitHub Actions
-- **Development**: Git, GitHub, VS Code, ESLint
+- **Testing**: Jest, Playwright, Testing Library
+- **Development**: Git, GitHub, VS Code, Claude Code
 - **Documentation**: Markdown, Marp (presentation)
 - **Team Coordination**: Microsoft Teams, Notion
 
