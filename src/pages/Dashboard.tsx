@@ -1,13 +1,13 @@
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from '../hooks/useNavigate'
+import ErrorManagementDashboard from './ErrorManagementDashboard'
+import LikesListPage from './LikesListPage'
 
-interface DashboardProps {
-  onNavigateLikes?: () => void
-}
-
-export default function Dashboard({ onNavigateLikes }: DashboardProps) {
-  const { user, logout } = useAuth()
+export default function Dashboard() {
+  const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
+  const [view, setView] = useState<'dashboard' | 'errors' | 'likes'>('dashboard')
 
   const handleLogout = async () => {
     await logout()
@@ -22,6 +22,15 @@ export default function Dashboard({ onNavigateLikes }: DashboardProps) {
     )
   }
 
+  // Issue #38: エラー管理ダッシュボードは admin のみアクセス可能
+  if (view === 'errors' && hasPermission('users', 'delete')) {
+    return <ErrorManagementDashboard onBack={() => setView('dashboard')} />
+  }
+
+  if (view === 'likes') {
+    return <LikesListPage onBack={() => setView('dashboard')} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -32,18 +41,24 @@ export default function Dashboard({ onNavigateLikes }: DashboardProps) {
             <p className="text-sm text-gray-600">ダッシュボード</p>
           </div>
           <div className="flex items-center gap-4">
-            {onNavigateLikes && (
-              <button
-                onClick={onNavigateLikes}
-                className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
-              >
-                ♥ いいね一覧
-              </button>
-            )}
+            <button
+              onClick={() => setView('likes')}
+              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
+            >
+              ♥ いいね一覧
+            </button>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-600">{user.email}</p>
             </div>
+            {hasPermission('users', 'delete') && (
+              <button
+                onClick={() => setView('errors')}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+              >
+                エラー管理
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
@@ -87,6 +102,16 @@ export default function Dashboard({ onNavigateLikes }: DashboardProps) {
             </p>
           </div>
         </div>
+
+        {/* 管理者専用メニュー（Issue #22: role に応じたコンディショナルレンダリング） */}
+        {hasPermission('users', 'delete') && (
+          <div className="bg-white rounded-lg p-6 shadow mb-8 border-2 border-indigo-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">管理者メニュー</h3>
+            <p className="text-sm text-gray-600">
+              このセクションは admin 権限を持つユーザにのみ表示されます。
+            </p>
+          </div>
+        )}
 
         {/* アクティビティセクション */}
         <div className="bg-white rounded-lg p-6 shadow">
