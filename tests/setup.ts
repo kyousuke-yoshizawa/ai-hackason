@@ -1,5 +1,23 @@
 import '@testing-library/jest-dom'
 
+// Mock API client（import.meta.env を使うため、ts-jest(CommonJS)下では直接読み込めない）
+jest.mock('../src/lib/api', () => ({
+  api: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    upload: jest.fn(),
+  },
+  ApiError: class ApiError extends Error {
+    status: number
+    constructor(message: string, status: number) {
+      super(message)
+      this.status = status
+    }
+  },
+}))
+
 // Mock Supabase client
 jest.mock('../src/lib/supabase', () => ({
   supabase: {

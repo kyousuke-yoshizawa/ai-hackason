@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { useAuth } from '../../src/context/AuthContext'
 import { AuthContext } from '../../src/context/AuthContext'
 import { ReactNode } from 'react'
@@ -7,11 +7,13 @@ import { ReactNode } from 'react'
 describe('Authentication - TC_20_1', () => {
   it('admin user can login with correct credentials', async () => {
     const mockAuthState = {
-      user: { id: 'admin-123', email: 'yoshizawa@ai-hackason.example', role: 'admin' },
+      user: { id: 'admin-123', email: 'yoshizawa@ai-hackason.example', name: '吉澤', role: 'admin' },
       isAuthenticated: true,
       isLoading: false,
+      permissions: [],
       login: jest.fn(),
       logout: jest.fn(),
+      hasPermission: jest.fn(() => false),
     }
 
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -31,11 +33,13 @@ describe('Authentication - TC_20_1', () => {
 describe('Role-Based Access Control - TC_20_2', () => {
   it('store manager user can login with store_manager role', async () => {
     const mockAuthState = {
-      user: { id: 'manager-456', email: 'satoh@ai-hackason.example', role: 'store_manager' },
+      user: { id: 'manager-456', email: 'satoh@ai-hackason.example', name: '佐藤', role: 'store_manager' },
       isAuthenticated: true,
       isLoading: false,
+      permissions: [],
       login: jest.fn(),
       logout: jest.fn(),
+      hasPermission: jest.fn(() => false),
     }
 
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -55,11 +59,13 @@ describe('Role-Based Access Control - TC_20_2', () => {
 describe('RBAC Permission Restrictions - TC_20_3', () => {
   it('regular user does not have admin role', async () => {
     const mockAuthState = {
-      user: { id: 'user-789', email: 'itagaki@ai-hackason.example', role: 'user' },
+      user: { id: 'user-789', email: 'itagaki@ai-hackason.example', name: '板垣', role: 'user' },
       isAuthenticated: true,
       isLoading: false,
+      permissions: [],
       login: jest.fn(),
       logout: jest.fn(),
+      hasPermission: jest.fn(() => false),
     }
 
     const wrapper = ({ children }: { children: ReactNode }) => (

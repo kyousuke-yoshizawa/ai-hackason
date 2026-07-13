@@ -24,7 +24,8 @@ interface AuthContextType {
   hasPermission: (resource: string, action: string) => boolean
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+// eslint-disable-next-line react-refresh/only-export-components -- テスト（tests/unit/auth.test.tsx）が Provider を直接使うために公開
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // role 名から role_permissions 経由で resource/action 一覧を取得（Issue #22）
 const fetchPermissions = async (role: string): Promise<Permission[]> => {
@@ -107,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- Provider と useAuth の同居は意図的な設計（Context パターン）
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
