@@ -227,7 +227,7 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 ## Testing & Quality
 
 - **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
-- **Type checking**: TypeScript in strict mode; enforced at build time for `src/`（`api/`/`server/`/`tests/` は未対応。監査手順書 T03 で対応予定）
+- **Type checking**: `npm run build`（`src/` のみ、tsc -b）と `npm run typecheck`（`api/server/scripts/tests/src` 全体、tsconfig.backend.json）の2種類。strict mode 有効
 - **Tests**: `npm test`（Jest, 16 suites / 116 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints

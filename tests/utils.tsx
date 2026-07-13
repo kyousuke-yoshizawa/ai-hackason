@@ -1,4 +1,4 @@
-import { ReactElement } from 'react'
+import { ReactElement, ReactNode } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { AuthContext } from '../src/context/AuthContext'
 
@@ -7,8 +7,10 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
     user: any
     isAuthenticated: boolean
     isLoading: boolean
+    permissions: any[]
     login: jest.Mock
     logout: jest.Mock
+    hasPermission: jest.Mock
   }
 }
 
@@ -16,8 +18,10 @@ const defaultAuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  permissions: [],
   login: jest.fn(),
   logout: jest.fn(),
+  hasPermission: jest.fn(() => false),
 }
 
 export function renderWithAuth(
@@ -27,7 +31,7 @@ export function renderWithAuth(
     ...renderOptions
   }: CustomRenderOptions = {}
 ) {
-  function Wrapper({ children }: { children: ReactElement }) {
+  function Wrapper({ children }: { children: ReactNode }) {
     return (
       <AuthContext.Provider value={authState}>
         {children}
