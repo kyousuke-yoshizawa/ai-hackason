@@ -168,7 +168,7 @@ gh pr merge <PR-number> --merge
 ⚠️ **Important**: 
 - Get token from https://github.com/settings/tokens (scopes: `repo`, `workflow`)
 - Never commit token to code; use environment variable only
-- See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` section 2-B for full details
+- See `docs/ai-hackathon-team-ops/references/pr-review-merge-flow.md` (section 2-B for CLI details)
 
 ### Local Development (Ubuntu + Claude CLI)
 

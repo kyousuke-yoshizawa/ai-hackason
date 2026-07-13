@@ -9,9 +9,9 @@
 実装から PR 作成までの詳細ステップ：
 
 ```
-git pull → ブランチ切る → 修正（こまめにコミット） → 自レビュー → 再修正 or コミット
+git pull → ブランチ切る → こまめにコミット → 自レビュー → 問題あれば修正
   ↓
-ある程度コミット溜まった → git push → PR作成 → AIレビュー → 修正サイクル → マージ
+git push → PR作成 → AIレビュー → 修正＆再レビュー → マージ
 ```
 
 ### 0-1. 作業開始前
@@ -83,7 +83,7 @@ git push -u origin feature/<name>
 ## 2. PR作成手順
 
 1. GitHubリポジトリのページで「Pull requests」→「New pull request」
-2. base: `main` ← compare: 自分の作業ブランチ（例: `feature/login-form`）
+2. base: `main` ← compare: 自分の作業ブランチ（例: `feature/yoshizawa`）
 3. タイトル: 何をしたか一目でわかるように（例: `ログインフォームのUI実装`）
 4. 説明欄には以下のテンプレートを使う
 
