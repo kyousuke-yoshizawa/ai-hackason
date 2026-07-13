@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { runCongestionNotificationCycle } from '../../backend/domains/notifications/congestionNotificationJob.js'
+import { sendError } from '../../backend/http/respond.js'
 
 // GET /api/cron/notify-congestion
 // Vercel Cron（vercel.json の crons）から30分おきに呼び出される想定。
@@ -7,13 +8,13 @@ import { runCongestionNotificationCycle } from '../../backend/domains/notificati
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const authHeader = req.headers.authorization
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'unauthorized' })
+    return sendError(res, 401, 'unauthorized', 'CRON_SECRET が一致しません')
   }
 
   try {
     const result = await runCongestionNotificationCycle()
     return res.status(200).json(result)
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : 'unknown error' })
+    return sendError(res, 500, 'internal_error', error instanceof Error ? error.message : 'unknown error')
   }
 }

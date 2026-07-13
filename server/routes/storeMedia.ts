@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdminOrStoreManager, requireAuth } from '../middleware/auth.js'
+import { sendError } from '../../backend/http/respond.js'
 
 export const storeMediaRouter = Router()
 
@@ -38,11 +39,11 @@ storeMediaRouter.post(
     const { storeId } = req.params
 
     if (!(await storeExists(storeId))) {
-      return res.status(404).json({ error: '店舗が見つかりません' })
+      return sendError(res, 404, 'not_found', '店舗が見つかりません')
     }
 
     if (!req.file) {
-      return res.status(400).json({ error: 'file は必須です' })
+      return sendError(res, 400, 'validation_error', 'file は必須です')
     }
 
     const filePath = `${storeId}/${Date.now()}-${req.file.originalname}`
@@ -52,7 +53,7 @@ storeMediaRouter.post(
       .upload(filePath, req.file.buffer, { contentType: req.file.mimetype })
 
     if (uploadError) {
-      return res.status(500).json({ error: uploadError.message })
+      return sendError(res, 500, 'internal_error', uploadError.message)
     }
 
     const { data, error } = await supabaseAdmin
@@ -71,7 +72,7 @@ storeMediaRouter.post(
 
     if (error) {
       await supabaseAdmin.storage.from(STORAGE_BUCKET).remove([filePath])
-      return res.status(500).json({ error: error.message })
+      return sendError(res, 500, 'internal_error', error.message)
     }
 
     res.status(201).json({ ...data, url: buildPublicUrl(data.file_path) })
@@ -82,7 +83,7 @@ storeMediaRouter.get('/:storeId/media', async (req, res) => {
   const { storeId } = req.params
 
   if (!(await storeExists(storeId))) {
-    return res.status(404).json({ error: '店舗が見つかりません' })
+    return sendError(res, 404, 'not_found', '店舗が見つかりません')
   }
 
   const { data, error } = await supabaseAdmin
@@ -92,7 +93,7 @@ storeMediaRouter.get('/:storeId/media', async (req, res) => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return sendError(res, 500, 'internal_error', error.message)
   }
 
   res.json({ data: (data ?? []).map((m) => ({ ...m, url: buildPublicUrl(m.file_path) })) })
@@ -113,7 +114,7 @@ storeMediaRouter.delete(
       .single()
 
     if (fetchError || !media) {
-      return res.status(404).json({ error: 'ファイルが見つかりません' })
+      return sendError(res, 404, 'not_found', 'ファイルが見つかりません')
     }
 
     await supabaseAdmin.storage.from(STORAGE_BUCKET).remove([media.file_path])
@@ -124,7 +125,7 @@ storeMediaRouter.delete(
       .eq('id', mediaId)
 
     if (deleteError) {
-      return res.status(500).json({ error: deleteError.message })
+      return sendError(res, 500, 'internal_error', deleteError.message)
     }
 
     res.json({ message: 'ファイルを削除しました' })

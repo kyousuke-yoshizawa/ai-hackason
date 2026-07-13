@@ -19,7 +19,7 @@ async function parseResponse<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => undefined)
 
   if (!res.ok) {
-    throw new ApiError(body?.error || `リクエストに失敗しました (${res.status})`, res.status)
+    throw new ApiError(body?.message ?? body?.error ?? `リクエストに失敗しました (${res.status})`, res.status)
   }
 
   return body as T
