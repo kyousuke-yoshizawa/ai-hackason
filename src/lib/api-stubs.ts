@@ -222,12 +222,18 @@ async function generateEmailLinkToken(userId: string, storeId: string): Promise<
 export const realtimeApi = {
   // Subscribe to crowd status changes
   subscribeToCrowdStatus(storeId: string, callback: (data: any) => void) {
-    const subscription = supabase
-      .from(`crowd_status:store_id=eq.${storeId}`)
-      .on('*', payload => callback(payload.new))
+    const channel = supabase
+      .channel(`crowd_status:store_id=eq.${storeId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'crowd_status', filter: `store_id=eq.${storeId}` },
+        (payload: { new: unknown }) => callback(payload.new)
+      )
       .subscribe()
 
-    return () => subscription.unsubscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
   },
 }
 
@@ -235,128 +241,11 @@ export const realtimeApi = {
 // PHASE 2: Medium Priority
 // ========================================
 
-// Issue #27: Likes
-export const likesApi = {
-  // POST /api/stores/:id/likes
-  async toggleLike(storeId: string) {
-    const { data: user } = await supabase.auth.getUser()
-    const userId = user?.user?.id
-
-    // Check if like exists
-    const { data: existing } = await supabase
-      .from('likes')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('store_id', storeId)
-      .single()
-
-    if (existing) {
-      // Delete like
-      await supabase
-        .from('likes')
-        .delete()
-        .eq('id', existing.id)
-      return { liked: false }
-    } else {
-      // Create like
-      await supabase
-        .from('likes')
-        .insert([{ user_id: userId, store_id: storeId }])
-      return { liked: true }
-    }
-  },
-
-  // GET /api/stores/:id/likes
-  async getLikeCount(storeId: string) {
-    const { count, error } = await supabase
-      .from('likes')
-      .select('id', { count: 'exact' })
-      .eq('store_id', storeId)
-
-    if (error) throw error
-    return count || 0
-  },
-
-  // GET /api/users/likes
-  async getUserLikes() {
-    const { data: user } = await supabase.auth.getUser()
-    const { data: likes, error } = await supabase
-      .from('likes')
-      .select('store_id')
-      .eq('user_id', user?.user?.id)
-
-    if (error) throw error
-    return likes?.map(l => l.store_id) || []
-  },
-}
-
-// Issue #29: Reviews
-export const reviewsApi = {
-  // POST /api/stores/:id/reviews
-  async createReview(storeId: string, rating: number, comment: string) {
-    const { data: user } = await supabase.auth.getUser()
-    const { data: review, error } = await supabase
-      .from('reviews')
-      .insert([{
-        store_id: storeId,
-        user_id: user?.user?.id,
-        rating,
-        comment,
-      }])
-      .select()
-      .single()
-
-    if (error) throw error
-
-    // Update review stats
-    await updateReviewStats(storeId)
-    return review
-  },
-
-  // GET /api/stores/:id/reviews
-  async getStoreReviews(storeId: string, limit = 20, offset = 0) {
-    const { data: reviews, error } = await supabase
-      .from('reviews')
-      .select('*, users:user_id(email)')
-      .eq('store_id', storeId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (error) throw error
-    return reviews
-  },
-
-  // GET /api/stores/:id/reviews/stats
-  async getReviewStats(storeId: string) {
-    const { data: stats, error } = await supabase
-      .from('review_stats')
-      .select('*')
-      .eq('store_id', storeId)
-      .single()
-
-    if (error) throw error
-    return stats
-  },
-}
-
-async function updateReviewStats(storeId: string) {
-  const { data: reviews } = await supabase
-    .from('reviews')
-    .select('rating')
-    .eq('store_id', storeId)
-
-  if (!reviews) return
-
-  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-
-  await supabase
-    .from('review_stats')
-    .upsert({
-      store_id: storeId,
-      total_reviews: reviews.length,
-      average_rating: Math.round(avgRating * 100) / 100,
-    })
-}
+// Issue #27 & #29: Likes / Reviews
+// ⚠️ likesApi / reviewsApi はここでは提供しない。
+// 実際に使われている実装は src/lib/likes.ts / src/lib/reviews.ts を参照
+// （auth.users ベースの本stubは、本アプリの実際の認証（public.users +
+//   localStorage）と前提が合わず未使用のまま重複していたため削除）
 
 // Issue #31: Crowd Analytics
 export const analyticsApi = {
@@ -551,8 +440,6 @@ export default {
   mapApi,
   crowdApi,
   realtimeApi,
-  likesApi,
-  reviewsApi,
   analyticsApi,
   reservationsApi,
   mediaApi,
