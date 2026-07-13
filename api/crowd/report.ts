@@ -2,9 +2,27 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { verifyLinkToken, type LinkTokenPayload } from '../_lib/email/linkToken'
 import { getNotificationById, markNotificationLinkUsed } from '../_lib/email/repository'
 import { upsertCrowdStatus, insertCrowdHistory } from '../_lib/crowd/repository'
+import { requireStoreAccess } from '../_lib/requireStoreAccess'
 import type { CongestionLevel } from '../_lib/email/templates'
 
 const VALID_LEVELS: CongestionLevel[] = ['low', 'medium', 'high']
+
+// POST /api/crowd/report { store_id, level } （store_manager もしくは admin が認証ヘッダ x-user-id 付きで直接報告する場合）
+async function handlePost(req: VercelRequest, res: VercelResponse) {
+  const { store_id: storeId, level } = req.body ?? {}
+
+  if (typeof storeId !== 'string' || typeof level !== 'string' || !VALID_LEVELS.includes(level as CongestionLevel)) {
+    return res.status(400).json({ error: 'store_id and a valid level are required' })
+  }
+
+  const userId = await requireStoreAccess(req, res, storeId)
+  if (!userId) return
+
+  await upsertCrowdStatus(storeId, level as CongestionLevel, userId)
+  await insertCrowdHistory(storeId, level as CongestionLevel, userId)
+
+  return res.status(200).json({ storeId, level })
+}
 
 function renderResultPage(status: number, title: string, message: string) {
   return {
@@ -19,9 +37,13 @@ function renderResultPage(status: number, title: string, message: string) {
   }
 }
 
-// GET /api/crowd/report?store_id=XXX&level=Y&token=ZZZZ
-// メール本文の3ボタン（混んでる/普通/空いてる）から遷移する1回限りリンク。
+// GET  /api/crowd/report?store_id=XXX&level=Y&token=ZZZZ — メール本文の3ボタンからの1回限りリンク
+// POST /api/crowd/report { store_id, level } — 店舗管理者/adminが直接報告する場合
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'POST') {
+    return handlePost(req, res)
+  }
+
   const { store_id: storeId, level, token } = req.query
 
   if (typeof storeId !== 'string' || typeof level !== 'string' || typeof token !== 'string') {

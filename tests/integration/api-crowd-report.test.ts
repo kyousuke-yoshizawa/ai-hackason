@@ -32,6 +32,26 @@ function createMockReq(query: Record<string, string>): VercelRequest {
   return { query } as unknown as VercelRequest
 }
 
+function createMockPostReq(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {},
+): VercelRequest {
+  return { method: 'POST', body, headers, query: {} } as unknown as VercelRequest
+}
+
+function createMockJsonRes() {
+  const res: Partial<VercelResponse> & { statusCode?: number; body?: unknown } = {}
+  res.status = jest.fn((code: number) => {
+    res.statusCode = code
+    return res as VercelResponse
+  }) as unknown as VercelResponse['status']
+  res.json = jest.fn((body: unknown) => {
+    res.body = body
+    return res as VercelResponse
+  }) as unknown as VercelResponse['json']
+  return res as VercelResponse & { statusCode: number; body: unknown }
+}
+
 const basePayload = {
   notificationId: 'notif-1',
   storeId: 'store-1',
@@ -92,5 +112,52 @@ describe('GET /api/crowd/report (TC-109-03)', () => {
 
     expect(res.statusCode).toBe(403)
     expect(fakeClient.getRows('crowd_history')).toHaveLength(0)
+  })
+})
+
+// TC-110-01: crowd_snapshots（本実装では crowd_status/crowd_history）への報告記録検証
+describe('POST /api/crowd/report (TC-110-01)', () => {
+  beforeEach(() => {
+    fakeClient.seed('users', [{ id: 'manager-1', role: 'user' }])
+    fakeClient.seed('store_managers', [{ store_id: 'store-1', manager_id: 'manager-1' }])
+  })
+
+  it('records the report when the caller is the assigned store manager', async () => {
+    const res = createMockJsonRes()
+
+    await handler(
+      createMockPostReq({ store_id: 'store-1', level: 'high' }, { 'x-user-id': 'manager-1' }),
+      res,
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(fakeClient.getRows('crowd_status')).toEqual([
+      expect.objectContaining({ store_id: 'store-1', level: 'high', updated_by: 'manager-1' }),
+    ])
+    expect(fakeClient.getRows('crowd_history')).toHaveLength(1)
+  })
+
+  it('rejects a caller who is neither admin nor the assigned store manager', async () => {
+    fakeClient.seed('users', [{ id: 'other-user', role: 'user' }])
+    const res = createMockJsonRes()
+
+    await handler(
+      createMockPostReq({ store_id: 'store-1', level: 'high' }, { 'x-user-id': 'other-user' }),
+      res,
+    )
+
+    expect(res.statusCode).toBe(403)
+    expect(fakeClient.getRows('crowd_history')).toHaveLength(0)
+  })
+
+  it('rejects a missing or invalid level', async () => {
+    const res = createMockJsonRes()
+
+    await handler(
+      createMockPostReq({ store_id: 'store-1', level: 'super-crowded' }, { 'x-user-id': 'manager-1' }),
+      res,
+    )
+
+    expect(res.statusCode).toBe(400)
   })
 })
