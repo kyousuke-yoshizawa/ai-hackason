@@ -222,12 +222,18 @@ async function generateEmailLinkToken(userId: string, storeId: string): Promise<
 export const realtimeApi = {
   // Subscribe to crowd status changes
   subscribeToCrowdStatus(storeId: string, callback: (data: any) => void) {
-    const subscription = supabase
-      .from(`crowd_status:store_id=eq.${storeId}`)
-      .on('*', payload => callback(payload.new))
+    const channel = supabase
+      .channel(`crowd_status:store_id=eq.${storeId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'crowd_status', filter: `store_id=eq.${storeId}` },
+        (payload: { new: unknown }) => callback(payload.new)
+      )
       .subscribe()
 
-    return () => subscription.unsubscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
   },
 }
 

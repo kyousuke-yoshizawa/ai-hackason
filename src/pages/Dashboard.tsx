@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from '../hooks/useNavigate'
 import ErrorManagementDashboard from './ErrorManagementDashboard'
+import LikesListPage from './LikesListPage'
 
 export default function Dashboard() {
   const { user, logout, hasPermission } = useAuth()
   const navigate = useNavigate()
-  const [view, setView] = useState<'dashboard' | 'errors'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'errors' | 'likes'>('dashboard')
 
   const handleLogout = async () => {
     await logout()
@@ -26,6 +27,10 @@ export default function Dashboard() {
     return <ErrorManagementDashboard onBack={() => setView('dashboard')} />
   }
 
+  if (view === 'likes') {
+    return <LikesListPage onBack={() => setView('dashboard')} />
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -36,6 +41,12 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600">ダッシュボード</p>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setView('likes')}
+              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
+            >
+              ♥ いいね一覧
+            </button>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-600">{user.email}</p>
