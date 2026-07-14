@@ -257,6 +257,193 @@ npm run dev
 
 7. ブラウザで http://localhost:5173 を開く
 
+---
+
+## 👥 チームメンバー別セットアップガイド
+
+### 🔧 Kyosuke（吉沢・インフラリード）向け
+
+**初回セットアップ**（プロジェクト開始時に 1 回だけ）
+
+```bash
+# 1. ローカル環境セットアップ
+git clone <repo-url>
+cd ai-hackason
+npm install
+
+# 2. Vercel Marketplace から Supabase 統合をインストール
+#    → https://vercel.com → Integrations → Supabase を検索・インストール
+#    → Supabase プロジェクトと Vercel プロジェクトをリンク
+
+# 3. ローカルセットアップ
+npm run setup
+
+# 4. SendGrid API Key を発行
+#    → https://app.sendgrid.com/settings/api_keys → Create API Key
+#    → .env に設定
+
+# 5. Anthropic API Key を発行
+#    → https://console.anthropic.com/settings/keys → Create Key
+#    → .env に設定
+
+# 6. 本番環境に手動設定（Vercel ダッシュボード）
+#    → Settings → Environment Variables → Production に以下を追加：
+#    - SENDGRID_API_KEY
+#    - ANTHROPIC_API_KEY
+#    - その他（詳細は README 環境変数セットアップガイドを参照）
+
+# 7. 動作確認
+npm run dev
+npm run server  # 別ターミナル
+# http://localhost:5173 にアクセス確認
+```
+
+**その後**
+- SendGrid と Anthropic のキーをチームメンバーに共有（安全に）
+- GitHub リポジトリへのアクセス権限を付与
+
+---
+
+### 💻 フロント担当向け
+
+**初回セットアップ**（開発開始時に 1 回だけ）
+
+```bash
+# 1. リポジトリをクローン
+git clone <repo-url>
+cd ai-hackason
+
+# 2. 依存関係をインストール
+npm install
+
+# 3. ローカル環境変数を自動生成
+npm run setup
+
+# 4. チーム共有キーを .env に設定
+#    → Kyosuke から以下を入手して .env に追加：
+#    - SENDGRID_API_KEY
+#    - ANTHROPIC_API_KEY
+
+# 5. フロント開発サーバーを起動
+npm run dev
+
+# 6. ブラウザで http://localhost:5173 を開く
+```
+
+**開発時のコマンド**
+```bash
+npm run dev           # フロント開発サーバー起動
+npm run lint          # TypeScript/TSX チェック
+npm run build         # ビルド
+npm test              # テスト実行
+npm run test:watch    # テスト監視モード
+```
+
+**注意**
+- `.env` ファイルを git にコミット**しないでください**
+- バックエンド（Express）が必要な場合は別ターミナルで `npm run server` を実行
+- 詳細は `docs/ai-hackathon-team-ops/agents/frontend-subagent.md` を参照
+
+---
+
+### 🔌 バック担当向け
+
+**初回セットアップ**（開発開始時に 1 回だけ）
+
+```bash
+# 1. リポジトリをクローン
+git clone <repo-url>
+cd ai-hackason
+
+# 2. 依存関係をインストール
+npm install
+
+# 3. ローカル環境変数を自動生成
+npm run setup
+
+# 4. チーム共有キーを .env に設定
+#    → Kyosuke から以下を入手して .env に追加：
+#    - SENDGRID_API_KEY
+#    - ANTHROPIC_API_KEY
+
+# 5. Express バックエンドを起動
+npm run server
+
+# 6. 動作確認（別ターミナルで）
+curl http://localhost:3000/api/health
+```
+
+**開発時のコマンド**
+```bash
+npm run server        # Express サーバー起動（ホットリロード対応）
+npm run typecheck     # 全体の型チェック
+npm run lint          # ESLint + TypeScript チェック
+npm run build         # ビルド
+npm test              # テスト実行
+npm run cron:dev      # ローカル Cron テスト（混雑通知）
+npm run cron:dev:analytics  # ローカル Cron テスト（分析集計）
+```
+
+**API サーバー**
+- Express: `http://localhost:3000`
+- Vercel Functions: `api/` ディレクトリ（本番環境で使用）
+
+**注意**
+- `.env` ファイルを git にコミット**しないでください**
+- フロント開発サーバーも必要な場合は別ターミナルで `npm run dev` を実行
+- 詳細は `docs/ai-hackathon-team-ops/agents/backend-subagent.md` を参照
+
+---
+
+### ✅ QA 担当向け
+
+**初回セットアップ**（テスト開始時に 1 回だけ）
+
+```bash
+# 1. リポジトリをクローン
+git clone <repo-url>
+cd ai-hackason
+
+# 2. 依存関係をインストール
+npm install
+
+# 3. ローカル環境変数を自動生成
+npm run setup
+
+# 4. チーム共有キーを .env に設定
+#    → Kyosuke から以下を入手して .env に追加：
+#    - SENDGRID_API_KEY
+#    - ANTHROPIC_API_KEY
+
+# 5. 開発環境を起動（別々のターミナルで）
+npm run dev           # ターミナル 1：フロント
+npm run server        # ターミナル 2：バック
+
+# 6. テストを実行
+npm run test          # ユニット・統合テスト
+npm run test:e2e      # E2E テスト（Playwright）
+npm run test:all      # 全テスト実行
+```
+
+**QA 用コマンド**
+```bash
+npm run test:coverage  # カバレッジレポート確認
+npm run lint           # コードチェック
+npm run build          # ビルド確認
+```
+
+**テストアクセス**
+- フロント: http://localhost:5173
+- バック API: http://localhost:3000
+
+**注意**
+- テストアカウント情報は `docs/database/USER_TABLE_README.md` を参照
+- E2E テストは Playwright（Chrome）を使用
+- `.env` ファイルを git にコミット**しないでください**
+- 詳細は `docs/ai-hackathon-team-ops/agents/qa-subagent.md` を参照
+
+---
+
 ## 📁 リポジトリ構成
 
 ```
