@@ -7,7 +7,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/login')
+    navigate('/login', { replace: true })
   }
 
   if (!user) {
