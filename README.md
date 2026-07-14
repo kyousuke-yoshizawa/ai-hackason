@@ -36,7 +36,18 @@
 
 ### 🚀 高速セットアップ（推奨）
 
-Vercel CLI を使えば、本番環境の設定をローカルに自動プルできます：
+#### 1️⃣ Vercel Marketplace から Supabase 統合をインストール
+
+1. [Vercel ダッシュボード](https://vercel.com) → **Integrations** → **Supabase** を検索
+2. **Install** をクリック
+3. Supabase プロジェクトを選択
+4. Vercel プロジェクトをリンク
+
+✅ これで以下の環境変数が **Vercel に自動設定**されます：
+- `VITE_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+#### 2️⃣ Vercel CLI でローカルに自動プル
 
 ```bash
 # Vercel にログイン（初回のみ）
@@ -50,21 +61,22 @@ vercel link
 vercel env pull
 ```
 
-これで `Supabase`・`SendGrid`・`Claude API` 以外の設定は自動反映されます。
-次に、**手動で設定が必要な3つのキー**を追加してください：
+✅ これで Supabase 関連を含む **大部分の環境変数がセット済み**になります。
+
+#### 3️⃣ 手動設定が必要な2つのキー
+
+残りは **SendGrid** と **Anthropic** の 2つだけ：
 
 | キー | 取得元 | 設定先 |
 |------|--------|--------|
-| `SUPABASE_URL` | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API | `.env` |
-| `SUPABASE_SERVICE_ROLE_KEY` | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API | `.env` |
-| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) | `.env` |
+| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) → Create API Key | `.env` |
 | `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) | `.env` |
 
 ---
 
-### 📝 ローカル開発環境での手動設定（フル手順）
+### 📝 ローカル開発環境での手動設定（Vercel CLI が使えない場合）
 
-Vercel CLI が使えない場合や、すべてを手動で設定する場合：
+Vercel CLI が使えない環境や、すべてを手動で設定したい場合：
 
 1. `.env.example` をコピーして `.env` を作成:
 
@@ -72,9 +84,9 @@ Vercel CLI が使えない場合や、すべてを手動で設定する場合：
 cp .env.example .env
 ```
 
-2. 各サービスから API キーを取得し、`.env` に設定します：
+#### 🗄️ Supabase の設定（ダッシュボード手動取得）
 
-#### 🗄️ Supabase の設定
+Vercel Marketplace 統合を使わない場合のみ：
 
 1. [Supabase ダッシュボード](https://supabase.com/dashboard) にログイン
 2. プロジェクトを選択 → **Settings** → **API** に移動
@@ -133,29 +145,21 @@ APP_BASE_URL=http://localhost:5173
 
 ### 本番環境（Vercel）でのシークレット設定
 
-#### 🔄 Vercel CLI で環境変数を管理（推奨）
+#### 🔄 自動設定される環境変数（Marketplace 統合）
 
-ローカルの `.env` を Vercel 本番環境に反映：
+Vercel Marketplace から Supabase を統合すると、以下は **自動的に設定**されます：
 
-```bash
-# 本番環境に環境変数をプッシュ
-vercel env push --environment=production
-```
+| キー | 取得元 | 自動同期 |
+|------|--------|---------|
+| `VITE_SUPABASE_URL` | Supabase | ✅ 自動 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase | ✅ 自動 |
 
-⚠️ **注意**：このコマンドは既存の環境変数を上書きします。本番にしかない設定がある場合は先に確認してください。
+#### 📝 手動で設定が必要な環境変数
 
-#### 🖱️ ダッシュボードで手動設定（代替方法）
-
-Vercel CLI が使えない場合：
-
-1. [Vercel ダッシュボード](https://vercel.com) → プロジェクトを選択
-2. **Settings** → **Environment Variables** に移動
-3. 以下を「本番環境（Production）」に追加：
+[Vercel ダッシュボード](https://vercel.com) → プロジェクトを選択 → **Settings** → **Environment Variables** に以下を追加：
 
 | キー | 値 | 取得元 |
 |------|-----|--------|
-| `VITE_SUPABASE_URL` | Supabase Project URL | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service Role Secret | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API |
 | `SENDGRID_API_KEY` | API Key | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) |
 | `EMAIL_FROM_ADDRESS` | メール送信元アドレス | 任意（例: `notify@ai-hackason.example`） |
 | `EMAIL_FROM_NAME` | 表示名 | 任意（例: `AI Hackathon`） |
@@ -166,11 +170,23 @@ Vercel CLI が使えない場合：
 | `APP_BASE_URL` | `https://ai-hackason.vercel.app` | Vercel ダッシュボード |
 | `CORS_ALLOWED_ORIGINS` | `https://ai-hackason.vercel.app` | 自分で設定 |
 
-**セキュアなシークレット生成:**
+#### 🔐 セキュアなシークレット生成
+
 ```bash
 # ローカルで安全なランダム文字列を生成
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+#### 🚀 Vercel CLI でのプッシュ（オプション）
+
+ローカルの `.env` を本番に反映させる場合：
+
+```bash
+# 本番環境に環境変数をプッシュ
+vercel env push --environment=production
+```
+
+⚠️ **注意**：既存の環境変数を上書きします。本番にしかない設定がある場合は先に確認してください。
 
 ---
 
