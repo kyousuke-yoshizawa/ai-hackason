@@ -199,21 +199,45 @@ vercel env push --environment=production
 cd /mnt/c/Develop/Projects/ai-hackason
 ```
 
-3. 環境変数を設定（上記の「ローカル開発環境での設定」に従う）
-
-4. 依存関係をインストール（初回のみ）:
+3. 依存関係をインストール（初回のみ）:
 
 ```bash
 npm install
 ```
 
-5. 開発サーバーを起動:
+4. **環境変数を自動セットアップ** ✨
+
+```bash
+npm run setup
+```
+
+このコマンドが以下を自動実行します：
+- ✅ `.env.example` から `.env` をコピー
+- ✅ `LINK_TOKEN_SECRET` と `CRON_SECRET` をランダム生成
+- ✅ デフォルト値を自動設定（`PORT`、`EMAIL_FROM_ADDRESS` など）
+- ✅ ローカル開発用の URL を設定
+
+5. **手動で 2 つのキーを設定**
+
+生成された `.env` ファイルを編集して、以下を追加：
+
+```bash
+# SendGrid API Key
+# https://app.sendgrid.com/settings/api_keys から取得
+SENDGRID_API_KEY=SG.your-api-key-here
+
+# Claude API Key
+# https://console.anthropic.com/settings/keys から取得
+ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+```
+
+6. 開発サーバーを起動:
 
 ```bash
 npm run dev
 ```
 
-6. ブラウザで http://localhost:5173 を開く
+7. ブラウザで http://localhost:5173 を開く
 
 ## 📁 リポジトリ構成
 
