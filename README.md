@@ -47,30 +47,41 @@
 - `VITE_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-#### 2️⃣ Vercel CLI でローカルに自動プル
+#### 2️⃣ npm run setup で残りを自動セットアップ
 
 ```bash
-# Vercel にログイン（初回のみ）
-npm install -g vercel
-vercel login
+# 依存関係をインストール（初回のみ）
+npm install
 
-# プロジェクトをリンク（初回のみ）
-vercel link
-
-# 本番環境の環境変数をローカルに自動反映
-vercel env pull
+# 環境変数を自動セットアップ
+npm run setup
 ```
 
-✅ これで Supabase 関連を含む **大部分の環境変数がセット済み**になります。
+✅ このコマンドが以下を自動実行します：
+- `.env.example` から `.env` をコピー
+- `LINK_TOKEN_SECRET` と `CRON_SECRET` をランダム生成
+- デフォルト値を自動設定（`PORT`、`EMAIL_FROM_ADDRESS` など）
+- ローカル開発用の URL を設定
 
-#### 3️⃣ 手動設定が必要な2つのキー
+#### 3️⃣ 手動で 2 つのキーを設定
 
-残りは **SendGrid** と **Anthropic** の 2つだけ：
+生成された `.env` ファイルを編集して、以下を追加：
 
-| キー | 取得元 | 設定先 |
-|------|--------|--------|
-| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) → Create API Key | `.env` |
-| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) | `.env` |
+| キー | 取得元 |
+|------|--------|
+| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) → Create API Key |
+| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) |
+
+```bash
+# .env を編集
+nano .env
+```
+
+以下を追加：
+```bash
+SENDGRID_API_KEY=SG.your-api-key-here
+ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+```
 
 ---
 
