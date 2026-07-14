@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { cancelReservation, getUserReservations } from '../lib/reservations'
 import type { AdminStore } from '../components/StoreForm'
 import type { Reservation } from '../types/reservation'
-
-interface ReservationsListPageProps {
-  onBack: () => void
-}
 
 const STATUS_LABEL: Record<Reservation['status'], string> = {
   pending: '保留中',
@@ -15,7 +12,8 @@ const STATUS_LABEL: Record<Reservation['status'], string> = {
   cancelled: 'キャンセル済み',
 }
 
-export default function ReservationsListPage({ onBack }: ReservationsListPageProps) {
+export default function ReservationsListPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [storeNames, setStoreNames] = useState<Record<string, string>>({})
@@ -74,7 +72,11 @@ export default function ReservationsListPage({ onBack }: ReservationsListPagePro
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button type="button" onClick={onBack} className="text-sm text-indigo-600 hover:underline">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="text-sm text-indigo-600 hover:underline"
+          >
             ← ダッシュボードに戻る
           </button>
           <h1 className="text-xl font-bold text-gray-900">予約一覧</h1>

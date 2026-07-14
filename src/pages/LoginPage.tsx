@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from '../hooks/useNavigate'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -18,7 +18,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password)
       if (result.success) {
-        navigate('/dashboard')
+        navigate('/dashboard', { replace: true })
       } else {
         setError(result.message || 'ログインに失敗しました')
       }

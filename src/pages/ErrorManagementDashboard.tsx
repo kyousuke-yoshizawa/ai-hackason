@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
 
@@ -26,7 +27,8 @@ const STATUS_LABEL: Record<ErrorLog['status'], string> = {
   resolved: '解決済み',
 }
 
-export default function ErrorManagementDashboard({ onBack }: { onBack: () => void }) {
+export default function ErrorManagementDashboard() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [errors, setErrors] = useState<ErrorLog[]>([])
   const [statusFilter, setStatusFilter] = useState<'all' | ErrorLog['status']>('all')
@@ -73,7 +75,7 @@ export default function ErrorManagementDashboard({ onBack }: { onBack: () => voi
             <p className="text-sm text-gray-600">admin 専用</p>
           </div>
           <button
-            onClick={onBack}
+            onClick={() => navigate('/dashboard')}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-medium transition"
           >
             ダッシュボードに戻る

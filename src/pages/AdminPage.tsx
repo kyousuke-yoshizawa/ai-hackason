@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { StoreManagementPanel } from '../components/StoreManagementPanel'
 import { ToastContainer, useToast } from '../components/Toast'
 import { UserManagementPanel } from '../components/UserManagementPanel'
 
-export default function AdminPage({ onBack }: { onBack: () => void }) {
+export default function AdminPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'users' | 'stores'>('users')
   const { toast, showToast } = useToast()
 
@@ -16,7 +18,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
             <p className="text-sm text-gray-600">ユーザ・店舗マスタ管理</p>
           </div>
           <button
-            onClick={onBack}
+            onClick={() => navigate('/dashboard')}
             className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
           >
             ← ダッシュボードに戻る
