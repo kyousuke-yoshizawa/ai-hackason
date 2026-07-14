@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **AI Hackathon 2026** — A 20-hour team project (Kyosuke + 3 members) building 「ことこと町」お出かけプラン AI アシスタント using React + TypeScript + Tailwind / Node.js + Express + Vercel Functions / Supabase PostgreSQL.
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
-- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media）+ Vercel Functions（`api/`, reservations/crowd/analytics/errors/cron/mail）
-- **AI**: Claude API によるお出かけプラン生成 — **統合作業中**（設計は `docs/architecture-audit/refactoring-handbook.md` T12 を参照。現時点で `@anthropic-ai/sdk` 依存・呼び出しコードは未実装）
+- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media）+ Vercel Functions（`api/`, reservations/crowd/analytics/errors/cron/mail/plan）
+- **AI**: Claude API（`@anthropic-ai/sdk`）によるお出かけプラン生成。`backend/domains/plan/`（`claudeClient.ts`/`promptBuilder.ts`/`scoring.ts`/`schema.ts`）+ `POST /api/plan/generate`（T12で実装。意図解析・店舗照合・スコアリング・プラン生成をAPI呼び出し1回に統合。UI画面は別タスク）
 - **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel (auto-deploy on main)
 - **Documentation Sync**: Notion Database (auto-sync on PR merge via GitHub Actions)
@@ -64,14 +64,17 @@ src/
 server/                  # Express（auth/users/stores/media）。ローカル開発と
                           #   Vercel本番の両方で使用（api/index.ts が re-export）
 api/                     # Vercel Functions（reservations/crowd/analytics/
-                          #   errors/cron/mail）。api/_http/ に Vercel専用の
+                          #   errors/cron/mail/plan）。api/_http/ に Vercel専用の
                           #   HTTPアダプタ（requireAdmin/requireStoreAccess）
 backend/                 # api/ と server/ が共有するドメインロジック
                           #   db.ts（supabaseAdmin唯一の定義）
                           #   auth/authz.ts（認可: is_active + store_managers判定）
-                          #   domains/{crowd,crowdAnalytics,email,reservations,notifications}/
+                          #   domains/{crowd,crowdAnalytics,email,reservations,
+                          #     notifications,social,auth,stores,plan}/
+                          #   （plan: Claude API統合。claudeClient/promptBuilder/
+                          #     scoring/schema。T12で新設）
 scripts/                 # ローカル開発用cron（node-cron。本番はvercel.jsonのcrons）
-tests/                   # unit(11) + integration(13) + e2e(2) = 26ファイル
+tests/                   # unit(14) + integration(15) + e2e(2) = 31ファイル
 docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 ```
 
@@ -262,7 +265,7 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 - **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
 - **Type checking**: `npm run build`（`src/` のみ、tsc -b）と `npm run typecheck`（`api/server/scripts/tests/src` 全体、tsconfig.backend.json）の2種類。strict mode 有効
-- **Tests**: `npm test`（Jest, 24 suites / 174 tests）+ `npm run test:e2e`（Playwright）
+- **Tests**: `npm test`（Jest, 29 suites / 197 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints
 

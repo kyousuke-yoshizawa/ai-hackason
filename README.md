@@ -26,7 +26,7 @@
 
 - **フロントエンド:** React 18 + TypeScript + Tailwind CSS + Vite
 - **バックエンド:** Node.js + Express（`server/`）+ Vercel Functions（`api/`）
-- **AI:** Claude API によるお出かけプラン生成 — 統合作業中（詳細: `docs/architecture-audit/refactoring-handbook.md` T12）
+- **AI:** Claude API（`@anthropic-ai/sdk`）によるお出かけプラン生成。`POST /api/plan/generate`（`backend/domains/plan/`）で意図解析・店舗照合・スコアリング・プラン生成をAPI呼び出し1回に統合。UI画面は別タスクで実装予定
 - **データベース:** Supabase (PostgreSQL)
 - **デプロイ:** Vercel（自動デプロイ）
 - **ドキュメント:** Notion Database（PRマージ時に自動同期）
