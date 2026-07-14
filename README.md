@@ -34,7 +34,37 @@
 
 ## ⚙️ 環境変数セットアップガイド
 
-### ローカル開発環境での設定
+### 🚀 高速セットアップ（推奨）
+
+Vercel CLI を使えば、本番環境の設定をローカルに自動プルできます：
+
+```bash
+# Vercel にログイン（初回のみ）
+npm install -g vercel
+vercel login
+
+# プロジェクトをリンク（初回のみ）
+vercel link
+
+# 本番環境の環境変数をローカルに自動反映
+vercel env pull
+```
+
+これで `Supabase`・`SendGrid`・`Claude API` 以外の設定は自動反映されます。
+次に、**手動で設定が必要な3つのキー**を追加してください：
+
+| キー | 取得元 | 設定先 |
+|------|--------|--------|
+| `SUPABASE_URL` | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API | `.env` |
+| `SUPABASE_SERVICE_ROLE_KEY` | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API | `.env` |
+| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) | `.env` |
+| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) | `.env` |
+
+---
+
+### 📝 ローカル開発環境での手動設定（フル手順）
+
+Vercel CLI が使えない場合や、すべてを手動で設定する場合：
 
 1. `.env.example` をコピーして `.env` を作成:
 
@@ -103,29 +133,42 @@ APP_BASE_URL=http://localhost:5173
 
 ### 本番環境（Vercel）でのシークレット設定
 
-Vercel へのデプロイ時、**環境変数は GitHub にコミットせず**、Vercel ダッシュボードで設定してください。
+#### 🔄 Vercel CLI で環境変数を管理（推奨）
+
+ローカルの `.env` を Vercel 本番環境に反映：
+
+```bash
+# 本番環境に環境変数をプッシュ
+vercel env push --environment=production
+```
+
+⚠️ **注意**：このコマンドは既存の環境変数を上書きします。本番にしかない設定がある場合は先に確認してください。
+
+#### 🖱️ ダッシュボードで手動設定（代替方法）
+
+Vercel CLI が使えない場合：
 
 1. [Vercel ダッシュボード](https://vercel.com) → プロジェクトを選択
 2. **Settings** → **Environment Variables** に移動
 3. 以下を「本番環境（Production）」に追加：
 
-| キー | 値 | 取得元 | 用途 |
-|------|-----|--------|------|
-| `VITE_SUPABASE_URL` | Supabase Project URL | Supabase Dashboard | DB接続（バックエンド） |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service Role Secret | Supabase Dashboard | DB操作（RLSバイパス） |
-| `SENDGRID_API_KEY` | API Key | SendGrid Dashboard | メール送信 |
-| `EMAIL_FROM_ADDRESS` | 送信元メール | 任意（例: notify@ai-hackason.example） | メール送信元 |
-| `EMAIL_FROM_NAME` | 表示名 | 任意（例: AI Hackathon） | メール送信元名 |
-| `ANTHROPIC_API_KEY` | API Key | Anthropic Console | Claude API（プラン生成） |
-| `ANTHROPIC_MODEL` | モデルID | Anthropic コンソール | Claude モデル選択（オプション） |
-| `LINK_TOKEN_SECRET` | ランダムな長い文字列 | 自分で生成 | リンクトークン署名 |
-| `CRON_SECRET` | ランダムな長い文字列 | 自分で生成 | Cron 認証 |
-| `APP_BASE_URL` | `https://ai-hackason.vercel.app` | Vercel ダッシュボード | 本番 URL |
-| `CORS_ALLOWED_ORIGINS` | `https://ai-hackason.vercel.app` | 自分で設定 | CORS許可オリジン |
+| キー | 値 | 取得元 |
+|------|-----|--------|
+| `VITE_SUPABASE_URL` | Supabase Project URL | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service Role Secret | [Supabase Dashboard](https://supabase.com/dashboard) → Settings → API |
+| `SENDGRID_API_KEY` | API Key | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) |
+| `EMAIL_FROM_ADDRESS` | メール送信元アドレス | 任意（例: `notify@ai-hackason.example`） |
+| `EMAIL_FROM_NAME` | 表示名 | 任意（例: `AI Hackathon`） |
+| `ANTHROPIC_API_KEY` | API Key | [Anthropic Console](https://console.anthropic.com/settings/keys) |
+| `ANTHROPIC_MODEL` | モデルID（オプション） | `claude-sonnet-5` |
+| `LINK_TOKEN_SECRET` | 署名用シークレット | 自分で生成（下記参照） |
+| `CRON_SECRET` | Cron認証シークレット | 自分で生成（下記参照） |
+| `APP_BASE_URL` | `https://ai-hackason.vercel.app` | Vercel ダッシュボード |
+| `CORS_ALLOWED_ORIGINS` | `https://ai-hackason.vercel.app` | 自分で設定 |
 
 **セキュアなシークレット生成:**
 ```bash
-# 開発用シェルで安全なランダム文字列を生成
+# ローカルで安全なランダム文字列を生成
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
