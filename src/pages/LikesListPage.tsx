@@ -115,15 +115,18 @@ export default function LikesListPage() {
         ) : (
           <ul className="space-y-3">
             {visibleRows.map((row) => (
-              <li
-                key={row.likeId}
-                className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">{row.storeName}</p>
-                  {row.category && <p className="text-xs text-gray-500">{row.category}</p>}
-                </div>
-                <span className="text-red-500">♥</span>
+              <li key={row.likeId} className="bg-white rounded-lg shadow p-4">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/stores/${row.storeId}`)}
+                  className="w-full flex justify-between items-center text-left"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900 hover:underline">{row.storeName}</p>
+                    {row.category && <p className="text-xs text-gray-500">{row.category}</p>}
+                  </div>
+                  <span className="text-red-500">♥</span>
+                </button>
               </li>
             ))}
           </ul>

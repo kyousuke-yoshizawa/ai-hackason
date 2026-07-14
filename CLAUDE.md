@@ -41,7 +41,8 @@ npm run preview
 
 ```
 src/
-├── pages/               # 7画面: LoginPage, Dashboard, StoresPage,
+├── pages/               # 8画面: LoginPage, Dashboard, StoresPage,
+│                         #   StoreDetailPage(いいね・レビュー結線先, T13),
 │                         #   ReservationsListPage, LikesListPage,
 │                         #   AdminPage, ErrorManagementDashboard
 ├── components/           # 16コンポーネント: フォーム(StoreForm/UserForm)、
@@ -70,7 +71,7 @@ backend/                 # api/ と server/ が共有するドメインロジッ
                           #   auth/authz.ts（認可: is_active + store_managers判定）
                           #   domains/{crowd,crowdAnalytics,email,reservations,notifications}/
 scripts/                 # ローカル開発用cron（node-cron。本番はvercel.jsonのcrons）
-tests/                   # unit(10) + integration(13) + e2e(2) = 25ファイル
+tests/                   # unit(11) + integration(13) + e2e(2) = 26ファイル
 docs/architecture-audit/ # アーキテクチャ監査報告・実装手順書
 ```
 
@@ -261,7 +262,7 @@ marp docs/presentation/presentation.md -o docs/presentation/presentation.pdf
 
 - **Linting**: `npm run lint` (ESLint with TypeScript/TSX; max 0 warnings)
 - **Type checking**: `npm run build`（`src/` のみ、tsc -b）と `npm run typecheck`（`api/server/scripts/tests/src` 全体、tsconfig.backend.json）の2種類。strict mode 有効
-- **Tests**: `npm test`（Jest, 23 suites / 172 tests）+ `npm run test:e2e`（Playwright）
+- **Tests**: `npm test`（Jest, 24 suites / 174 tests）+ `npm run test:e2e`（Playwright）
 
 ## Common Patterns & Constraints
 
