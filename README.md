@@ -36,51 +36,58 @@
 
 ### 🚀 高速セットアップ（推奨）
 
-#### 1️⃣ Vercel Marketplace から Supabase 統合をインストール
+#### 1️⃣ Vercel Marketplace から Supabase 統合をインストール（インフラ担当 Kyosuke のみ）
 
 1. [Vercel ダッシュボード](https://vercel.com) → **Integrations** → **Supabase** を検索
 2. **Install** をクリック
 3. Supabase プロジェクトを選択
 4. Vercel プロジェクトをリンク
 
-✅ これで以下の環境変数が **Vercel に自動設定**されます：
+✅ これで以下の環境変数が **Vercel に自動設定**されます（**1回だけ設定すればチーム全員が使用**）：
 - `VITE_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-#### 2️⃣ npm run setup で残りを自動セットアップ
+⏭️ チームメンバーは以下にスキップしてください。
+
+#### 2️⃣ npm run setup で残りを自動セットアップ（チーム全員が初回に実行）
+
+各開発者が **自分のローカル環境で 1 回だけ**実行：
 
 ```bash
 # 依存関係をインストール（初回のみ）
 npm install
 
-# 環境変数を自動セットアップ
+# 環境変数を自動セットアップ（ローカル開発環境用）
 npm run setup
 ```
 
-✅ このコマンドが以下を自動実行します：
+✅ このコマンドが各開発者のローカル環境で以下を自動実行します：
 - `.env.example` から `.env` をコピー
-- `LINK_TOKEN_SECRET` と `CRON_SECRET` をランダム生成
+- `LINK_TOKEN_SECRET` と `CRON_SECRET` をランダム生成（各環境で異なる）
 - デフォルト値を自動設定（`PORT`、`EMAIL_FROM_ADDRESS` など）
 - ローカル開発用の URL を設定
 
-#### 3️⃣ 手動で 2 つのキーを設定
+#### 3️⃣ 手動で 2 つのキーを設定（チーム全員が同じキーを使用）
 
 生成された `.env` ファイルを編集して、以下を追加：
 
-| キー | 取得元 |
-|------|--------|
-| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) → Create API Key |
-| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) |
+⚠️ **重要**: 以下の 2 つのキーは**チーム全員が同じ値を使用します**
+（Kyosuke から教えてもらうか、チーム共有ドキュメントを参照）
+
+| キー | 取得元 | 共有方法 |
+|------|--------|---------|
+| `SENDGRID_API_KEY` | [SendGrid Dashboard](https://app.sendgrid.com/settings/api_keys) | チーム共有（Kyosuke が管理） |
+| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) | チーム共有（Kyosuke が管理） |
 
 ```bash
 # .env を編集
 nano .env
 ```
 
-以下を追加：
+Kyosuke から提供されたキーを追加：
 ```bash
-SENDGRID_API_KEY=SG.your-api-key-here
-ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+SENDGRID_API_KEY=SG.xxx...（チーム共有キー）
+ANTHROPIC_API_KEY=sk-ant-xxx...（チーム共有キー）
 ```
 
 ---
@@ -216,7 +223,7 @@ cd /mnt/c/Develop/Projects/ai-hackason
 npm install
 ```
 
-4. **環境変数を自動セットアップ** ✨
+4. **環境変数を自動セットアップ**（初回のみ）✨
 
 ```bash
 npm run setup
@@ -228,19 +235,19 @@ npm run setup
 - ✅ デフォルト値を自動設定（`PORT`、`EMAIL_FROM_ADDRESS` など）
 - ✅ ローカル開発用の URL を設定
 
-5. **手動で 2 つのキーを設定**
+5. **手動で 2 つのキーを設定**（チーム共有キーを追加）
 
-生成された `.env` ファイルを編集して、以下を追加：
+生成された `.env` ファイルを編集して、チーム共有キーを追加：
 
 ```bash
-# SendGrid API Key
-# https://app.sendgrid.com/settings/api_keys から取得
+# SendGrid API Key（チーム共有）
 SENDGRID_API_KEY=SG.your-api-key-here
 
-# Claude API Key
-# https://console.anthropic.com/settings/keys から取得
+# Claude API Key（チーム共有）
 ANTHROPIC_API_KEY=sk-ant-your-api-key-here
 ```
+
+⏹️ **キーの取得**は Kyosuke に確認してください（各自で発行しないでください）
 
 6. 開発サーバーを起動:
 
