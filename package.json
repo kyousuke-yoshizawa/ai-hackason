@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "setup": "node scripts/setup-env.cjs",
     "dev": "vite",
     "server": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
