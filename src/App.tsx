@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import StoresPage from './pages/StoresPage'
+import StoreDetailPage from './pages/StoreDetailPage'
 import ReservationsListPage from './pages/ReservationsListPage'
 import LikesListPage from './pages/LikesListPage'
 import AdminPage from './pages/AdminPage'
@@ -41,6 +42,14 @@ function App() {
           element={
             <ProtectedRoute>
               <StoresPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stores/:storeId"
+          element={
+            <ProtectedRoute>
+              <StoreDetailPage />
             </ProtectedRoute>
           }
         />

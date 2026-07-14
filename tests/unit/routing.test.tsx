@@ -8,6 +8,10 @@ jest.mock('../../src/context/AuthContext', () => ({ useAuth: jest.fn() }))
 jest.mock('../../src/pages/LoginPage', () => ({ __esModule: true, default: () => <div>LoginPageStub</div> }))
 jest.mock('../../src/pages/Dashboard', () => ({ __esModule: true, default: () => <div>DashboardStub</div> }))
 jest.mock('../../src/pages/StoresPage', () => ({ __esModule: true, default: () => <div>StoresPageStub</div> }))
+jest.mock('../../src/pages/StoreDetailPage', () => ({
+  __esModule: true,
+  default: () => <div>StoreDetailPageStub</div>,
+}))
 jest.mock('../../src/pages/ReservationsListPage', () => ({
   __esModule: true,
   default: () => <div>ReservationsListPageStub</div>,
@@ -56,6 +60,18 @@ describe('App routing (T10)', () => {
     renderAt('/stores')
 
     expect(screen.getByText('StoresPageStub')).toBeTruthy()
+  })
+
+  it('/stores/:storeId で店舗詳細ページが開く（T13: いいね・レビューの結線先）', () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      user: { role: 'user' },
+      hasPermission: () => false,
+    })
+    renderAt('/stores/store-1')
+
+    expect(screen.getByText('StoreDetailPageStub')).toBeTruthy()
   })
 
   it('admin以外が /admin を開くと /dashboard へリダイレクトされる', () => {

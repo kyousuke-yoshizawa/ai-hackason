@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
+import { getStoreLikeCount } from '../lib/likes'
+import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
 
 export default function StoresPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [stores, setStores] = useState<AdminStore[]>([])
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
@@ -14,7 +19,11 @@ export default function StoresPage() {
   useEffect(() => {
     api
       .get<{ data: AdminStore[] }>('/api/stores')
-      .then((res) => setStores(res.data))
+      .then(async (res) => {
+        setStores(res.data)
+        const counts = await Promise.all(res.data.map((store) => getStoreLikeCount(store.id)))
+        setLikeCounts(Object.fromEntries(res.data.map((store, i) => [store.id, counts[i].count])))
+      })
       .catch((err) => setError(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました'))
       .finally(() => setIsLoading(false))
   }, [])
@@ -46,21 +55,32 @@ export default function StoresPage() {
         ) : (
           <ul className="space-y-3">
             {stores.map((store) => (
-              <li key={store.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-gray-900">{store.name}</p>
+              <li
+                key={store.id}
+                data-testid="store-item"
+                className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
+              >
+                <button
+                  type="button"
+                  onClick={() => navigate(`/stores/${store.id}`)}
+                  className="text-left"
+                >
+                  <p className="font-medium text-gray-900 hover:underline">{store.name}</p>
                   <p className="text-xs text-gray-500">
                     {store.category}
                     {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
                   </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setReservingStore(store)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
-                >
-                  座席予約
                 </button>
+                <div className="flex items-center gap-3">
+                  {user && <LikeButton userId={user.id} storeId={store.id} initialCount={likeCounts[store.id] ?? 0} />}
+                  <button
+                    type="button"
+                    onClick={() => setReservingStore(store)}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    座席予約
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

@@ -45,6 +45,7 @@ export default function LikeButton({ userId, storeId, initialCount = 0 }: LikeBu
   return (
     <button
       type="button"
+      data-testid="like-button"
       onClick={handleClick}
       disabled={isBusy}
       className="inline-flex items-center gap-1 text-sm font-medium disabled:opacity-60"
@@ -52,7 +53,9 @@ export default function LikeButton({ userId, storeId, initialCount = 0 }: LikeBu
       aria-label={liked ? 'いいねを解除する' : 'いいねする'}
     >
       <span className={liked ? 'text-red-500' : 'text-gray-400'}>♥</span>
-      <span className={liked ? 'text-red-600' : 'text-gray-600'}>{count}</span>
+      <span className={liked ? 'text-red-600' : 'text-gray-600'} data-testid="like-count">
+        {count}
+      </span>
     </button>
   )
 }
