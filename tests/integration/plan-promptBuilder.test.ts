@@ -7,6 +7,7 @@ jest.mock('../../backend/db', () => {
 import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import { buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder'
+import * as reviewsRepository from '../../backend/domains/social/reviewsRepository'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 
@@ -50,5 +51,18 @@ describe('buildStoreContexts', () => {
     expect(context.rating).toBeNull()
     expect(context.crowdText).toContain('混雑情報なし')
     expect(context.score).toBeGreaterThan(0)
+  })
+
+  it('1店舗のレビュー統計取得が例外を投げても、その店舗をフォールバック扱いにして他の店舗の処理は継続する', async () => {
+    const spy = jest.spyOn(reviewsRepository, 'getStoreReviewStats').mockRejectedValueOnce(new Error('db down'))
+    const otherStore: StoreForPrompt = { ...STORE, id: 'store-2', name: 'ことりカフェ' }
+
+    const contexts = await buildStoreContexts([STORE, otherStore])
+
+    expect(contexts).toHaveLength(2)
+    expect(contexts[0].rating).toBeNull()
+    expect(contexts[0].score).toBeGreaterThan(0)
+
+    spy.mockRestore()
   })
 })
