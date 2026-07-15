@@ -26,7 +26,7 @@ export default function StarRating({ rating, onChange, size = 'md' }: StarRating
           disabled={!interactive}
           onClick={() => onChange?.(star)}
           className={`${interactive ? 'cursor-pointer' : 'cursor-default'} ${
-            star <= Math.round(rating) ? 'text-yellow-400' : 'text-gray-300'
+            star <= Math.round(rating) ? 'text-sand-500' : 'text-wood-200'
           }`}
           aria-label={`${star}つ星`}
         >

@@ -94,14 +94,14 @@ export function StoreMediaPanel({
         }}
         onDragLeave={() => setIsDraggingOver(false)}
         onDrop={handleDrop}
-        className={`mb-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition ${
-          isDraggingOver ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-gray-50'
+        className={`mb-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-8 text-center transition ${
+          isDraggingOver ? 'border-leaf-400 bg-leaf-50' : 'border-wood-200 bg-sand-100/60'
         }`}
       >
-        <p className="mb-2 text-sm text-gray-600">
+        <p className="mb-2 text-sm font-bold text-wood-600">
           ファイルをドラッグ＆ドロップ、またはクリックして選択
         </p>
-        <label className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        <label className="ac-btn-primary cursor-pointer">
           {isUploading ? 'アップロード中...' : 'ファイルを選択'}
           <input
             type="file"
@@ -111,43 +111,43 @@ export function StoreMediaPanel({
             className="hidden"
           />
         </label>
-        <p className="mt-2 text-xs text-gray-400">画像（PNG/JPEG/WebP/GIF）・PDF、10MBまで</p>
+        <p className="mt-2 text-xs text-wood-400">画像（PNG/JPEG/WebP/GIF）・PDF、10MBまで</p>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-3 py-2 text-sm font-bold text-bubble-700">
           {error}
         </p>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">読み込み中...</p>
+        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
       ) : media.length === 0 ? (
-        <p className="rounded-lg bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+        <p className="rounded-2xl border-2 border-dashed border-wood-200 bg-sand-50/60 px-4 py-6 text-center text-sm text-wood-400">
           ファイルがまだありません
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-3">
           {media.map((item) => (
-            <li key={item.id} className="rounded-lg border border-gray-200 p-2">
+            <li key={item.id} className="rounded-2xl border-2 border-wood-200 bg-sand-50 p-2">
               {item.media_type === 'image' ? (
                 <img
                   src={item.url}
                   alt={item.file_name}
-                  className="mb-2 h-24 w-full rounded object-cover"
+                  className="mb-2 h-24 w-full rounded-xl object-cover"
                 />
               ) : (
-                <div className="mb-2 flex h-24 w-full items-center justify-center rounded bg-gray-100 text-3xl">
+                <div className="mb-2 flex h-24 w-full items-center justify-center rounded-xl bg-sand-100 text-3xl">
                   📄
                 </div>
               )}
-              <p className="truncate text-xs text-gray-700" title={item.file_name}>
+              <p className="truncate text-xs font-bold text-wood-700" title={item.file_name}>
                 {item.file_name}
               </p>
               <button
                 type="button"
                 onClick={() => handleDelete(item)}
-                className="mt-1 text-xs font-medium text-red-600 hover:underline"
+                className="mt-1 text-xs font-bold text-bubble-600 hover:underline"
               >
                 削除
               </button>

@@ -1,5 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Cloud from '../components/decor/Cloud'
+import Leaf from '../components/decor/Leaf'
+import GrassBorder from '../components/decor/GrassBorder'
 
 export default function Dashboard() {
   const { user, logout, hasPermission } = useAuth()
@@ -12,137 +15,121 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">ログインしてください</p>
+      <div className="ac-page-bg flex items-center justify-center">
+        <p className="font-bold text-wood-600">ログインしてください</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="ac-page-bg">
       {/* ヘッダー */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI Hackathon 2026</h1>
-            <p className="text-sm text-gray-600">ダッシュボード</p>
+      <header className="ac-header">
+        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-2">
+            <Leaf className="h-9 w-9" color="#dff1cf" />
+            <div>
+              <h1 className="text-xl font-extrabold">ことこと町</h1>
+              <p className="text-xs font-bold text-leaf-100">お出かけプラン ダッシュボード</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/likes"
-              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
-            >
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/likes" className="ac-btn-secondary !px-4 !py-2 text-sm">
               ♥ いいね一覧
             </Link>
-            <Link
-              to="/stores"
-              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
-            >
+            <Link to="/stores" className="ac-btn-secondary !px-4 !py-2 text-sm">
               店舗一覧・予約
             </Link>
-            <Link
-              to="/reservations"
-              className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition"
-            >
+            <Link to="/reservations" className="ac-btn-secondary !px-4 !py-2 text-sm">
               予約一覧
             </Link>
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-600">{user.email}</p>
-            </div>
             {user.role === 'admin' && (
-              <Link
-                to="/admin"
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
-              >
+              <Link to="/admin" className="ac-btn-primary !px-4 !py-2 text-sm">
                 管理画面
               </Link>
             )}
             {hasPermission('users', 'delete') && (
-              <Link
-                to="/admin/errors"
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
-              >
+              <Link to="/admin/errors" className="ac-btn-primary !px-4 !py-2 text-sm">
                 エラー管理
               </Link>
             )}
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
-            >
+            <button onClick={handleLogout} className="ac-btn-danger !px-4 !py-2 text-sm">
               ログアウト
             </button>
           </div>
         </div>
+        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
       </header>
 
       {/* メインコンテンツ */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* ウェルカムカード */}
-          <div className="md:col-span-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg p-6 text-white">
-            <h2 className="text-2xl font-bold mb-2">ようこそ、{user.name}さん</h2>
-            <p className="text-indigo-100">
-              AI Hackathon 2026 プロジェクトのダッシュボードへようこそ。
-              {user.role === 'admin' && '管理者権限でログインしています。'}
+          <div className="ac-card relative md:col-span-3 bg-leaf-500 border-leaf-700 text-white">
+            <Leaf className="absolute -right-4 -top-6 h-20 w-20 rotate-12 opacity-20" color="#ffffff" />
+            <h2 className="mb-2 text-2xl font-extrabold">ようこそ、{user.name}さん 🌿</h2>
+            <p className="text-leaf-50">
+              ことこと町のお出かけプランを一緒に見つけましょう。
+              {user.role === 'admin' && ' 管理者権限でログインしています。'}
             </p>
           </div>
 
           {/* スタットカード */}
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h3 className="text-gray-600 text-sm font-medium mb-2">プロジェクト状態</h3>
-            <p className="text-3xl font-bold text-indigo-600 mb-2">進行中</p>
-            <p className="text-xs text-gray-500">開発フェーズ</p>
+          <div className="ac-card-sm">
+            <h3 className="mb-2 text-sm font-bold text-wood-500">プロジェクト状態</h3>
+            <p className="mb-2 text-3xl font-extrabold text-leaf-600">進行中</p>
+            <p className="text-xs text-wood-400">開発フェーズ</p>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h3 className="text-gray-600 text-sm font-medium mb-2">チームメンバー</h3>
-            <p className="text-3xl font-bold text-blue-600 mb-2">4</p>
-            <p className="text-xs text-gray-500">名</p>
+          <div className="ac-card-sm">
+            <h3 className="mb-2 text-sm font-bold text-wood-500">チームメンバー</h3>
+            <p className="mb-2 text-3xl font-extrabold text-sky-600">4</p>
+            <p className="text-xs text-wood-400">名</p>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h3 className="text-gray-600 text-sm font-medium mb-2">ユーザ権限</h3>
-            <p className="text-lg font-bold text-gray-900 mb-2 capitalize">{user.role}</p>
-            <p className="text-xs text-gray-500">
+          <div className="ac-card-sm">
+            <h3 className="mb-2 text-sm font-bold text-wood-500">ユーザ権限</h3>
+            <p className="mb-2 text-lg font-extrabold capitalize text-wood-800">{user.role}</p>
+            <p className="text-xs text-wood-400">
               {user.role === 'admin' ? '管理者' : '標準ユーザ'}
             </p>
           </div>
         </div>
 
-        {/* 管理者専用メニュー（Issue #22: role に応じたコンディショナルレンダリング） */}
+        {/* 管理者専用メニュー */}
         {hasPermission('users', 'delete') && (
-          <div className="bg-white rounded-lg p-6 shadow mb-8 border-2 border-indigo-200">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">管理者メニュー</h3>
-            <p className="text-sm text-gray-600">
+          <div className="ac-card mb-8 border-sand-400">
+            <h3 className="mb-2 text-lg font-extrabold text-wood-800">管理者メニュー</h3>
+            <p className="text-sm text-wood-500">
               このセクションは admin 権限を持つユーザにのみ表示されます。
             </p>
           </div>
         )}
 
         {/* アクティビティセクション */}
-        <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">最近のアクティビティ</h3>
+        <div className="ac-card">
+          <h3 className="mb-4 text-lg font-extrabold text-wood-800">最近のアクティビティ</h3>
           <div className="space-y-3">
-            <div className="flex gap-3 py-2 border-b border-gray-200 last:border-b-0">
-              <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
+            <div className="flex gap-3 border-b border-sand-200 py-2 last:border-b-0">
+              <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-leaf-500"></div>
               <div>
-                <p className="text-sm font-medium text-gray-900">ログイン画面の実装が完了しました</p>
-                <p className="text-xs text-gray-500">本日</p>
+                <p className="text-sm font-bold text-wood-800">ログイン画面の実装が完了しました</p>
+                <p className="text-xs text-wood-400">本日</p>
               </div>
             </div>
-            <div className="flex gap-3 py-2 border-b border-gray-200 last:border-b-0">
-              <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
+            <div className="flex gap-3 border-b border-sand-200 py-2 last:border-b-0">
+              <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-leaf-500"></div>
               <div>
-                <p className="text-sm font-medium text-gray-900">ダッシュボード画面がセットアップされました</p>
-                <p className="text-xs text-gray-500">本日</p>
+                <p className="text-sm font-bold text-wood-800">ダッシュボード画面がセットアップされました</p>
+                <p className="text-xs text-wood-400">本日</p>
               </div>
             </div>
             <div className="flex gap-3 py-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-sky-500"></div>
               <div>
-                <p className="text-sm font-medium text-gray-900">プロジェクトが開始されました</p>
-                <p className="text-xs text-gray-500">3日前</p>
+                <p className="text-sm font-bold text-wood-800">プロジェクトが開始されました</p>
+                <p className="text-xs text-wood-400">3日前</p>
               </div>
             </div>
           </div>
@@ -150,9 +137,9 @@ export default function Dashboard() {
       </main>
 
       {/* フッター */}
-      <footer className="mt-12 bg-gray-900 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-400">© 2026 AI Hackathon. All rights reserved.</p>
+      <footer className="ac-footer mt-12 py-8">
+        <div className="mx-auto max-w-7xl px-4 text-center">
+          <p className="text-sm text-wood-200">🍃 2026 ことこと町. All rights reserved.</p>
         </div>
       </footer>
     </div>

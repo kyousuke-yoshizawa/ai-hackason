@@ -14,7 +14,7 @@ interface CrowdAnalyticsRow {
 
 const LEVEL_VALUE: Record<CongestionLevel, number> = { low: 0, medium: 1, high: 2 }
 const LEVEL_LABEL: Record<CongestionLevel, string> = { low: '空いている', medium: '普通', high: '混雑' }
-const LEVEL_COLOR: Record<CongestionLevel, string> = { low: 'bg-green-500', medium: 'bg-amber-500', high: 'bg-red-500' }
+const LEVEL_COLOR: Record<CongestionLevel, string> = { low: 'bg-leaf-500', medium: 'bg-sand-500', high: 'bg-bubble-500' }
 const WEEKDAY_LABEL = ['日', '月', '火', '水', '木', '金', '土']
 
 const RANGE_OPTIONS = [
@@ -140,10 +140,10 @@ export function CrowdAnalyticsDashboard({
           <button
             key={opt.days}
             onClick={() => setRangeDays(opt.days)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`rounded-full px-3 py-1.5 text-sm font-bold transition ${
               rangeDays === opt.days
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-leaf-500 text-white shadow-ac-sm'
+                : 'bg-sand-100 text-wood-600 hover:bg-sand-200'
             }`}
           >
             {opt.label}
@@ -152,28 +152,28 @@ export function CrowdAnalyticsDashboard({
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">読み込み中...</p>
+        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
       ) : error ? (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm font-bold text-bubble-600">{error}</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-wood-400">
           集計データがありません。混雑報告が集まり次第、翌日以降に反映されます。
         </p>
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-4">
-            <div className="rounded-lg bg-gray-50 p-4">
-              <p className="text-xs font-medium text-gray-500">平均混雑度</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="ac-card-sm">
+              <p className="text-xs font-bold text-wood-500">平均混雑度</p>
+              <p className="text-2xl font-extrabold text-wood-800">
                 {averageLevel !== null ? averageLevel.toFixed(1) : '-'}
               </p>
-              <p className="text-xs text-gray-400">0: 空いている 〜 2: 混雑</p>
+              <p className="text-xs text-wood-400">0: 空いている 〜 2: 混雑</p>
             </div>
-            <div className="rounded-lg bg-gray-50 p-4">
-              <p className="text-xs font-medium text-gray-500">最も混む時間帯</p>
-              <p className="text-2xl font-bold text-gray-900">{mostCrowded?.label ?? '-'}</p>
+            <div className="ac-card-sm">
+              <p className="text-xs font-bold text-wood-500">最も混む時間帯</p>
+              <p className="text-2xl font-extrabold text-wood-800">{mostCrowded?.label ?? '-'}</p>
               {mostCrowded && (
-                <p className="text-xs text-gray-400">{LEVEL_LABEL[mostCrowded.level]}</p>
+                <p className="text-xs text-wood-400">{LEVEL_LABEL[mostCrowded.level]}</p>
               )}
             </div>
           </div>
@@ -181,16 +181,16 @@ export function CrowdAnalyticsDashboard({
           <div className="space-y-1">
             {hourly.map(({ hour, count, level }) => (
               <div key={hour} className="flex items-center gap-2 text-xs">
-                <span className="w-10 flex-shrink-0 text-right text-gray-500">{hour}時</span>
-                <div className="h-4 flex-1 overflow-hidden rounded bg-gray-100">
+                <span className="w-10 flex-shrink-0 text-right text-wood-500">{hour}時</span>
+                <div className="h-4 flex-1 overflow-hidden rounded-full bg-sand-100">
                   {count > 0 && (
                     <div
-                      className={`h-full ${level ? LEVEL_COLOR[level] : 'bg-gray-300'}`}
+                      className={`h-full ${level ? LEVEL_COLOR[level] : 'bg-sand-300'}`}
                       style={{ width: `${(count / maxCount) * 100}%` }}
                     />
                   )}
                 </div>
-                <span className="w-6 flex-shrink-0 text-gray-500">{count || ''}</span>
+                <span className="w-6 flex-shrink-0 text-wood-500">{count || ''}</span>
               </div>
             ))}
           </div>

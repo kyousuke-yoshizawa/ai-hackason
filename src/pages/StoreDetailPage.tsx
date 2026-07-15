@@ -7,6 +7,9 @@ import LikeButton from '../components/LikeButton'
 import StoreReviewSection from '../components/StoreReviewSection'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
+import Cloud from '../components/decor/Cloud'
+import Leaf from '../components/decor/Leaf'
+import GrassBorder from '../components/decor/GrassBorder'
 
 export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>()
@@ -33,18 +36,23 @@ export default function StoreDetailPage() {
   }, [storeId])
 
   if (isLoading) {
-    return <p className="p-8 text-center text-gray-500 text-sm">読み込み中...</p>
+    return (
+      <div className="ac-page-bg flex items-center justify-center">
+        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+      </div>
+    )
   }
 
   if (error || !store) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-sm mb-4">{error ?? '店舗が見つかりません'}</p>
+      <div className="ac-page-bg flex items-center justify-center">
+        <div className="ac-card relative text-center">
+          <Leaf className="absolute -top-6 -left-6 h-14 w-14 -rotate-12 drop-shadow" />
+          <p className="mb-4 text-sm font-bold text-bubble-700">{error ?? '店舗が見つかりません'}</p>
           <button
             type="button"
             onClick={() => navigate('/stores')}
-            className="text-sm text-indigo-600 hover:underline"
+            className="ac-btn-secondary !px-4 !py-2 text-sm"
           >
             ← 店舗一覧に戻る
           </button>
@@ -54,26 +62,30 @@ export default function StoreDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+    <div className="ac-page-bg">
+      <header className="ac-header relative">
+        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
+        <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
           <button
             type="button"
             onClick={() => navigate('/stores')}
-            className="text-sm text-indigo-600 hover:underline"
+            className="ac-btn-ghost !px-3 !py-1.5 text-sm !text-white hover:!bg-white/20"
           >
             ← 店舗一覧に戻る
           </button>
-          <h1 className="text-xl font-bold text-gray-900">店舗詳細</h1>
+          <h1 className="text-xl font-extrabold">店舗詳細</h1>
         </div>
+        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-start mb-2">
+      <main className="relative mx-auto max-w-4xl space-y-6 px-4 py-8">
+        <Leaf className="absolute -top-2 right-2 h-9 w-9 rotate-12 opacity-70" />
+
+        <div className="ac-card">
+          <div className="mb-2 flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{store.name}</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-2xl font-extrabold text-wood-800">{store.name}</h2>
+              <p className="mt-1 text-sm text-wood-500">
                 {store.category}
                 {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
               </p>
@@ -84,7 +96,7 @@ export default function StoreDetailPage() {
           <button
             type="button"
             onClick={() => setIsReserving(true)}
-            className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+            className="ac-btn-primary mt-4 !px-4 !py-2 text-sm"
           >
             座席予約
           </button>

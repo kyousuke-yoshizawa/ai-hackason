@@ -77,47 +77,47 @@ export function UserForm({
     <Modal title={isEdit ? 'ユーザ編集' : 'ユーザ新規登録'} onClose={onCancel}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">メールアドレス</label>
+          <label className="ac-label">メールアドレス</label>
           <input
             type="email"
             disabled={isEdit}
             value={values.email}
             onChange={(e) => setValues({ ...values, email: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+            className="ac-input disabled:bg-sand-200/60 disabled:text-wood-400"
           />
-          {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+          {errors.email && <p className="mt-1 text-xs font-bold text-bubble-600">{errors.email}</p>}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="ac-label">
             パスワード{isEdit && '（変更する場合のみ入力）'}
           </label>
           <input
             type="password"
             value={values.password}
             onChange={(e) => setValues({ ...values, password: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input"
           />
-          {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+          {errors.password && <p className="mt-1 text-xs font-bold text-bubble-600">{errors.password}</p>}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">名前</label>
+          <label className="ac-label">名前</label>
           <input
             type="text"
             value={values.name}
             onChange={(e) => setValues({ ...values, name: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input"
           />
-          {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+          {errors.name && <p className="mt-1 text-xs font-bold text-bubble-600">{errors.name}</p>}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">ロール</label>
+          <label className="ac-label">ロール</label>
           <select
             value={values.role}
             onChange={(e) => setValues({ ...values, role: e.target.value as AdminUser['role'] })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input"
           >
             <option value="user">user</option>
             <option value="store_manager">store_manager</option>
@@ -126,18 +126,10 @@ export function UserForm({
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
-          >
+          <button type="button" onClick={onCancel} className="ac-btn-secondary">
             キャンセル
           </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={isSubmitting} className="ac-btn-primary">
             {isEdit ? '更新' : '登録'}
           </button>
         </div>
