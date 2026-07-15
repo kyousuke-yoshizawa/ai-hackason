@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
@@ -6,6 +6,8 @@ import { getStoreLikeCount } from '../lib/likes'
 import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
+
+type SortKey = 'name' | 'category'
 
 export default function StoresPage() {
   const navigate = useNavigate()
@@ -15,6 +17,9 @@ export default function StoresPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
+  const [searchText, setSearchText] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [sortKey, setSortKey] = useState<SortKey>('name')
 
   useEffect(() => {
     api
@@ -27,6 +32,23 @@ export default function StoresPage() {
       .catch((err) => setError(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました'))
       .finally(() => setIsLoading(false))
   }, [])
+
+  const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
+
+  const visibleStores = useMemo(() => {
+    const text = searchText.trim().toLowerCase()
+    const filtered = stores.filter((s) => {
+      const matchesText = text === '' || s.name.toLowerCase().includes(text)
+      const matchesCategory = categoryFilter === 'all' || s.category === categoryFilter
+      return matchesText && matchesCategory
+    })
+
+    return [...filtered].sort((a, b) => {
+      const primary = a[sortKey].localeCompare(b[sortKey], 'ja')
+      if (primary !== 0) return primary
+      return a.name.localeCompare(b.name, 'ja')
+    })
+  }, [stores, searchText, categoryFilter, sortKey])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,13 +70,51 @@ export default function StoresPage() {
           <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</p>
         )}
 
+        <div className="flex flex-wrap gap-3 mb-6">
+          <input
+            type="text"
+            placeholder="店舗名で検索"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          />
+
+          {categories.length > 0 && (
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="all">すべてのカテゴリ</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="name">店舗名順</option>
+            <option value="category">カテゴリ順</option>
+          </select>
+        </div>
+
         {isLoading ? (
           <p className="text-gray-500 text-sm">読み込み中...</p>
         ) : stores.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">店舗がありません</div>
+        ) : visibleStores.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            検索条件に一致する店舗がありません
+          </div>
         ) : (
           <ul className="space-y-3">
-            {stores.map((store) => (
+            {visibleStores.map((store) => (
               <li
                 key={store.id}
                 data-testid="store-item"
