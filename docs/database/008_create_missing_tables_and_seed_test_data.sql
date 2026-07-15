@@ -59,17 +59,17 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 
 INSERT INTO stores (id, name, category, x, y, open_time, close_time, price_min, price_max, created_by)
-SELECT '10000000-0000-4000-8000-000000000001', '【テスト】ことこと食堂', 'restaurant', 50.00, 60.00, '11:00', '21:00', 800, 1500, u.id
+SELECT '10000000-0000-4000-8000-000000000001', 'ことこと食堂', 'restaurant', 50.00, 60.00, '11:00', '21:00', 800, 1500, u.id
 FROM users u WHERE u.email = 'yoshizawa@ai-hackason.example'
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO stores (id, name, category, x, y, open_time, close_time, price_min, price_max, created_by)
-SELECT '10000000-0000-4000-8000-000000000002', '【テスト】ことこと珈琲', 'cafe', 120.50, 80.25, '08:00', '19:00', 400, 900, u.id
+SELECT '10000000-0000-4000-8000-000000000002', 'ことこと珈琲', 'cafe', 120.50, 80.25, '08:00', '19:00', 400, 900, u.id
 FROM users u WHERE u.email = 'yoshizawa@ai-hackason.example'
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO stores (id, name, category, x, y, open_time, close_time, price_min, price_max, created_by)
-SELECT '10000000-0000-4000-8000-000000000003', '【テスト】ことこと雑貨店', 'goods', 200.00, 150.75, '10:00', '20:00', 300, 5000, u.id
+SELECT '10000000-0000-4000-8000-000000000003', 'ことこと雑貨店', 'goods', 200.00, 150.75, '10:00', '20:00', 300, 5000, u.id
 FROM users u WHERE u.email = 'yoshizawa@ai-hackason.example'
 ON CONFLICT (id) DO NOTHING;
 
