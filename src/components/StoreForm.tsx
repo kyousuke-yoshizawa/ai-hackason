@@ -13,6 +13,11 @@ export interface AdminStore {
   close_time: string | null
   price_min: number | null
   price_max: number | null
+  // 一覧APIのみが返す集計値（Issue #84）。詳細取得等では未設定の場合がある
+  like_count?: number
+  avg_rating?: number
+  review_count?: number
+  crowd_level?: 'low' | 'medium' | 'high' | null
 }
 
 export interface StoreFormValues {
