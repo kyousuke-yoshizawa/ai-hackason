@@ -20,8 +20,10 @@ export default function StoresPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
-  const [searchText, setSearchText] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [draftSearchText, setDraftSearchText] = useState('')
+  const [draftCategoryFilter, setDraftCategoryFilter] = useState('all')
+  const [appliedSearchText, setAppliedSearchText] = useState('')
+  const [appliedCategoryFilter, setAppliedCategoryFilter] = useState('all')
   const [sortKey, setSortKey] = useState<SortKey>('name')
 
   useEffect(() => {
@@ -38,11 +40,23 @@ export default function StoresPage() {
 
   const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
 
+  const handleSearch = () => {
+    setAppliedSearchText(draftSearchText)
+    setAppliedCategoryFilter(draftCategoryFilter)
+  }
+
+  const handleClear = () => {
+    setDraftSearchText('')
+    setDraftCategoryFilter('all')
+    setAppliedSearchText('')
+    setAppliedCategoryFilter('all')
+  }
+
   const visibleStores = useMemo(() => {
-    const text = searchText.trim().toLowerCase()
+    const text = appliedSearchText.trim().toLowerCase()
     const filtered = stores.filter((s) => {
       const matchesText = text === '' || s.name.toLowerCase().includes(text)
-      const matchesCategory = categoryFilter === 'all' || s.category === categoryFilter
+      const matchesCategory = appliedCategoryFilter === 'all' || s.category === appliedCategoryFilter
       return matchesText && matchesCategory
     })
 
@@ -51,7 +65,7 @@ export default function StoresPage() {
       if (primary !== 0) return primary
       return a.name.localeCompare(b.name, 'ja')
     })
-  }, [stores, searchText, categoryFilter, sortKey])
+  }, [stores, appliedSearchText, appliedCategoryFilter, sortKey])
 
   return (
     <div className="ac-page-bg">
@@ -81,15 +95,15 @@ export default function StoresPage() {
           <input
             type="text"
             placeholder="店舗名で検索"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            value={draftSearchText}
+            onChange={(e) => setDraftSearchText(e.target.value)}
             className="ac-input !w-auto text-sm"
           />
 
           {categories.length > 0 && (
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              value={draftCategoryFilter}
+              onChange={(e) => setDraftCategoryFilter(e.target.value)}
               className="ac-input !w-auto text-sm"
             >
               <option value="all">すべてのカテゴリ</option>
@@ -100,6 +114,13 @@ export default function StoresPage() {
               ))}
             </select>
           )}
+
+          <button onClick={handleSearch} className="ac-btn-secondary text-sm">
+            検索
+          </button>
+          <button onClick={handleClear} className="ac-btn-ghost text-sm">
+            クリア
+          </button>
 
           <select
             value={sortKey}
