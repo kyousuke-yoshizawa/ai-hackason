@@ -31,7 +31,7 @@ GitHub Actions により自動で入力されるカラムです。
 - **型**：URL
 - **説明**：GitHub PR への直接リンク
 - **入力方法**：自動（GitHub から）
-- **例**：「https://github.com/dx-ai-sas-com-organization/repository-007/pull/7」
+- **例**：「https://github.com/kyousuke-yoshizawa/ai-hackason/pull/7」
 
 ## 推奨カラム（手動入力）
 

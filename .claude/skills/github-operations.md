@@ -96,7 +96,7 @@ description: GitHub MCP ツールを使用した汎用GitHub操作スキル。PR
 
 1. **リポジトリ情報の取得**：
    - 現在の git リポジトリから owner と repo を取得
-   - デフォルト：`dx-ai-sas-com-organization/repository-007`
+   - デフォルト：`kyousuke-yoshizawa/ai-hackason`
 
 2. **ToolSearch でスキーマ取得**：
    - 使用するツール（例：`mcp__github__create_pull_request`）のスキーマを ToolSearch で取得
@@ -167,7 +167,7 @@ gh pr merge <PR番号> --merge
 
 ## リポジトリの自動判定
 
-このスキルは実行時に現在の git リポジトリから owner と repo 名を自動判定します。デフォルトでは `dx-ai-sas-com-organization/repository-007` をターゲットします。
+このスキルは実行時に現在の git リポジトリから owner と repo 名を自動判定します。デフォルトでは `kyousuke-yoshizawa/ai-hackason` をターゲットします。
 
 ## 実装詳細
 

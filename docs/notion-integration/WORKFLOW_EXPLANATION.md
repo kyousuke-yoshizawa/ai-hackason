@@ -113,7 +113,7 @@ Notion API を使用して、指定のデータベースに新しいページを
 新しいページ
 ├─ PRタイトル: "ログイン機能とダッシュボード画面を実装"
 ├─ 担当者: "yoshizawa"
-├─ PRリンク: "https://github.com/dx-ai-sas-com-organization/repository-007/pull/7"
+├─ PRリンク: "https://github.com/kyousuke-yoshizawa/ai-hackason/pull/7"
 └─ [その他のカラム]: （手動で追記可能）
 ```
 
