@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 import { StoreMediaPanel } from './StoreMediaPanel'
+import { SortableHeader, SortDirection } from './SortableHeader'
+
+type StoreSortKey = 'name' | 'category' | 'open_time'
 
 export function StoreManagementPanel({
   onNotify,
@@ -11,16 +14,18 @@ export function StoreManagementPanel({
 }) {
   const [stores, setStores] = useState<AdminStore[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [categoryFilter, setCategoryFilter] = useState('')
+  const [searchText, setSearchText] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [sortKey, setSortKey] = useState<StoreSortKey>('name')
+  const [sortDir, setSortDir] = useState<SortDirection>('asc')
   const [formMode, setFormMode] = useState<'create' | AdminStore | null>(null)
   const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
   const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
 
-  const loadStores = async (category: string) => {
+  const loadStores = async () => {
     setIsLoading(true)
     try {
-      const query = category ? `?category=${encodeURIComponent(category)}` : ''
-      const res = await api.get<{ data: AdminStore[] }>(`/api/stores${query}`)
+      const res = await api.get<{ data: AdminStore[] }>('/api/stores')
       setStores(res.data)
     } catch (err) {
       onNotify(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました', 'error')
@@ -30,9 +35,9 @@ export function StoreManagementPanel({
   }
 
   useEffect(() => {
-    loadStores(categoryFilter)
+    loadStores()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFilter])
+  }, [])
 
   const handleSubmit = async (values: Omit<AdminStore, 'id'>) => {
     try {
@@ -44,7 +49,7 @@ export function StoreManagementPanel({
         onNotify('店舗を登録しました')
       }
       setFormMode(null)
-      await loadStores(categoryFilter)
+      await loadStores()
     } catch (err) {
       onNotify(err instanceof ApiError ? err.message : '保存に失敗しました', 'error')
     }
@@ -55,11 +60,39 @@ export function StoreManagementPanel({
     try {
       await api.delete(`/api/stores/${store.id}`)
       onNotify('店舗を削除しました')
-      await loadStores(categoryFilter)
+      await loadStores()
     } catch (err) {
       onNotify(err instanceof ApiError ? err.message : '削除に失敗しました', 'error')
     }
   }
+
+  const handleSort = (key: StoreSortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
+
+  const visibleStores = useMemo(() => {
+    const text = searchText.trim().toLowerCase()
+    const filtered = stores.filter((s) => {
+      const matchesText = text === '' || s.name.toLowerCase().includes(text)
+      const matchesCategory = categoryFilter === 'all' || s.category === categoryFilter
+      return matchesText && matchesCategory
+    })
+
+    const dir = sortDir === 'asc' ? 1 : -1
+    return [...filtered].sort((a, b) => {
+      if (sortKey === 'open_time') {
+        return (a.open_time ?? '').localeCompare(b.open_time ?? '') * dir
+      }
+      return a[sortKey].localeCompare(b[sortKey], 'ja') * dir
+    })
+  }, [stores, searchText, categoryFilter, sortKey, sortDir])
 
   return (
     <div>
@@ -68,11 +101,23 @@ export function StoreManagementPanel({
         <div className="flex items-center gap-3">
           <input
             type="text"
-            placeholder="カテゴリで絞込"
+            placeholder="店舗名で検索"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+          <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          />
+          >
+            <option value="all">すべてのカテゴリ</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
           <button
             onClick={() => setFormMode('create')}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -89,14 +134,32 @@ export function StoreManagementPanel({
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">名前</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">カテゴリ</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">営業時間</th>
+                <SortableHeader
+                  label="名前"
+                  sortKey="name"
+                  currentSortKey={sortKey}
+                  currentSortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="カテゴリ"
+                  sortKey="category"
+                  currentSortKey={sortKey}
+                  currentSortDir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="営業時間"
+                  sortKey="open_time"
+                  currentSortKey={sortKey}
+                  currentSortDir={sortDir}
+                  onSort={handleSort}
+                />
                 <th className="px-4 py-2 text-left font-medium text-gray-600">アクション</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
-              {stores.map((s) => (
+              {visibleStores.map((s) => (
                 <tr key={s.id}>
                   <td className="px-4 py-2">{s.name}</td>
                   <td className="px-4 py-2">{s.category}</td>
@@ -131,10 +194,10 @@ export function StoreManagementPanel({
                   </td>
                 </tr>
               ))}
-              {stores.length === 0 && (
+              {visibleStores.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
-                    店舗がありません
+                    {stores.length === 0 ? '店舗がありません' : '検索条件に一致する店舗がありません'}
                   </td>
                 </tr>
               )}
