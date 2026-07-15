@@ -1,25 +1,30 @@
+// ⚠️ このファイルの GET ハンドラ（メールリンクからの着地ページ）は HTML を返す設計
+// のため、統一エラー契約（{error, message} の JSON）の対象外として意図的に現状維持する
+// （docs/architecture-audit/refactoring-handbook.md T09）。POST ハンドラのみ JSON 契約に統一する。
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { verifyLinkToken, type LinkTokenPayload } from '../_lib/email/linkToken.js'
-import { getNotificationById, markNotificationLinkUsed } from '../_lib/email/repository.js'
-import { upsertCrowdStatus, insertCrowdHistory } from '../_lib/crowd/repository.js'
-import { requireStoreAccess } from '../_lib/requireStoreAccess.js'
-import type { CongestionLevel } from '../_lib/email/templates.js'
+import { verifyLinkToken, type LinkTokenPayload } from '../../backend/domains/email/linkToken.js'
+import { getNotificationById, markNotificationLinkUsed } from '../../backend/domains/email/repository.js'
+import { upsertCrowdStatus, insertCrowdHistory } from '../../backend/domains/crowd/repository.js'
+import { requireStoreAccess } from '../_http/requireStoreAccess.js'
+import type { CongestionLevel } from '../../backend/domains/crowd/types.js'
+import { reportCrowdBodySchema } from '../../backend/domains/crowd/schema.js'
+import { zodError } from '../../backend/http/respond.js'
 
 const VALID_LEVELS: CongestionLevel[] = ['low', 'medium', 'high']
 
 // POST /api/crowd/report { store_id, level } （store_manager もしくは admin が認証ヘッダ x-user-id 付きで直接報告する場合）
 async function handlePost(req: VercelRequest, res: VercelResponse) {
-  const { store_id: storeId, level } = req.body ?? {}
-
-  if (typeof storeId !== 'string' || typeof level !== 'string' || !VALID_LEVELS.includes(level as CongestionLevel)) {
-    return res.status(400).json({ error: 'store_id and a valid level are required' })
+  const parsed = reportCrowdBodySchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
   }
+  const { store_id: storeId, level } = parsed.data
 
   const userId = await requireStoreAccess(req, res, storeId)
   if (!userId) return
 
-  await upsertCrowdStatus(storeId, level as CongestionLevel, userId)
-  await insertCrowdHistory(storeId, level as CongestionLevel, userId)
+  await upsertCrowdStatus(storeId, level, userId)
+  await insertCrowdHistory(storeId, level, userId)
 
   return res.status(200).json({ storeId, level })
 }

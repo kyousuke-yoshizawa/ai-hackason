@@ -1,22 +1,20 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { supabaseAdmin } from '../db.js'
+import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdmin, requireAdminOrSelf, requireAuth } from '../middleware/auth.js'
+import { sendError, zodError } from '../../backend/http/respond.js'
+import { createUserSchema, updateUserSchema } from '../../backend/domains/users/schema.js'
 
 export const usersRouter = Router()
 
 const USER_PUBLIC_COLUMNS = 'id, email, name, role, store_id, is_active, created_at, updated_at'
-const ALLOWED_ROLES = ['admin', 'store_manager', 'user']
 
 usersRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, name, role = 'user' } = req.body ?? {}
-
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: 'email, password, name は必須です' })
+  const parsed = createUserSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
   }
-  if (!ALLOWED_ROLES.includes(role)) {
-    return res.status(400).json({ error: `role は ${ALLOWED_ROLES.join('/')} のいずれかです` })
-  }
+  const { email, password, name, role } = parsed.data
 
   const passwordHash = await bcrypt.hash(password, 10)
 
@@ -28,9 +26,9 @@ usersRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
 
   if (error) {
     if (error.code === '23505') {
-      return res.status(409).json({ error: 'このメールアドレスは既に登録されています' })
+      return sendError(res, 409, 'email_taken', 'このメールアドレスは既に登録されています')
     }
-    return res.status(500).json({ error: error.message })
+    return sendError(res, 500, 'internal_error', error.message)
   }
 
   res.status(201).json(data)
@@ -49,7 +47,7 @@ usersRouter.get('/', requireAuth, requireAdmin, async (req, res) => {
     .range(from, to)
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return sendError(res, 500, 'internal_error', error.message)
   }
 
   res.json({ data, page, limit, total: count ?? 0 })
@@ -63,14 +61,18 @@ usersRouter.get('/:id', requireAuth, requireAdminOrSelf(), async (req, res) => {
     .single()
 
   if (error || !data) {
-    return res.status(404).json({ error: 'ユーザが見つかりません' })
+    return sendError(res, 404, 'not_found', 'ユーザが見つかりません')
   }
 
   res.json(data)
 })
 
 usersRouter.put('/:id', requireAuth, requireAdminOrSelf(), async (req, res) => {
-  const { name, role, password } = req.body ?? {}
+  const parsed = updateUserSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
+  }
+  const { name, role, password } = parsed.data
   const updates: Record<string, unknown> = {}
 
   if (name !== undefined) updates.name = name
@@ -78,16 +80,13 @@ usersRouter.put('/:id', requireAuth, requireAdminOrSelf(), async (req, res) => {
 
   if (role !== undefined) {
     if (req.authedUser?.role !== 'admin') {
-      return res.status(403).json({ error: 'role の変更は管理者のみ可能です' })
-    }
-    if (!ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({ error: `role は ${ALLOWED_ROLES.join('/')} のいずれかです` })
+      return sendError(res, 403, 'forbidden', 'role の変更は管理者のみ可能です')
     }
     updates.role = role
   }
 
   if (Object.keys(updates).length === 0) {
-    return res.status(400).json({ error: '更新内容がありません' })
+    return sendError(res, 400, 'no_updates', '更新内容がありません')
   }
   updates.updated_at = new Date().toISOString()
 
@@ -99,7 +98,7 @@ usersRouter.put('/:id', requireAuth, requireAdminOrSelf(), async (req, res) => {
     .single()
 
   if (error || !data) {
-    return res.status(404).json({ error: 'ユーザが見つかりません' })
+    return sendError(res, 404, 'not_found', 'ユーザが見つかりません')
   }
 
   res.json(data)
@@ -114,7 +113,7 @@ usersRouter.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     .single()
 
   if (error || !data) {
-    return res.status(404).json({ error: 'ユーザが見つかりません' })
+    return sendError(res, 404, 'not_found', 'ユーザが見つかりません')
   }
 
   res.json({ message: 'ユーザを無効化しました', user: data })

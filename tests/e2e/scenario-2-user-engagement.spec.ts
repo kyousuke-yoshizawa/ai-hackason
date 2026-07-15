@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 // E2E Scenario 2: User Likes & Reviews Flow
+// T13でLikeButton・StoreReviewSectionを店舗一覧・店舗詳細ページ(/stores/:storeId)に
+// 結線したことに伴い、実UI（実際のテキスト・data-testid）に合わせて更新
 test.describe('Scenario 2: User Engagement - Likes & Reviews - TC_28_1', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -8,45 +10,50 @@ test.describe('Scenario 2: User Engagement - Likes & Reviews - TC_28_1', () => {
     await page.fill('input[type="email"]', 'itagaki@ai-hackason.example')
     await page.fill('input[type="password"]', 'password123')
     await page.click('button:has-text("ログイン")')
-    await page.waitForSelector('text=ダッシュボード')
+    await page.waitForURL('**/dashboard')
   })
 
   test('user can like and review a store', async ({ page }) => {
     // Navigate to store list
-    await page.click('text=店舗一覧')
-    await page.waitForSelector('.store-item')
+    await page.click('text=店舗一覧・予約')
+    await page.waitForURL('**/stores')
+    await page.waitForSelector('[data-testid="store-item"]')
 
-    // Click on a store
-    await page.click('.store-item >> nth=0')
+    // Click on a store to open its detail page
+    await page.locator('[data-testid="store-item"] >> nth=0 >> button').first().click()
+    await page.waitForURL('**/stores/*')
     await page.waitForSelector('text=店舗詳細')
 
     // Like the store
-    await page.click('button:has-text("❤")')
-    await expect(page.locator('text=いいね数: 1')).toBeVisible()
+    const likeButton = page.locator('[data-testid="like-button"]')
+    const before = Number(await likeButton.locator('[data-testid="like-count"]').textContent())
+    await likeButton.click()
+    await expect(likeButton.locator('[data-testid="like-count"]')).toHaveText(String(before + 1))
 
     // Open review form
     await page.click('text=レビューを書く')
-    await page.waitForSelector('textarea[placeholder="レビュー内容"]')
+    await page.waitForSelector('textarea[placeholder="お店の感想を書いてください"]')
 
     // Write review
-    await page.fill('textarea[placeholder="レビュー内容"]', 'Great store with excellent service!')
-    await page.selectOption('select[name="rating"]', '5')
-    await page.click('button:has-text("送信")')
+    await page.fill('textarea[placeholder="お店の感想を書いてください"]', 'Great store with excellent service!')
+    await page.click('button[aria-label="5つ星"]')
+    await page.click('button:has-text("投稿する")')
 
     // Verify review submitted
-    await expect(page.locator('text=レビューが投稿されました')).toBeVisible()
+    await expect(page.locator('text=レビューを投稿しました')).toBeVisible()
   })
 
   test('user can see average rating for stores', async ({ page }) => {
-    await page.click('text=店舗一覧')
-    await page.waitForSelector('.store-item')
+    await page.click('text=店舗一覧・予約')
+    await page.waitForURL('**/stores')
+    await page.waitForSelector('[data-testid="store-item"]')
 
     // Click on store with reviews
-    await page.click('.store-item >> nth=0')
-    await page.waitForSelector('.average-rating')
+    await page.locator('[data-testid="store-item"] >> nth=0 >> button').first().click()
+    await page.waitForSelector('[data-testid="average-rating"]')
 
     // Verify rating display
-    const ratingText = await page.locator('.average-rating').textContent()
+    const ratingText = await page.locator('[data-testid="average-rating"]').textContent()
     expect(ratingText).toMatch(/\d+\.\d+/)
   })
 })

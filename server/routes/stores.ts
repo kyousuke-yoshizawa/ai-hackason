@@ -1,6 +1,8 @@
 import { Router } from 'express'
-import { supabaseAdmin } from '../db.js'
+import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdmin, requireAdminOrStoreManager, requireAuth } from '../middleware/auth.js'
+import { sendError, zodError } from '../../backend/http/respond.js'
+import { createStoreSchema, updateStoreSchema } from '../../backend/domains/stores/schema.js'
 
 export const storesRouter = Router()
 
@@ -8,11 +10,11 @@ const STORE_COLUMNS =
   'id, name, category, x, y, open_time, close_time, price_min, price_max, created_by, created_at, updated_at'
 
 storesRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
-  const { name, category, x, y, open_time, close_time, price_min, price_max } = req.body ?? {}
-
-  if (!name || !category || x === undefined || y === undefined) {
-    return res.status(400).json({ error: 'name, category, x, y は必須です' })
+  const parsed = createStoreSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
   }
+  const { name, category, x, y, open_time, close_time, price_min, price_max } = parsed.data
 
   const { data, error } = await supabaseAdmin
     .from('stores')
@@ -31,7 +33,7 @@ storesRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
     .single()
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return sendError(res, 500, 'internal_error', error.message)
   }
 
   res.status(201).json(data)
@@ -47,7 +49,7 @@ storesRouter.get('/', async (req, res) => {
   const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return sendError(res, 500, 'internal_error', error.message)
   }
 
   res.json({ data })
@@ -62,14 +64,18 @@ storesRouter.get('/:id', async (req, res) => {
     .single()
 
   if (error || !data) {
-    return res.status(404).json({ error: '店舗が見つかりません' })
+    return sendError(res, 404, 'not_found', '店舗が見つかりません')
   }
 
   res.json(data)
 })
 
 storesRouter.put('/:id', requireAuth, requireAdminOrStoreManager(), async (req, res) => {
-  const { name, category, x, y, open_time, close_time, price_min, price_max } = req.body ?? {}
+  const parsed = updateStoreSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
+  }
+  const { name, category, x, y, open_time, close_time, price_min, price_max } = parsed.data
   const updates: Record<string, unknown> = {}
 
   if (name !== undefined) updates.name = name
@@ -82,7 +88,7 @@ storesRouter.put('/:id', requireAuth, requireAdminOrStoreManager(), async (req, 
   if (price_max !== undefined) updates.price_max = price_max
 
   if (Object.keys(updates).length === 0) {
-    return res.status(400).json({ error: '更新内容がありません' })
+    return sendError(res, 400, 'no_updates', '更新内容がありません')
   }
   updates.updated_at = new Date().toISOString()
 
@@ -95,7 +101,7 @@ storesRouter.put('/:id', requireAuth, requireAdminOrStoreManager(), async (req, 
     .single()
 
   if (error || !data) {
-    return res.status(404).json({ error: '店舗が見つかりません' })
+    return sendError(res, 404, 'not_found', '店舗が見つかりません')
   }
 
   res.json(data)
@@ -111,7 +117,7 @@ storesRouter.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     .single()
 
   if (error || !data) {
-    return res.status(404).json({ error: '店舗が見つかりません' })
+    return sendError(res, 404, 'not_found', '店舗が見つかりません')
   }
 
   res.json({ message: '店舗を削除しました', store: data })

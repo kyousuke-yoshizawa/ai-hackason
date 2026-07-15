@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { api, ApiError } from '../lib/api'
 
 interface ErrorLog {
   id: string
@@ -25,7 +27,8 @@ const STATUS_LABEL: Record<ErrorLog['status'], string> = {
   resolved: '解決済み',
 }
 
-export default function ErrorManagementDashboard({ onBack }: { onBack: () => void }) {
+export default function ErrorManagementDashboard() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [errors, setErrors] = useState<ErrorLog[]>([])
   const [statusFilter, setStatusFilter] = useState<'all' | ErrorLog['status']>('all')
@@ -39,15 +42,9 @@ export default function ErrorManagementDashboard({ onBack }: { onBack: () => voi
     setErrorMessage(null)
     try {
       const query = statusFilter === 'all' ? '' : `?status=${statusFilter}`
-      const res = await fetch(`/api/errors${query}`, {
-        headers: { 'x-user-id': user.id },
-      })
-      if (!res.ok) {
-        throw new Error(`エラー一覧の取得に失敗しました（${res.status}）`)
-      }
-      setErrors(await res.json())
+      setErrors(await api.get<ErrorLog[]>(`/api/errors${query}`))
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'エラー一覧の取得に失敗しました')
+      setErrorMessage(err instanceof ApiError ? err.message : 'エラー一覧の取得に失敗しました')
     } finally {
       setIsLoading(false)
     }
@@ -61,19 +58,11 @@ export default function ErrorManagementDashboard({ onBack }: { onBack: () => voi
   const updateStatus = async (errorId: string, status: ErrorLog['status']) => {
     if (!user) return
     try {
-      const res = await fetch(`/api/errors/${errorId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-        body: JSON.stringify({ status }),
-      })
-      if (!res.ok) {
-        throw new Error(`ステータス更新に失敗しました（${res.status}）`)
-      }
-      const updated = await res.json()
+      const updated = await api.patch<ErrorLog>(`/api/errors/${errorId}`, { status })
       setErrors((prev) => prev.map((e) => (e.id === errorId ? updated : e)))
       setSelected((prev) => (prev && prev.id === errorId ? updated : prev))
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'ステータス更新に失敗しました')
+      setErrorMessage(err instanceof ApiError ? err.message : 'ステータス更新に失敗しました')
     }
   }
 
@@ -86,7 +75,7 @@ export default function ErrorManagementDashboard({ onBack }: { onBack: () => voi
             <p className="text-sm text-gray-600">admin 専用</p>
           </div>
           <button
-            onClick={onBack}
+            onClick={() => navigate('/dashboard')}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-medium transition"
           >
             ダッシュボードに戻る

@@ -1,16 +1,16 @@
 {
   "rewrites": [
-    { "source": "/api/(auth|users|stores|health)(/.*)?", "destination": "/api" },
+    { "source": "/api/(auth|users|stores|likes|reviews|health)(/.*)?", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [
     {
       "path": "/api/cron/notify-congestion",
-      "schedule": "*/30 9-21 * * *"
+      "schedule": "*/30 0-12 * * *"
     },
     {
       "path": "/api/cron/aggregate-crowd-analytics",
-      "schedule": "0 23 * * *"
+      "schedule": "0 14 * * *"
     }
   ]
 }

@@ -7,7 +7,7 @@ jest.mock('nodemailer', () => {
 })
 
 import nodemailer from 'nodemailer'
-import { sendEmail } from '../../api/_lib/email/mailer'
+import { sendEmail } from '../../backend/domains/email/mailer'
 
 const sendMailMock = (nodemailer as unknown as { __sendMail: jest.Mock }).__sendMail
 

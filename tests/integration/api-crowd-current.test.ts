@@ -1,12 +1,12 @@
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { resolveCurrentCrowdLevel, formatCrowdLevelForPrompt } from '../../api/_lib/crowd/getCurrentLevel'
+import { resolveCurrentCrowdLevel, formatCrowdLevelForPrompt } from '../../backend/domains/crowd/getCurrentLevel'
 import handler from '../../api/crowd/current/[store_id]'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 

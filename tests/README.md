@@ -17,9 +17,8 @@ tests/
 ├── e2e/                  # E2E tests (30% of pyramid)
 │   ├── scenario-1-store-admin.spec.ts    # Store manager workflow
 │   └── scenario-2-user-engagement.spec.ts # User features workflow
-├── utils.ts              # Test utilities & helpers
+├── utils.tsx             # Test utilities & helpers
 ├── setup.ts              # Jest setup & mocks
-├── test-runner.ts        # Auto-diagnosis & fix logic
 └── README.md             # This file
 ```
 
@@ -104,37 +103,6 @@ npm run test:watch
 4. **Reporting** - Results aggregated and analyzed
 5. **Cleanup** - Test environment cleaned
 
-### Auto-Diagnosis Features (test-runner.ts)
-
-When a test fails, the test runner automatically:
-
-1. **Identifies Failure Type**
-   - Timeout
-   - Reference Error
-   - Authentication Error
-   - Connection Error
-   - Assertion Failure
-   - Unknown Error
-
-2. **Diagnoses Root Cause**
-   - Async operation not resolving
-   - Missing mock setup
-   - Invalid JWT token
-   - Server not running
-   - Logic mismatch
-
-3. **Suggests Fix**
-   - Check async operations
-   - Review test setup
-   - Verify token generation
-   - Start dev server
-   - Debug with console logs
-
-### Retry Logic
-- Failed tests are retried up to 3 times
-- 1-second delay between retries
-- Helps identify flaky tests vs. real failures
-
 ## Test Coverage Requirements
 
 **Target: ≥ 80% code coverage**
@@ -152,7 +120,7 @@ Current coverage tracked per phase:
 
 ## Test Data & Fixtures
 
-### Test Users (utils.ts)
+### Test Users (utils.tsx)
 ```typescript
 testData.user.admin         // yoshizawa@ai-hackason.example
 testData.user.storeManager  // satoh@ai-hackason.example
@@ -221,26 +189,18 @@ jest.mock('../src/lib/supabase')  // Database client
 
 ## CI/CD Integration
 
-### GitHub Actions
-- Runs on every push and PR
-- Timeout: 10 minutes
-- Parallel execution: 4 workers
-- Reports coverage to GitHub
+**現状: CI は未導入です。** `.github/workflows/` には Notion 同期用の1本（PRマージ時のみ発火）しかなく、push/PR で lint・typecheck・test を自動実行する仕組みはまだありません（`docs/architecture-audit/refactoring-handbook.md` T02 で対応予定）。
 
-### Test Execution Flow
+### 手動実行フロー（現状）
 ```
-Event: Push/PR
+git push → PR作成
   ↓
-npm install
+（ローカルで）npm run lint && npm run typecheck && npm test
   ↓
-npm run test (unit)
-  ↓
-npm run test:e2e (if passed)
-  ↓
-Generate coverage report
-  ↓
-Report results to GitHub
+AIレビュー → 修正 → マージ
 ```
+
+CI導入後は、上記フローの手動ステップが自動化される想定です。
 
 ## Debugging Tests
 
@@ -283,24 +243,21 @@ open coverage/lcov-report/index.html
 
 ## Next Steps
 
-1. **Implement Backend** - Replace stubs in `api-stubs.ts` with real implementations
-2. **Add Frontend Components** - Build React components tested in E2E
-3. **Database Migrations** - Run `002_create_new_features_schema.sql`
-4. **Deploy to Supabase** - Replace mock queries with real client
-5. **Monitor Coverage** - Maintain ≥80% coverage during development
+1. **Add Frontend Components** - Build React components tested in E2E
+2. **Database Migrations** - Run `002_create_new_features_schema.sql`
+3. **Deploy to Supabase** - Replace mock queries with real client
+4. **Monitor Coverage** - Maintain ≥80% coverage during development
 
 ## Resources
 
 - **Test Config**: `jest.config.ts`, `playwright.config.ts`
-- **Test Utilities**: `tests/utils.ts`, `tests/setup.ts`
-- **API Stubs**: `src/lib/api-stubs.ts`
+- **Test Utilities**: `tests/utils.tsx`, `tests/setup.ts`
 - **Database Schema**: `docs/database/002_create_new_features_schema.sql`
 - **Issue Details**: GitHub Issues #17-38
 
 ## Support
 
 For test failures:
-1. Check auto-diagnosis in console output
-2. Review test case documentation in the issue
-3. Check `tests/utils.ts` for available test utilities
-4. Debug with: `npm test -- --verbose --no-coverage`
+1. Review test case documentation in the issue
+2. Check `tests/utils.tsx` for available test utilities
+3. Debug with: `npm test -- --verbose --no-coverage`

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
+import { StoreMediaPanel } from './StoreMediaPanel'
 
 export function StoreManagementPanel({
   onNotify,
@@ -13,6 +14,7 @@ export function StoreManagementPanel({
   const [categoryFilter, setCategoryFilter] = useState('')
   const [formMode, setFormMode] = useState<'create' | AdminStore | null>(null)
   const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
+  const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
 
   const loadStores = async (category: string) => {
     setIsLoading(true)
@@ -115,6 +117,12 @@ export function StoreManagementPanel({
                       混雑分析
                     </button>
                     <button
+                      onClick={() => setMediaStore(s)}
+                      className="font-medium text-purple-600 hover:underline"
+                    >
+                      メディア管理
+                    </button>
+                    <button
                       onClick={() => handleDelete(s)}
                       className="font-medium text-red-600 hover:underline"
                     >
@@ -148,6 +156,15 @@ export function StoreManagementPanel({
           storeId={analyticsStore.id}
           storeName={analyticsStore.name}
           onClose={() => setAnalyticsStore(null)}
+        />
+      )}
+
+      {mediaStore && (
+        <StoreMediaPanel
+          storeId={mediaStore.id}
+          storeName={mediaStore.name}
+          onClose={() => setMediaStore(null)}
+          onNotify={onNotify}
         />
       )}
     </div>

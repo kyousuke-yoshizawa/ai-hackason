@@ -1,12 +1,12 @@
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
+import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { runCrowdAnalyticsAggregationJob } from '../../api/_lib/crowdAnalytics/aggregationJob'
+import { runCrowdAnalyticsAggregationJob } from '../../backend/domains/crowdAnalytics/aggregationJob'
 import handler from '../../api/analytics/crowd/[store_id]'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
@@ -66,9 +66,9 @@ describe('runCrowdAnalyticsAggregationJob (TC-205-INT-01)', () => {
 describe('GET /api/analytics/crowd/:store_id', () => {
   beforeEach(() => {
     fakeClient.seed('users', [
-      { id: 'admin-1', role: 'admin' },
-      { id: 'manager-1', role: 'store_manager' },
-      { id: 'manager-2', role: 'store_manager' },
+      { id: 'admin-1', role: 'admin', is_active: true },
+      { id: 'manager-1', role: 'store_manager', is_active: true },
+      { id: 'manager-2', role: 'store_manager', is_active: true },
     ])
     fakeClient.seed('store_managers', [{ store_id: 'store-1', manager_id: 'manager-1' }])
     fakeClient.seed('crowd_analytics', [

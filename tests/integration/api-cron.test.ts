@@ -1,19 +1,19 @@
 process.env.LINK_TOKEN_SECRET = 'test-secret'
 
-jest.mock('../../api/_lib/supabaseAdmin', () => {
+jest.mock('../../backend/db', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createFakeSupabaseClient } = require('../testUtils/fakeSupabase')
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-jest.mock('../../api/_lib/email/mailer', () => ({
+jest.mock('../../backend/domains/email/mailer', () => ({
   sendEmail: jest.fn(),
 }))
 
-import { supabaseAdmin } from '../../api/_lib/supabaseAdmin'
-import { sendEmail } from '../../api/_lib/email/mailer'
+import { supabaseAdmin } from '../../backend/db'
+import { sendEmail } from '../../backend/domains/email/mailer'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { runCongestionNotificationCycle } from '../../api/_lib/cron/congestionNotificationJob'
+import { runCongestionNotificationCycle } from '../../backend/domains/notifications/congestionNotificationJob'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 
@@ -29,7 +29,7 @@ beforeEach(() => {
 // TC-109-02: メール送信フロー（キュー → SendGrid → ログ）
 describe('runCongestionNotificationCycle (TC-109-02)', () => {
   it('schedules a notification per store manager, sends it, and logs the result', async () => {
-    ;(sendEmail as jest.Mock).mockResolvedValueOnce({ success: true, providerMessageId: 'sg-1' })
+    (sendEmail as jest.Mock).mockResolvedValueOnce({ success: true, providerMessageId: 'sg-1' })
 
     const result = await runCongestionNotificationCycle()
 

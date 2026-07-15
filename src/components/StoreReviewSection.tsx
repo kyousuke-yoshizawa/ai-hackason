@@ -69,7 +69,7 @@ export default function StoreReviewSection({ storeId }: StoreReviewSectionProps)
       <div className="flex justify-between items-center mb-4">
         <div>
           <h3 className="text-lg font-bold text-gray-900">レビュー</h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600" data-testid="average-rating">
             評価 {stats.avg_rating.toFixed(1)} / 5（{stats.review_count}件のレビュー）
           </p>
         </div>
