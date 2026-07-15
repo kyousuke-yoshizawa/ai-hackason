@@ -3,6 +3,7 @@ import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdmin, requireAdminOrStoreManager, requireAuth } from '../middleware/auth.js'
 import { sendError, zodError } from '../../backend/http/respond.js'
 import { createStoreSchema, updateStoreSchema } from '../../backend/domains/stores/schema.js'
+import { enrichStoresWithAggregates } from '../../backend/domains/stores/enrichWithAggregates.js'
 
 export const storesRouter = Router()
 
@@ -52,7 +53,9 @@ storesRouter.get('/', async (req, res) => {
     return sendError(res, 500, 'internal_error', error.message)
   }
 
-  res.json({ data })
+  const enriched = await enrichStoresWithAggregates(data ?? [])
+
+  res.json({ data: enriched })
 })
 
 storesRouter.get('/:id', async (req, res) => {
