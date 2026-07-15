@@ -120,14 +120,14 @@ export function StoreForm({
 
   const field = (key: keyof StoreFormValues, label: string, type = 'text') => (
     <div>
-      <label className="mb-1 block text-sm font-medium text-gray-700">{label}</label>
+      <label className="ac-label">{label}</label>
       <input
         type={type}
         value={values[key]}
         onChange={(e) => setValues({ ...values, [key]: e.target.value })}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+        className="ac-input"
       />
-      {errors[key] && <p className="mt-1 text-xs text-red-600">{errors[key]}</p>}
+      {errors[key] && <p className="mt-1 text-xs font-bold text-bubble-600">{errors[key]}</p>}
     </div>
   )
 
@@ -155,18 +155,10 @@ export function StoreForm({
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
-          >
+          <button type="button" onClick={onCancel} className="ac-btn-secondary">
             キャンセル
           </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={isSubmitting} className="ac-btn-primary">
             {isEdit ? '更新' : '登録'}
           </button>
         </div>

@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Cloud from '../components/decor/Cloud'
+import Leaf from '../components/decor/Leaf'
+import Flower from '../components/decor/Flower'
+import GrassBorder from '../components/decor/GrassBorder'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,20 +35,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Hackathon</h1>
-        <p className="text-gray-600 mb-6">2026 プロジェクト ログイン</p>
+    <div className="ac-page-bg relative flex items-center justify-center overflow-hidden p-4">
+      <Cloud className="absolute left-8 top-10 h-14 w-28 opacity-90 md:left-16" />
+      <Cloud className="absolute right-10 top-24 h-10 w-20 opacity-80 md:right-24" />
+      <Cloud className="absolute right-1/3 top-6 h-8 w-16 opacity-70" />
+      <Flower className="absolute bottom-8 left-6 h-10 w-10 md:left-20" />
+      <Flower className="absolute bottom-6 right-8 h-8 w-8 md:right-24" color="#ffd07d" center="#ff8fb8" />
+
+      <div className="ac-card relative w-full max-w-md">
+        <Leaf className="absolute -top-6 -left-6 h-14 w-14 -rotate-12 drop-shadow" />
+
+        <h1 className="font-sans text-3xl font-extrabold text-wood-800">ことこと町</h1>
+        <p className="mb-6 text-sm font-bold text-leaf-700">お出かけプラン AI アシスタント</p>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 p-3">
+            <p className="text-sm font-bold text-bubble-700">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="ac-label">
               メールアドレス
             </label>
             <input
@@ -53,14 +65,14 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="yoshizawa@ai-hackason.example"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+              className="ac-input"
               required
               disabled={isLoading}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="ac-label">
               パスワード
             </label>
             <input
@@ -69,31 +81,32 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+              className="ac-input"
               required
               disabled={isLoading}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition duration-200"
-          >
+          <button type="submit" disabled={isLoading} className="ac-btn-primary w-full">
             {isLoading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>テスト用メールアドレス：</p>
-          <p className="mt-2 text-xs text-gray-500">
-            yoshizawa@ai-hackason.example<br/>
-            satoh@ai-hackason.example<br/>
-            itagaki@ai-hackason.example<br/>
+        <div className="mt-6 rounded-2xl bg-sand-100/70 p-3 text-center text-sm text-wood-600">
+          <p className="font-bold">テスト用メールアドレス：</p>
+          <p className="mt-2 text-xs text-wood-500">
+            yoshizawa@ai-hackason.example
+            <br />
+            satoh@ai-hackason.example
+            <br />
+            itagaki@ai-hackason.example
+            <br />
             takayanagi@ai-hackason.example
           </p>
         </div>
       </div>
+
+      <GrassBorder className="absolute bottom-0 left-0 h-6 w-full" />
     </div>
   )
 }

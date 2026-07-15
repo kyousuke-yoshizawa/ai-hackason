@@ -63,83 +63,74 @@ export function StoreManagementPanel({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold text-gray-900">店舗管理</h3>
-        <div className="flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-extrabold text-wood-800">🏬 店舗管理</h3>
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             placeholder="カテゴリで絞込"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input !w-auto"
           />
-          <button
-            onClick={() => setFormMode('create')}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-          >
+          <button onClick={() => setFormMode('create')} className="ac-btn-primary">
             新規登録
           </button>
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">読み込み中...</p>
+        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">名前</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">カテゴリ</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">営業時間</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">アクション</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {stores.map((s) => (
-                <tr key={s.id}>
-                  <td className="px-4 py-2">{s.name}</td>
-                  <td className="px-4 py-2">{s.category}</td>
-                  <td className="px-4 py-2">
-                    {s.open_time && s.close_time ? `${s.open_time} - ${s.close_time}` : '-'}
-                  </td>
-                  <td className="px-4 py-2 space-x-3">
-                    <button
-                      onClick={() => setFormMode(s)}
-                      className="font-medium text-indigo-600 hover:underline"
-                    >
-                      編集
-                    </button>
-                    <button
-                      onClick={() => setAnalyticsStore(s)}
-                      className="font-medium text-emerald-600 hover:underline"
-                    >
-                      混雑分析
-                    </button>
-                    <button
-                      onClick={() => setMediaStore(s)}
-                      className="font-medium text-purple-600 hover:underline"
-                    >
-                      メディア管理
-                    </button>
-                    <button
-                      onClick={() => handleDelete(s)}
-                      className="font-medium text-red-600 hover:underline"
-                    >
-                      削除
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {stores.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
-                    店舗がありません
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          <div className="hidden gap-4 px-4 text-xs font-bold text-wood-500 md:grid md:grid-cols-[2fr_1.2fr_1.5fr_2.3fr]">
+            <span>名前</span>
+            <span>カテゴリ</span>
+            <span>営業時間</span>
+            <span>アクション</span>
+          </div>
+          {stores.map((s) => (
+            <div
+              key={s.id}
+              className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-wood-200 bg-sand-50 p-4 md:grid-cols-[2fr_1.2fr_1.5fr_2.3fr] md:items-center"
+            >
+              <p className="font-bold text-wood-800">{s.name}</p>
+              <p>
+                <span className="ac-badge bg-leaf-100 text-leaf-700">{s.category}</span>
+              </p>
+              <p className="text-sm text-wood-600">
+                {s.open_time && s.close_time ? `${s.open_time} - ${s.close_time}` : '-'}
+              </p>
+              <div className="flex flex-wrap gap-3 text-sm">
+                <button onClick={() => setFormMode(s)} className="font-bold text-leaf-600 hover:underline">
+                  編集
+                </button>
+                <button
+                  onClick={() => setAnalyticsStore(s)}
+                  className="font-bold text-sky-600 hover:underline"
+                >
+                  混雑分析
+                </button>
+                <button
+                  onClick={() => setMediaStore(s)}
+                  className="font-bold text-wood-600 hover:underline"
+                >
+                  メディア管理
+                </button>
+                <button
+                  onClick={() => handleDelete(s)}
+                  className="font-bold text-bubble-600 hover:underline"
+                >
+                  削除
+                </button>
+              </div>
+            </div>
+          ))}
+          {stores.length === 0 && (
+            <div className="rounded-2xl border-2 border-dashed border-wood-200 bg-sand-50/60 px-4 py-6 text-center text-wood-400">
+              店舗がありません
+            </div>
+          )}
         </div>
       )}
 

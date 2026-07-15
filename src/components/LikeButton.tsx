@@ -52,8 +52,8 @@ export default function LikeButton({ userId, storeId, initialCount = 0 }: LikeBu
       aria-pressed={liked}
       aria-label={liked ? 'いいねを解除する' : 'いいねする'}
     >
-      <span className={liked ? 'text-red-500' : 'text-gray-400'}>♥</span>
-      <span className={liked ? 'text-red-600' : 'text-gray-600'} data-testid="like-count">
+      <span className={liked ? 'text-bubble-500' : 'text-wood-300'}>♥</span>
+      <span className={liked ? 'text-bubble-600' : 'text-wood-500'} data-testid="like-count">
         {count}
       </span>
     </button>

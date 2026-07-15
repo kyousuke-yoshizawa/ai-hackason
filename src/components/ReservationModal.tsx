@@ -99,11 +99,11 @@ export default function ReservationModal({
     return (
       <Modal title="予約が確定しました" onClose={resetAndClose}>
         <div className="text-center py-4">
-          <p className="text-sm text-gray-600 mb-2">{storeName}</p>
-          <p className="text-2xl font-bold text-indigo-600 mb-4">
+          <p className="text-sm text-wood-500 mb-2">{storeName}</p>
+          <p className="text-2xl font-extrabold text-leaf-600 mb-4">
             予約番号 #{confirmed.id.slice(0, 6).toUpperCase()}
           </p>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-wood-700 font-bold">
             {confirmed.reservationDate} {confirmed.reservationTime} / {confirmed.partySize}名
           </p>
           <button
@@ -112,7 +112,7 @@ export default function ReservationModal({
               resetAndClose()
               onViewReservations?.()
             }}
-            className="text-sm text-indigo-600 hover:underline mt-4"
+            className="text-sm font-bold text-leaf-700 hover:underline mt-4"
           >
             キャンセルはここから
           </button>
@@ -125,23 +125,19 @@ export default function ReservationModal({
     <Modal title={`座席予約 - ${storeName}`} onClose={resetAndClose}>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">日付</label>
+          <label className="ac-label">日付</label>
           <input
             type="date"
             value={date}
             min={todayIsoDate()}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="ac-input"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">時刻</label>
-          <select
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          >
+          <label className="ac-label">時刻</label>
+          <select value={time} onChange={(e) => setTime(e.target.value)} className="ac-input">
             {timeSlots.map((slot) => (
               <option key={slot} value={slot}>
                 {slot}
@@ -151,11 +147,11 @@ export default function ReservationModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">人数</label>
+          <label className="ac-label">人数</label>
           <select
             value={partySize}
             onChange={(e) => setPartySize(Number(e.target.value))}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="ac-input"
           >
             {PARTY_SIZE_OPTIONS.map((n) => (
               <option key={n} value={n}>
@@ -165,21 +161,21 @@ export default function ReservationModal({
           </select>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <div className="rounded-2xl border-2 border-bubble-200 bg-bubble-50 p-3">
+            <p className="text-sm font-bold text-bubble-700">{error}</p>
+          </div>
+        )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={resetAndClose}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-          >
+          <button type="button" onClick={resetAndClose} className="ac-btn-secondary !px-4 !py-2 text-sm">
             キャンセル
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+            className="ac-btn-primary !px-4 !py-2 text-sm"
           >
             {isSubmitting ? '予約中...' : '予約確定'}
           </button>
