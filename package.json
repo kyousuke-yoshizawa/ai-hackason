@@ -30,6 +30,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@marp-team/marp-cli": "^4.4.1",
     "@playwright/test": "^1.40.1",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
