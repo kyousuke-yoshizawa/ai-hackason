@@ -71,7 +71,7 @@ describe('StoresPage 検索・絞り込み・ソート', () => {
 
     fireEvent.change(screen.getByDisplayValue('店舗名順'), { target: { value: 'category' } })
 
-    const names = Array.from(document.querySelectorAll('[data-testid="store-item"] p.font-medium')).map(
+    const names = Array.from(document.querySelectorAll('[data-testid="store-item"] p.font-bold')).map(
       (el) => el.textContent
     )
     expect(names).toEqual(['Bravo', 'Charlie', 'Alpha'])

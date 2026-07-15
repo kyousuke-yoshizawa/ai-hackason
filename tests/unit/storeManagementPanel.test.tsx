@@ -47,7 +47,9 @@ describe('StoreManagementPanel 検索・絞り込み・ソート', () => {
     await screen.findByText('Charlie')
 
     const bodyRowNames = () =>
-      screen.getAllByRole('row').slice(1).map((row) => row.querySelectorAll('td')[0].textContent)
+      screen
+        .getAllByTestId('store-row')
+        .map((row) => row.querySelector('p.font-bold')?.textContent)
 
     expect(bodyRowNames()).toEqual(['Alpha', 'Bravo', 'Charlie'])
 
@@ -72,7 +74,9 @@ describe('StoreManagementPanel 検索・絞り込み・ソート', () => {
     await screen.findByText('Charlie')
 
     const bodyRowNames = () =>
-      screen.getAllByRole('row').slice(1).map((row) => row.querySelectorAll('td')[0].textContent)
+      screen
+        .getAllByTestId('store-row')
+        .map((row) => row.querySelector('p.font-bold')?.textContent)
 
     fireEvent.click(screen.getByRole('button', { name: /カテゴリ/ }))
 

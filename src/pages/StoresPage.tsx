@@ -6,6 +6,9 @@ import { getStoreLikeCount } from '../lib/likes'
 import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
+import Cloud from '../components/decor/Cloud'
+import Leaf from '../components/decor/Leaf'
+import GrassBorder from '../components/decor/GrassBorder'
 
 type SortKey = 'name' | 'category'
 
@@ -51,23 +54,27 @@ export default function StoresPage() {
   }, [stores, searchText, categoryFilter, sortKey])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+    <div className="ac-page-bg">
+      <header className="ac-header relative">
+        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
+        <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="text-sm text-indigo-600 hover:underline"
+            className="ac-btn-ghost !px-3 !py-1.5 text-sm !text-white hover:!bg-white/20"
           >
             ← ダッシュボードに戻る
           </button>
-          <h1 className="text-xl font-bold text-gray-900">店舗一覧</h1>
+          <h1 className="text-xl font-extrabold">店舗一覧</h1>
         </div>
+        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="relative mx-auto max-w-4xl px-4 py-8">
         {error && (
-          <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</p>
+          <p className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-4 py-2 text-sm font-bold text-bubble-700">
+            {error}
+          </p>
         )}
 
         <div className="flex flex-wrap gap-3 mb-6">
@@ -76,14 +83,14 @@ export default function StoresPage() {
             placeholder="店舗名で検索"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="ac-input !w-auto text-sm"
           />
 
           {categories.length > 0 && (
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="ac-input !w-auto text-sm"
             >
               <option value="all">すべてのカテゴリ</option>
               {categories.map((c) => (
@@ -97,7 +104,7 @@ export default function StoresPage() {
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="ac-input !w-auto text-sm"
           >
             <option value="name">店舗名順</option>
             <option value="category">カテゴリ順</option>
@@ -105,11 +112,14 @@ export default function StoresPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-gray-500 text-sm">読み込み中...</p>
+          <p className="text-sm font-bold text-wood-500">読み込み中...</p>
         ) : stores.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">店舗がありません</div>
+          <div className="ac-card relative text-center text-wood-500">
+            <Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />
+            店舗がありません
+          </div>
         ) : visibleStores.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+          <div className="ac-card relative text-center text-wood-500">
             検索条件に一致する店舗がありません
           </div>
         ) : (
@@ -118,15 +128,15 @@ export default function StoresPage() {
               <li
                 key={store.id}
                 data-testid="store-item"
-                className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
+                className="ac-card-sm flex items-center justify-between"
               >
                 <button
                   type="button"
                   onClick={() => navigate(`/stores/${store.id}`)}
                   className="text-left"
                 >
-                  <p className="font-medium text-gray-900 hover:underline">{store.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-bold text-wood-800 hover:underline">{store.name}</p>
+                  <p className="text-xs text-wood-400">
                     {store.category}
                     {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
                   </p>
@@ -136,7 +146,7 @@ export default function StoresPage() {
                   <button
                     type="button"
                     onClick={() => setReservingStore(store)}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+                    className="ac-btn-primary !px-4 !py-2 text-sm"
                   >
                     座席予約
                   </button>

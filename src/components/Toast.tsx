@@ -22,10 +22,13 @@ export function ToastContainer({ toast }: { toast: ToastState | null }) {
 
   return (
     <div
-      className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg transition ${
-        toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+      className={`fixed bottom-6 right-6 z-50 rounded-2xl border-2 px-4 py-3 text-sm font-bold text-white shadow-ac transition ${
+        toast.type === 'success'
+          ? 'border-leaf-700/30 bg-leaf-500'
+          : 'border-bubble-700/30 bg-bubble-500'
       }`}
     >
+      {toast.type === 'success' ? '🍃 ' : '⚠️ '}
       {toast.message}
     </div>
   )

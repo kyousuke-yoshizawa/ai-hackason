@@ -10,6 +10,7 @@ import {
   updateReview,
 } from '../lib/reviews'
 import type { ReviewStats, ReviewWithUser } from '../types/social'
+import Flower from './decor/Flower'
 
 interface StoreReviewSectionProps {
   storeId: string
@@ -65,18 +66,19 @@ export default function StoreReviewSection({ storeId }: StoreReviewSectionProps)
   }
 
   return (
-    <section className="bg-white rounded-lg shadow p-6">
+    <section className="ac-card relative">
+      <Flower className="absolute -top-3 -right-3 h-9 w-9 opacity-80" />
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-900">レビュー</h3>
-          <p className="text-sm text-gray-600" data-testid="average-rating">
+          <h3 className="text-lg font-extrabold text-wood-800">レビュー</h3>
+          <p className="text-sm font-bold text-wood-600" data-testid="average-rating">
             評価 {stats.avg_rating.toFixed(1)} / 5（{stats.review_count}件のレビュー）
           </p>
         </div>
         <button
           type="button"
           onClick={openNewReview}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium"
+          className="ac-btn-primary text-sm"
         >
           レビューを書く
         </button>

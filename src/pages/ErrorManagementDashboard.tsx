@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
+import Leaf from '../components/decor/Leaf'
+import GrassBorder from '../components/decor/GrassBorder'
 
 interface ErrorLog {
   id: string
@@ -16,9 +18,9 @@ interface ErrorLog {
 }
 
 const STATUS_BADGE: Record<ErrorLog['status'], string> = {
-  new: 'bg-red-100 text-red-800',
-  reviewing: 'bg-yellow-100 text-yellow-800',
-  resolved: 'bg-green-100 text-green-800',
+  new: 'bg-bubble-100 text-bubble-700',
+  reviewing: 'bg-sand-200 text-wood-700',
+  resolved: 'bg-leaf-100 text-leaf-700',
 }
 
 const STATUS_LABEL: Record<ErrorLog['status'], string> = {
@@ -67,32 +69,34 @@ export default function ErrorManagementDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="ac-page-bg">
+      <header className="ac-header relative">
+        <Leaf className="absolute right-6 top-2 h-8 w-8 opacity-30" color="#dff1cf" />
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">エラー管理ダッシュボード</h1>
-            <p className="text-sm text-gray-600">admin 専用</p>
+            <h1 className="text-2xl font-extrabold">エラー管理ダッシュボード</h1>
+            <p className="text-sm font-bold text-leaf-100">admin 専用</p>
           </div>
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-medium transition"
+            className="ac-btn-secondary !px-4 !py-2 text-sm"
           >
             ダッシュボードに戻る
           </button>
         </div>
+        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-4">
-          <label htmlFor="status-filter" className="text-sm text-gray-600">
+          <label htmlFor="status-filter" className="ac-label mb-0">
             ステータス絞り込み:
           </label>
           <select
             id="status-filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+            className="ac-input w-auto py-1.5"
           >
             <option value="all">すべて</option>
             <option value="new">新規</option>
@@ -102,33 +106,33 @@ export default function ErrorManagementDashboard() {
         </div>
 
         {errorMessage && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2">
+          <div className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-4 py-2 text-sm font-bold text-bubble-700">
             {errorMessage}
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+        <div className="ac-card overflow-x-auto !p-0">
+          <table className="min-w-full divide-y divide-sand-200 text-sm">
+            <thead className="bg-sand-100">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">エラータイプ</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">メッセージ</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">影響リソース</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">状態</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">発生時刻</th>
+                <th className="px-4 py-2 text-left font-bold text-wood-600">エラータイプ</th>
+                <th className="px-4 py-2 text-left font-bold text-wood-600">メッセージ</th>
+                <th className="px-4 py-2 text-left font-bold text-wood-600">影響リソース</th>
+                <th className="px-4 py-2 text-left font-bold text-wood-600">状態</th>
+                <th className="px-4 py-2 text-left font-bold text-wood-600">発生時刻</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-sand-100">
               {isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-6 text-center text-wood-400">
                     読み込み中...
                   </td>
                 </tr>
               )}
               {!isLoading && errors.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-6 text-center text-wood-400">
                     エラーはありません
                   </td>
                 </tr>
@@ -137,17 +141,17 @@ export default function ErrorManagementDashboard() {
                 <tr
                   key={e.id}
                   onClick={() => setSelected(e)}
-                  className="cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer hover:bg-sand-100/60"
                 >
-                  <td className="px-4 py-2 font-medium text-gray-900">{e.error_type}</td>
-                  <td className="px-4 py-2 text-gray-700 max-w-md truncate">{e.message}</td>
-                  <td className="px-4 py-2 text-gray-500">{e.affected_resource_id ?? '-'}</td>
+                  <td className="px-4 py-2 font-bold text-wood-800">{e.error_type}</td>
+                  <td className="px-4 py-2 text-wood-600 max-w-md truncate">{e.message}</td>
+                  <td className="px-4 py-2 text-wood-400">{e.affected_resource_id ?? '-'}</td>
                   <td className="px-4 py-2">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[e.status]}`}>
+                    <span className={`ac-badge ${STATUS_BADGE[e.status]}`}>
                       {STATUS_LABEL[e.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-gray-500">
+                  <td className="px-4 py-2 text-wood-400">
                     {new Date(e.created_at).toLocaleString('ja-JP')}
                   </td>
                 </tr>
@@ -159,30 +163,32 @@ export default function ErrorManagementDashboard() {
 
       {selected && (
         <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-wood-900/50 flex items-center justify-center p-4 z-50"
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6"
+            className="ac-card relative max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
+            <Leaf className="absolute -top-4 -left-4 h-9 w-9 rotate-[-15deg] drop-shadow" />
+
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-lg font-bold text-gray-900">{selected.error_type}</h2>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[selected.status]}`}>
+              <h2 className="text-lg font-extrabold text-wood-800">{selected.error_type}</h2>
+              <span className={`ac-badge ${STATUS_BADGE[selected.status]}`}>
                 {STATUS_LABEL[selected.status]}
               </span>
             </div>
 
-            <p className="text-sm text-gray-700 mb-3">{selected.message}</p>
+            <p className="text-sm text-wood-600 mb-3">{selected.message}</p>
 
-            <div className="text-xs text-gray-500 mb-3 space-y-1">
+            <div className="text-xs text-wood-400 mb-3 space-y-1">
               <p>発生ユーザ: {selected.user_id ?? '不明'}</p>
               <p>影響リソース: {selected.affected_resource_id ?? '-'}</p>
               <p>発生時刻: {new Date(selected.created_at).toLocaleString('ja-JP')}</p>
             </div>
 
             {selected.stack_trace && (
-              <pre className="bg-gray-900 text-gray-100 text-xs rounded-lg p-3 overflow-x-auto mb-4">
+              <pre className="bg-wood-900 text-wood-100 text-xs rounded-2xl p-3 overflow-x-auto mb-4">
                 {selected.stack_trace}
               </pre>
             )}
@@ -191,7 +197,7 @@ export default function ErrorManagementDashboard() {
               {selected.status !== 'reviewing' && (
                 <button
                   onClick={() => updateStatus(selected.id, 'reviewing')}
-                  className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium"
+                  className="ac-btn-secondary !px-3 !py-1.5 text-sm"
                 >
                   確認中にする
                 </button>
@@ -199,14 +205,14 @@ export default function ErrorManagementDashboard() {
               {selected.status !== 'resolved' && (
                 <button
                   onClick={() => updateStatus(selected.id, 'resolved')}
-                  className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium"
+                  className="ac-btn-primary !px-3 !py-1.5 text-sm"
                 >
                   解決済みにする
                 </button>
               )}
               <button
                 onClick={() => setSelected(null)}
-                className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-medium"
+                className="ac-btn-ghost !px-3 !py-1.5 text-sm"
               >
                 閉じる
               </button>

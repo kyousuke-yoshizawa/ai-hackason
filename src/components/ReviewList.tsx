@@ -11,7 +11,7 @@ interface ReviewListProps {
 
 export default function ReviewList({ reviews, currentUserId, isAdmin, onEdit, onDelete }: ReviewListProps) {
   if (reviews.length === 0) {
-    return <p className="text-sm text-gray-500">まだレビューがありません</p>
+    return <p className="text-sm font-bold text-wood-500">まだレビューがありません</p>
   }
 
   return (
@@ -20,18 +20,18 @@ export default function ReviewList({ reviews, currentUserId, isAdmin, onEdit, on
         const isOwner = !!currentUserId && review.user_id === currentUserId
 
         return (
-          <li key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+          <li key={review.id} className="border-b-2 border-sand-200 pb-4 last:border-b-0">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-gray-900">{review.users?.name ?? '匿名ユーザー'}</p>
+                <p className="text-sm font-bold text-wood-800">{review.users?.name ?? '匿名ユーザー'}</p>
                 <StarRating rating={review.rating} size="sm" />
               </div>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-wood-400">
                 {new Date(review.created_at).toLocaleDateString('ja-JP')}
               </span>
             </div>
 
-            {review.comment && <p className="text-sm text-gray-700 mt-2">{review.comment}</p>}
+            {review.comment && <p className="text-sm text-wood-600 mt-2">{review.comment}</p>}
 
             {(isOwner || isAdmin) && (
               <div className="flex gap-3 mt-2">
@@ -39,7 +39,7 @@ export default function ReviewList({ reviews, currentUserId, isAdmin, onEdit, on
                   <button
                     type="button"
                     onClick={() => onEdit(review)}
-                    className="text-xs text-indigo-600 hover:underline"
+                    className="text-xs font-bold text-leaf-600 hover:underline"
                   >
                     編集
                   </button>
@@ -48,7 +48,7 @@ export default function ReviewList({ reviews, currentUserId, isAdmin, onEdit, on
                   <button
                     type="button"
                     onClick={() => onDelete(review.id)}
-                    className="text-xs text-red-600 hover:underline"
+                    className="text-xs font-bold text-bubble-600 hover:underline"
                   >
                     削除
                   </button>

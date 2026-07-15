@@ -96,19 +96,19 @@ export function UserManagementPanel({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-bold text-gray-900">ユーザ管理</h3>
+        <h3 className="text-lg font-extrabold text-wood-800">ユーザ管理</h3>
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             placeholder="名前・メールで検索"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input !w-auto"
           />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input !w-auto"
           >
             <option value="all">すべてのロール</option>
             <option value="admin">admin</option>
@@ -118,28 +118,25 @@ export function UserManagementPanel({
           <select
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="ac-input !w-auto"
           >
             <option value="all">すべての状態</option>
             <option value="active">有効</option>
             <option value="inactive">無効</option>
           </select>
-          <button
-            onClick={() => setFormMode('create')}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-          >
+          <button onClick={() => setFormMode('create')} className="ac-btn-primary !px-4 !py-2 text-sm">
             新規登録
           </button>
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">読み込み中...</p>
+        <p className="text-sm font-bold text-wood-400">読み込み中...</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
+        <div className="overflow-x-auto">
+          <table className="w-full border-separate border-spacing-y-2 text-sm">
+            <thead>
+              <tr className="text-left text-xs font-bold uppercase tracking-wide text-wood-500">
                 <SortableHeader
                   label="メール"
                   sortKey="email"
@@ -161,34 +158,38 @@ export function UserManagementPanel({
                   currentSortDir={sortDir}
                   onSort={handleSort}
                 />
-                <th className="px-4 py-2 text-left font-medium text-gray-600">状態</th>
-                <th className="px-4 py-2 text-left font-medium text-gray-600">アクション</th>
+                <th className="px-4 py-2">状態</th>
+                <th className="px-4 py-2">アクション</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
+            <tbody>
               {visibleUsers.map((u) => (
-                <tr key={u.id}>
-                  <td className="px-4 py-2">{u.email}</td>
-                  <td className="px-4 py-2">{u.name}</td>
-                  <td className="px-4 py-2">{u.role}</td>
-                  <td className="px-4 py-2">
+                <tr key={u.id} className="bg-sand-50">
+                  <td className="rounded-l-2xl border-y-2 border-l-2 border-wood-200 px-4 py-2 text-wood-800">
+                    {u.email}
+                  </td>
+                  <td className="border-y-2 border-wood-200 px-4 py-2 text-wood-800">{u.name}</td>
+                  <td className="border-y-2 border-wood-200 px-4 py-2">
+                    <span className="ac-badge bg-sky-100 text-sky-700">{u.role}</span>
+                  </td>
+                  <td className="border-y-2 border-wood-200 px-4 py-2">
                     {u.is_active ? (
-                      <span className="text-green-600">有効</span>
+                      <span className="ac-badge bg-leaf-100 text-leaf-700">有効</span>
                     ) : (
-                      <span className="text-gray-400">無効</span>
+                      <span className="ac-badge bg-wood-100 text-wood-500">無効</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 space-x-3">
+                  <td className="rounded-r-2xl border-y-2 border-r-2 border-wood-200 px-4 py-2 space-x-3">
                     <button
                       onClick={() => setFormMode(u)}
-                      className="font-medium text-indigo-600 hover:underline"
+                      className="font-bold text-leaf-600 hover:underline"
                     >
                       編集
                     </button>
                     {u.is_active && (
                       <button
                         onClick={() => handleDeactivate(u)}
-                        className="font-medium text-red-600 hover:underline"
+                        className="font-bold text-bubble-600 hover:underline"
                       >
                         無効化
                       </button>
@@ -198,7 +199,10 @@ export function UserManagementPanel({
               ))}
               {visibleUsers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                  <td
+                    colSpan={5}
+                    className="rounded-2xl border-2 border-wood-200 bg-sand-50 px-4 py-6 text-center text-wood-400"
+                  >
                     {users.length === 0 ? 'ユーザがいません' : '検索条件に一致するユーザがいません'}
                   </td>
                 </tr>
