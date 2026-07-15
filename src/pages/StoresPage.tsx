@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
@@ -10,6 +10,8 @@ import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
 import GrassBorder from '../components/decor/GrassBorder'
 
+type SortKey = 'name' | 'category'
+
 export default function StoresPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -18,6 +20,9 @@ export default function StoresPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
+  const [searchText, setSearchText] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [sortKey, setSortKey] = useState<SortKey>('name')
 
   useEffect(() => {
     api
@@ -30,6 +35,23 @@ export default function StoresPage() {
       .catch((err) => setError(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました'))
       .finally(() => setIsLoading(false))
   }, [])
+
+  const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
+
+  const visibleStores = useMemo(() => {
+    const text = searchText.trim().toLowerCase()
+    const filtered = stores.filter((s) => {
+      const matchesText = text === '' || s.name.toLowerCase().includes(text)
+      const matchesCategory = categoryFilter === 'all' || s.category === categoryFilter
+      return matchesText && matchesCategory
+    })
+
+    return [...filtered].sort((a, b) => {
+      const primary = a[sortKey].localeCompare(b[sortKey], 'ja')
+      if (primary !== 0) return primary
+      return a.name.localeCompare(b.name, 'ja')
+    })
+  }, [stores, searchText, categoryFilter, sortKey])
 
   return (
     <div className="ac-page-bg">
@@ -55,6 +77,40 @@ export default function StoresPage() {
           </p>
         )}
 
+        <div className="flex flex-wrap gap-3 mb-6">
+          <input
+            type="text"
+            placeholder="店舗名で検索"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="ac-input !w-auto text-sm"
+          />
+
+          {categories.length > 0 && (
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="ac-input !w-auto text-sm"
+            >
+              <option value="all">すべてのカテゴリ</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="ac-input !w-auto text-sm"
+          >
+            <option value="name">店舗名順</option>
+            <option value="category">カテゴリ順</option>
+          </select>
+        </div>
+
         {isLoading ? (
           <p className="text-sm font-bold text-wood-500">読み込み中...</p>
         ) : stores.length === 0 ? (
@@ -62,9 +118,13 @@ export default function StoresPage() {
             <Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />
             店舗がありません
           </div>
+        ) : visibleStores.length === 0 ? (
+          <div className="ac-card relative text-center text-wood-500">
+            検索条件に一致する店舗がありません
+          </div>
         ) : (
           <ul className="space-y-3">
-            {stores.map((store) => (
+            {visibleStores.map((store) => (
               <li
                 key={store.id}
                 data-testid="store-item"
