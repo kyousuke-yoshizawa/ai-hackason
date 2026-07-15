@@ -30,32 +30,35 @@ COMMENT ON COLUMN users.created_at IS '作成日時';
 COMMENT ON COLUMN users.updated_at IS '更新日時';
 
 -- テストデータ挿入
--- ※ パスワードは実際にはハッシュ化が必要です
--- 下記は例示用です（実環境では必ずハッシュ化してください）
+-- 以下は bcryptjs (cost=10) で実際にハッシュ化した値（平文パスワード: Hackathon2026!）。
+-- 2026-07-15: 過去に本物のハッシュではないダミー文字列
+-- ($2b$10$NexusPlatformHashedPassword...) が入っており、どのパスワードを
+-- 入力してもログイン不可能な事故が発生した（本番incident）。このSQLを
+-- 再実行する場合も必ず bcrypt.hashSync() 等で生成した実ハッシュを使うこと。
 
 INSERT INTO users (email, name, password, role) VALUES
   (
     'yoshizawa@ai-hackason.example',
     '吉沢',
-    '$2b$10$NexusPlatformHashedPassword123456789012345678901234567890',
+    '$2a$10$Ha8ISs5HYf3IyrzoOClW4O9CZd5lAvSSzxkzGNEzOlcEfA7xaIbNG',
     'admin'
   ),
   (
     'satoh@ai-hackason.example',
     '佐藤',
-    '$2b$10$NexusPlatformHashedPassword123456789012345678901234567890',
+    '$2a$10$Ha8ISs5HYf3IyrzoOClW4O9CZd5lAvSSzxkzGNEzOlcEfA7xaIbNG',
     'user'
   ),
   (
     'itagaki@ai-hackason.example',
     '板垣',
-    '$2b$10$NexusPlatformHashedPassword123456789012345678901234567890',
+    '$2a$10$Ha8ISs5HYf3IyrzoOClW4O9CZd5lAvSSzxkzGNEzOlcEfA7xaIbNG',
     'user'
   ),
   (
     'takayanagi@ai-hackason.example',
     '高柳',
-    '$2b$10$NexusPlatformHashedPassword123456789012345678901234567890',
+    '$2a$10$Ha8ISs5HYf3IyrzoOClW4O9CZd5lAvSSzxkzGNEzOlcEfA7xaIbNG',
     'user'
   );
 
