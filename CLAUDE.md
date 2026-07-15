@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **AI Hackathon 2026** — A 20-hour team project (Kyosuke + 3 members) building a production application using React + TypeScript + Tailwind / Node.js + Express + Claude API / Supabase PostgreSQL / Vercel.
 
+- **GitHub Repository**: `dx-ai-sas-com-organization/repository-007` (https://github.com/dx-ai-sas-com-organization/repository-007) — canonical repo as of 2026-07-15. The former repo `kyousuke-yoshizawa/ai-hackason` is kept read-only for reference only; do not push to it anymore.
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
 - **Backend**: Node.js + Express (Claude API integration)
 - **Database**: Supabase (PostgreSQL)
