@@ -27,37 +27,70 @@ describe('UserManagementPanel 検索・絞り込み・ソート', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/users?limit=100')
   })
 
-  it('名前またはメールで部分一致検索できる', async () => {
+  it('検索ボタンを押すまでは一覧が変化しない', async () => {
     setup()
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByPlaceholderText('名前・メールで検索'), { target: { value: 'al' } })
 
+    expect(screen.getByText('Charlie')).toBeTruthy()
+    expect(screen.getByText('Alpha')).toBeTruthy()
+    expect(screen.getByText('Bravo')).toBeTruthy()
+  })
+
+  it('検索ボタンを押すと名前またはメールの部分一致で絞り込まれる', async () => {
+    setup()
+    await screen.findByText('Charlie')
+
+    fireEvent.change(screen.getByPlaceholderText('名前・メールで検索'), { target: { value: 'al' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
+
     expect(screen.getByText('Alpha')).toBeTruthy()
     expect(screen.queryByText('Charlie')).toBeNull()
     expect(screen.queryByText('Bravo')).toBeNull()
   })
 
-  it('ロールで絞り込みできる', async () => {
+  it('検索ボタンを押すとロールで絞り込まれる', async () => {
     setup()
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByDisplayValue('すべてのロール'), { target: { value: 'admin' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
 
     expect(screen.getByText('Alpha')).toBeTruthy()
     expect(screen.queryByText('Charlie')).toBeNull()
     expect(screen.queryByText('Bravo')).toBeNull()
   })
 
-  it('有効/無効で絞り込みできる', async () => {
+  it('検索ボタンを押すと有効/無効で絞り込まれる', async () => {
     setup()
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByDisplayValue('すべての状態'), { target: { value: 'inactive' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
 
     expect(screen.getByText('Bravo')).toBeTruthy()
     expect(screen.queryByText('Charlie')).toBeNull()
     expect(screen.queryByText('Alpha')).toBeNull()
+  })
+
+  it('クリアボタンで検索条件と一覧表示が初期状態に戻る', async () => {
+    setup()
+    await screen.findByText('Charlie')
+
+    fireEvent.change(screen.getByPlaceholderText('名前・メールで検索'), { target: { value: 'al' } })
+    fireEvent.change(screen.getByDisplayValue('すべてのロール'), { target: { value: 'admin' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
+    expect(screen.queryByText('Charlie')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'クリア' }))
+
+    expect(screen.getByPlaceholderText('名前・メールで検索')).toHaveValue('')
+    expect(screen.getByDisplayValue('すべてのロール')).toBeTruthy()
+    expect(screen.getByDisplayValue('すべての状態')).toBeTruthy()
+    expect(screen.getByText('Charlie')).toBeTruthy()
+    expect(screen.getByText('Alpha')).toBeTruthy()
+    expect(screen.getByText('Bravo')).toBeTruthy()
   })
 
   it('ヘッダークリックで名前順の昇順・降順を切り替えられる', async () => {
@@ -78,6 +111,7 @@ describe('UserManagementPanel 検索・絞り込み・ソート', () => {
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByPlaceholderText('名前・メールで検索'), { target: { value: '存在しないユーザー名' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
 
     expect(await screen.findByText('検索条件に一致するユーザがいません')).toBeTruthy()
   })

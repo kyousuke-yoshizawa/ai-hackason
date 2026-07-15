@@ -14,8 +14,10 @@ export function StoreManagementPanel({
 }) {
   const [stores, setStores] = useState<AdminStore[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [searchText, setSearchText] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [draftSearchText, setDraftSearchText] = useState('')
+  const [draftCategoryFilter, setDraftCategoryFilter] = useState('all')
+  const [appliedSearchText, setAppliedSearchText] = useState('')
+  const [appliedCategoryFilter, setAppliedCategoryFilter] = useState('all')
   const [sortKey, setSortKey] = useState<StoreSortKey>('name')
   const [sortDir, setSortDir] = useState<SortDirection>('asc')
   const [formMode, setFormMode] = useState<'create' | AdminStore | null>(null)
@@ -75,13 +77,25 @@ export function StoreManagementPanel({
     }
   }
 
+  const handleSearch = () => {
+    setAppliedSearchText(draftSearchText)
+    setAppliedCategoryFilter(draftCategoryFilter)
+  }
+
+  const handleClear = () => {
+    setDraftSearchText('')
+    setDraftCategoryFilter('all')
+    setAppliedSearchText('')
+    setAppliedCategoryFilter('all')
+  }
+
   const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
 
   const visibleStores = useMemo(() => {
-    const text = searchText.trim().toLowerCase()
+    const text = appliedSearchText.trim().toLowerCase()
     const filtered = stores.filter((s) => {
       const matchesText = text === '' || s.name.toLowerCase().includes(text)
-      const matchesCategory = categoryFilter === 'all' || s.category === categoryFilter
+      const matchesCategory = appliedCategoryFilter === 'all' || s.category === appliedCategoryFilter
       return matchesText && matchesCategory
     })
 
@@ -94,7 +108,7 @@ export function StoreManagementPanel({
       if (primary !== 0) return primary * dir
       return sortKey === 'name' ? 0 : a.name.localeCompare(b.name, 'ja')
     })
-  }, [stores, searchText, categoryFilter, sortKey, sortDir])
+  }, [stores, appliedSearchText, appliedCategoryFilter, sortKey, sortDir])
 
   return (
     <div>
@@ -104,13 +118,13 @@ export function StoreManagementPanel({
           <input
             type="text"
             placeholder="店舗名で検索"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            value={draftSearchText}
+            onChange={(e) => setDraftSearchText(e.target.value)}
             className="ac-input !w-auto"
           />
           <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            value={draftCategoryFilter}
+            onChange={(e) => setDraftCategoryFilter(e.target.value)}
             className="ac-input !w-auto"
           >
             <option value="all">すべてのカテゴリ</option>
@@ -120,6 +134,12 @@ export function StoreManagementPanel({
               </option>
             ))}
           </select>
+          <button onClick={handleSearch} className="ac-btn-secondary">
+            検索
+          </button>
+          <button onClick={handleClear} className="ac-btn-ghost">
+            クリア
+          </button>
           <button onClick={() => setFormMode('create')} className="ac-btn-primary">
             新規登録
           </button>

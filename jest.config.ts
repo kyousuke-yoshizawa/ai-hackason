@@ -30,11 +30,10 @@ const config: Config = {
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-      },
+      // tsconfig.backend.json は tsconfig.json を継承しつつ include に "tests" を
+      // 含むため、tests/配下のアンビエント型宣言（例: @testing-library/jest-dom の
+      // 型拡張）が ts-jest の型チェック対象プログラムに含まれるようになる。
+      tsconfig: '<rootDir>/tsconfig.backend.json',
     }],
   },
 }

@@ -43,26 +43,56 @@ beforeEach(() => {
 })
 
 describe('StoresPage 検索・絞り込み・ソート', () => {
-  it('店舗名で部分一致検索できる', async () => {
+  it('検索ボタンを押すまでは一覧が変化しない', async () => {
     setup()
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByPlaceholderText('店舗名で検索'), { target: { value: 'al' } })
+
+    expect(screen.getByText('Charlie')).toBeTruthy()
+    expect(screen.getByText('Alpha')).toBeTruthy()
+    expect(screen.getByText('Bravo')).toBeTruthy()
+  })
+
+  it('検索ボタンを押すと店舗名の部分一致で絞り込まれる', async () => {
+    setup()
+    await screen.findByText('Charlie')
+
+    fireEvent.change(screen.getByPlaceholderText('店舗名で検索'), { target: { value: 'al' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
 
     expect(screen.getByText('Alpha')).toBeTruthy()
     expect(screen.queryByText('Charlie')).toBeNull()
     expect(screen.queryByText('Bravo')).toBeNull()
   })
 
-  it('カテゴリで絞り込みできる', async () => {
+  it('検索ボタンを押すとカテゴリで絞り込まれる', async () => {
     setup()
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByDisplayValue('すべてのカテゴリ'), { target: { value: 'Sushi' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
 
     expect(screen.getByText('Alpha')).toBeTruthy()
     expect(screen.queryByText('Charlie')).toBeNull()
     expect(screen.queryByText('Bravo')).toBeNull()
+  })
+
+  it('クリアボタンで検索条件と一覧表示が初期状態に戻る', async () => {
+    setup()
+    await screen.findByText('Charlie')
+
+    fireEvent.change(screen.getByPlaceholderText('店舗名で検索'), { target: { value: 'al' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
+    expect(screen.queryByText('Charlie')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'クリア' }))
+
+    expect(screen.getByPlaceholderText('店舗名で検索')).toHaveValue('')
+    expect(screen.getByDisplayValue('すべてのカテゴリ')).toBeTruthy()
+    expect(screen.getByText('Charlie')).toBeTruthy()
+    expect(screen.getByText('Alpha')).toBeTruthy()
+    expect(screen.getByText('Bravo')).toBeTruthy()
   })
 
   it('カテゴリ順で並び替えると同カテゴリ内は店舗名順になる', async () => {
@@ -82,6 +112,7 @@ describe('StoresPage 検索・絞り込み・ソート', () => {
     await screen.findByText('Charlie')
 
     fireEvent.change(screen.getByPlaceholderText('店舗名で検索'), { target: { value: '存在しない店舗名' } })
+    fireEvent.click(screen.getByRole('button', { name: '検索' }))
 
     expect(await screen.findByText('検索条件に一致する店舗がありません')).toBeTruthy()
   })
