@@ -161,7 +161,20 @@ Tailwind CSS + PostCSS. Configuration in:
 1. Read `docs/ai-hackathon-team-ops/README.md` — team onboarding & setup
 2. Read `docs/ai-hackathon-team-ops/SKILL.md` — full overview
 3. Read `docs/ai-hackathon-team-ops/references/ai-harness-core.md` if delegating to AI agents
-4. Read your role's subagent file (`docs/ai-hackathon-team-ops/agents/*-subagent.md`)
+4. Read your role's subagent file (`docs/ai-hackathon-team-ops/agents/*-subagent.md`) — these are role *guides* for humans/AI collaborators to read, not Claude Code subagents. Don't confuse them with the `.claude/agents/*.md` entries below, which the Agent tool actually invokes.
+
+### Claude Code サブエージェント（実装→レビューサイクル）
+
+`.claude/agents/` に、Claude Code の Agent ツールから直接呼び出せるサブエージェントを用意している（`.claude/skills/subagent-creator.md` で生成・保守）:
+
+| エージェント | 担当範囲 |
+|---|---|
+| `frontend-implementer` | React/TS/Tailwind（`src/`） |
+| `backend-implementer` | Express（`server/`）/ Vercel Functions（`api/`）/ 共有ロジック（`backend/`） |
+| `infra-builder` | Vercel / Supabase / GitHub Actions / cron |
+| `reviewer` | 上記3エージェントの成果物、または任意の変更のレビュー |
+
+**必須ルール**: `frontend-implementer` / `backend-implementer` / `infra-builder` のいずれかを呼んだ後は、呼び出し元セッションが必ず `reviewer` エージェントでレビューを行うこと。`reviewer` が `REVIEW: ISSUES FOUND`（`[必須]` 指摘あり）を返した場合は該当の実装エージェントに修正を依頼し、`REVIEW: CLEAN` になるまで 実装→レビュー を繰り返す（目安上限5サイクル。収束しない場合はループを止め、ユーザーに状況を報告して指示を仰ぐ）。実装エージェント自身の完了報告だけをもって「完了」と判断しない。
 
 ### Branches & PRs
 
