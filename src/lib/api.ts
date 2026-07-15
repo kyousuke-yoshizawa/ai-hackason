@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// 本番はフロントエンドと /api/* が同一オリジン（Vercel Functions）のため相対パスでよい。
+// ローカル開発はフロントエンド(5173)とバックエンド(3000)が別ポートなので明示的に指定する
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:3000' : '')
 
 export class ApiError extends Error {
   constructor(
