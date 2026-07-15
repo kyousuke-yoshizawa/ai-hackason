@@ -14,9 +14,12 @@ export function UserManagementPanel({
 }) {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [searchText, setSearchText] = useState('')
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all')
+  const [draftSearchText, setDraftSearchText] = useState('')
+  const [draftRoleFilter, setDraftRoleFilter] = useState<RoleFilter>('all')
+  const [draftActiveFilter, setDraftActiveFilter] = useState<ActiveFilter>('all')
+  const [appliedSearchText, setAppliedSearchText] = useState('')
+  const [appliedRoleFilter, setAppliedRoleFilter] = useState<RoleFilter>('all')
+  const [appliedActiveFilter, setAppliedActiveFilter] = useState<ActiveFilter>('all')
   const [sortKey, setSortKey] = useState<UserSortKey>('name')
   const [sortDir, setSortDir] = useState<SortDirection>('asc')
   const [formMode, setFormMode] = useState<'create' | AdminUser | null>(null)
@@ -74,14 +77,29 @@ export function UserManagementPanel({
     }
   }
 
+  const handleSearch = () => {
+    setAppliedSearchText(draftSearchText)
+    setAppliedRoleFilter(draftRoleFilter)
+    setAppliedActiveFilter(draftActiveFilter)
+  }
+
+  const handleClear = () => {
+    setDraftSearchText('')
+    setDraftRoleFilter('all')
+    setDraftActiveFilter('all')
+    setAppliedSearchText('')
+    setAppliedRoleFilter('all')
+    setAppliedActiveFilter('all')
+  }
+
   const visibleUsers = useMemo(() => {
-    const text = searchText.trim().toLowerCase()
+    const text = appliedSearchText.trim().toLowerCase()
     const filtered = users.filter((u) => {
       const matchesText =
         text === '' || u.name.toLowerCase().includes(text) || u.email.toLowerCase().includes(text)
-      const matchesRole = roleFilter === 'all' || u.role === roleFilter
+      const matchesRole = appliedRoleFilter === 'all' || u.role === appliedRoleFilter
       const matchesActive =
-        activeFilter === 'all' || (activeFilter === 'active' ? u.is_active : !u.is_active)
+        appliedActiveFilter === 'all' || (appliedActiveFilter === 'active' ? u.is_active : !u.is_active)
       return matchesText && matchesRole && matchesActive
     })
 
@@ -91,7 +109,7 @@ export function UserManagementPanel({
       if (primary !== 0) return primary * dir
       return sortKey === 'name' ? 0 : a.name.localeCompare(b.name, 'ja')
     })
-  }, [users, searchText, roleFilter, activeFilter, sortKey, sortDir])
+  }, [users, appliedSearchText, appliedRoleFilter, appliedActiveFilter, sortKey, sortDir])
 
   return (
     <div>
@@ -101,13 +119,13 @@ export function UserManagementPanel({
           <input
             type="text"
             placeholder="名前・メールで検索"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            value={draftSearchText}
+            onChange={(e) => setDraftSearchText(e.target.value)}
             className="ac-input !w-auto"
           />
           <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+            value={draftRoleFilter}
+            onChange={(e) => setDraftRoleFilter(e.target.value as RoleFilter)}
             className="ac-input !w-auto"
           >
             <option value="all">すべてのロール</option>
@@ -116,14 +134,20 @@ export function UserManagementPanel({
             <option value="user">user</option>
           </select>
           <select
-            value={activeFilter}
-            onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+            value={draftActiveFilter}
+            onChange={(e) => setDraftActiveFilter(e.target.value as ActiveFilter)}
             className="ac-input !w-auto"
           >
             <option value="all">すべての状態</option>
             <option value="active">有効</option>
             <option value="inactive">無効</option>
           </select>
+          <button onClick={handleSearch} className="ac-btn-secondary !px-4 !py-2 text-sm">
+            検索
+          </button>
+          <button onClick={handleClear} className="ac-btn-ghost !px-4 !py-2 text-sm">
+            クリア
+          </button>
           <button onClick={() => setFormMode('create')} className="ac-btn-primary !px-4 !py-2 text-sm">
             新規登録
           </button>
