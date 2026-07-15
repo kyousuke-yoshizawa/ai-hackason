@@ -66,4 +66,16 @@ describe('StoreManagementPanel 検索・絞り込み・ソート', () => {
 
     expect(await screen.findByText('検索条件に一致する店舗がありません')).toBeTruthy()
   })
+
+  it('カテゴリ順ソート時、同カテゴリ内は名前順（タイブレーク）になる', async () => {
+    setup()
+    await screen.findByText('Charlie')
+
+    const bodyRowNames = () =>
+      screen.getAllByRole('row').slice(1).map((row) => row.querySelectorAll('td')[0].textContent)
+
+    fireEvent.click(screen.getByRole('button', { name: /カテゴリ/ }))
+
+    expect(bodyRowNames()).toEqual(['Bravo', 'Charlie', 'Alpha'])
+  })
 })

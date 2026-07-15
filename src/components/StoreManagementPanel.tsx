@@ -87,10 +87,12 @@ export function StoreManagementPanel({
 
     const dir = sortDir === 'asc' ? 1 : -1
     return [...filtered].sort((a, b) => {
-      if (sortKey === 'open_time') {
-        return (a.open_time ?? '').localeCompare(b.open_time ?? '') * dir
-      }
-      return a[sortKey].localeCompare(b[sortKey], 'ja') * dir
+      const primary =
+        sortKey === 'open_time'
+          ? (a.open_time ?? '').localeCompare(b.open_time ?? '')
+          : a[sortKey].localeCompare(b[sortKey], 'ja')
+      if (primary !== 0) return primary * dir
+      return sortKey === 'name' ? 0 : a.name.localeCompare(b.name, 'ja')
     })
   }, [stores, searchText, categoryFilter, sortKey, sortDir])
 

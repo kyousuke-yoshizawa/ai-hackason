@@ -86,7 +86,11 @@ export function UserManagementPanel({
     })
 
     const dir = sortDir === 'asc' ? 1 : -1
-    return [...filtered].sort((a, b) => a[sortKey].localeCompare(b[sortKey], 'ja') * dir)
+    return [...filtered].sort((a, b) => {
+      const primary = a[sortKey].localeCompare(b[sortKey], 'ja')
+      if (primary !== 0) return primary * dir
+      return sortKey === 'name' ? 0 : a.name.localeCompare(b.name, 'ja')
+    })
   }, [users, searchText, roleFilter, activeFilter, sortKey, sortDir])
 
   return (

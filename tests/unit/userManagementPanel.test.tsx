@@ -81,4 +81,22 @@ describe('UserManagementPanel 検索・絞り込み・ソート', () => {
 
     expect(await screen.findByText('検索条件に一致するユーザがいません')).toBeTruthy()
   })
+
+  it('ロール順ソート時、同ロール内は名前順（タイブレーク）になる', async () => {
+    const TIED_ROLE_USERS = [
+      { id: 'u1', email: 'charlie@example.com', name: 'Charlie', role: 'user' as const, store_id: null, is_active: true },
+      { id: 'u2', email: 'alpha@example.com', name: 'Alpha', role: 'user' as const, store_id: null, is_active: true },
+      { id: 'u3', email: 'bravo@example.com', name: 'Bravo', role: 'admin' as const, store_id: null, is_active: true },
+    ]
+    mockGet.mockResolvedValue({ data: TIED_ROLE_USERS })
+    render(<UserManagementPanel onNotify={jest.fn()} />)
+    await screen.findByText('Charlie')
+
+    fireEvent.click(screen.getByRole('button', { name: /ロール/ }))
+
+    const bodyRowNames = () =>
+      screen.getAllByRole('row').slice(1).map((row) => row.querySelectorAll('td')[1].textContent)
+
+    expect(bodyRowNames()).toEqual(['Bravo', 'Alpha', 'Charlie'])
+  })
 })
