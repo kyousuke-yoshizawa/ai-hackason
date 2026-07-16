@@ -35,12 +35,22 @@ export default function Sidebar() {
   const commonItemClasses =
     'flex flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border-l-4 px-4 py-2.5 font-bold transition'
 
+  // 現在地に最も一致するメニュー項目を1つだけactiveにする（完全一致 or パス階層一致のうち最長のto）。
+  // 例: /admin/errors では「エラー管理」(/admin/errors) のみactiveにし、「管理画面」(/admin) は
+  // 前方一致するがより短いtoなので除外する。
+  const activeItem = items.reduce<SidebarMenuItem | null>((best, item) => {
+    const matches = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+    if (!matches) return best
+    if (!best || item.to.length > best.to.length) return item
+    return best
+  }, null)
+
   return (
-    <aside className="w-full flex-shrink-0 md:w-64">
+    <aside className="w-full flex-shrink-0 p-4 md:sticky md:top-0 md:w-64 md:self-start">
       <nav className="ac-card flex flex-col gap-4 !p-4" aria-label="画面遷移メニュー">
         <ul className="flex gap-2 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0">
           {items.map((item) => {
-            const isActive = location.pathname === item.to
+            const isActive = item === activeItem
 
             if (!item.enabled) {
               return (

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
 import Leaf from '../components/decor/Leaf'
@@ -30,7 +29,6 @@ const STATUS_LABEL: Record<ErrorLog['status'], string> = {
 }
 
 export default function ErrorManagementDashboard() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [errors, setErrors] = useState<ErrorLog[]>([])
   const [statusFilter, setStatusFilter] = useState<'all' | ErrorLog['status']>('all')
@@ -69,20 +67,14 @@ export default function ErrorManagementDashboard() {
   }
 
   return (
-    <div className="ac-page-bg">
+    <>
       <header className="ac-header relative">
         <Leaf className="absolute right-6 top-2 h-8 w-8 opacity-30" color="#dff1cf" />
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
           <div>
             <h1 className="text-2xl font-extrabold">エラー管理ダッシュボード</h1>
             <p className="text-sm font-bold text-leaf-100">admin 専用</p>
           </div>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="ac-btn-secondary !px-4 !py-2 text-sm"
-          >
-            ダッシュボードに戻る
-          </button>
         </div>
         <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
       </header>
@@ -220,6 +212,6 @@ export default function ErrorManagementDashboard() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
