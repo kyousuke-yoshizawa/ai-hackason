@@ -4,6 +4,7 @@ import { api, ApiError } from '../lib/api'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { PageHeader } from '../components/ui/PageHeader'
 import { ErrorBanner } from '../components/ui/ErrorBanner'
+import { Modal } from '../components/Modal'
 import Leaf from '../components/decor/Leaf'
 
 interface ErrorLog {
@@ -151,63 +152,56 @@ export default function ErrorManagementDashboard() {
       </main>
 
       {selected && (
-        <div
-          className="fixed inset-0 bg-wood-900/50 flex items-center justify-center p-4 z-50"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="ac-card relative max-w-2xl w-full max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Leaf className="absolute -top-4 -left-4 h-9 w-9 rotate-[-15deg] drop-shadow" />
-
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-lg font-extrabold text-wood-800">{selected.error_type}</h2>
+        <Modal
+          title={
+            <span className="flex items-center gap-2">
+              {selected.error_type}
               <span className={`ac-badge ${STATUS_BADGE[selected.status]}`}>
                 {STATUS_LABEL[selected.status]}
               </span>
-            </div>
+            </span>
+          }
+          onClose={() => setSelected(null)}
+          maxWidth="max-w-2xl"
+          maxHeight="max-h-[80vh]"
+          zIndex="z-50"
+        >
+          <p className="text-sm text-wood-600 mb-3">{selected.message}</p>
 
-            <p className="text-sm text-wood-600 mb-3">{selected.message}</p>
-
-            <div className="text-xs text-wood-400 mb-3 space-y-1">
-              <p>発生ユーザ: {selected.user_id ?? '不明'}</p>
-              <p>影響リソース: {selected.affected_resource_id ?? '-'}</p>
-              <p>発生時刻: {new Date(selected.created_at).toLocaleString('ja-JP')}</p>
-            </div>
-
-            {selected.stack_trace && (
-              <pre className="bg-wood-900 text-wood-100 text-xs rounded-2xl p-3 overflow-x-auto mb-4">
-                {selected.stack_trace}
-              </pre>
-            )}
-
-            <div className="flex gap-2 justify-end">
-              {selected.status !== 'reviewing' && (
-                <button
-                  onClick={() => updateStatus(selected.id, 'reviewing')}
-                  className="ac-btn-secondary !px-3 !py-1.5 text-sm"
-                >
-                  確認中にする
-                </button>
-              )}
-              {selected.status !== 'resolved' && (
-                <button
-                  onClick={() => updateStatus(selected.id, 'resolved')}
-                  className="ac-btn-primary !px-3 !py-1.5 text-sm"
-                >
-                  解決済みにする
-                </button>
-              )}
-              <button
-                onClick={() => setSelected(null)}
-                className="ac-btn-ghost !px-3 !py-1.5 text-sm"
-              >
-                閉じる
-              </button>
-            </div>
+          <div className="text-xs text-wood-400 mb-3 space-y-1">
+            <p>発生ユーザ: {selected.user_id ?? '不明'}</p>
+            <p>影響リソース: {selected.affected_resource_id ?? '-'}</p>
+            <p>発生時刻: {new Date(selected.created_at).toLocaleString('ja-JP')}</p>
           </div>
-        </div>
+
+          {selected.stack_trace && (
+            <pre className="bg-wood-900 text-wood-100 text-xs rounded-2xl p-3 overflow-x-auto mb-4">
+              {selected.stack_trace}
+            </pre>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            {selected.status !== 'reviewing' && (
+              <button
+                onClick={() => updateStatus(selected.id, 'reviewing')}
+                className="ac-btn-secondary !px-3 !py-1.5 text-sm"
+              >
+                確認中にする
+              </button>
+            )}
+            {selected.status !== 'resolved' && (
+              <button
+                onClick={() => updateStatus(selected.id, 'resolved')}
+                className="ac-btn-primary !px-3 !py-1.5 text-sm"
+              >
+                解決済みにする
+              </button>
+            )}
+            <button onClick={() => setSelected(null)} className="ac-btn-ghost !px-3 !py-1.5 text-sm">
+              閉じる
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )
