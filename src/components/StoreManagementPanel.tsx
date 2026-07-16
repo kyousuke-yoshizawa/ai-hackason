@@ -225,6 +225,7 @@ export function StoreManagementPanel({
           initialStore={formMode === 'create' ? undefined : formMode}
           onSubmit={handleSubmit}
           onCancel={() => setFormMode(null)}
+          existingStores={stores.map((s) => ({ name: s.name, x: s.x, y: s.y }))}
         />
       )}
 

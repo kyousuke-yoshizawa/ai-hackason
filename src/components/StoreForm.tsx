@@ -67,6 +67,7 @@ export function StoreForm({
   initialStore,
   onSubmit,
   onCancel,
+  existingStores,
 }: {
   initialStore?: AdminStore
   onSubmit: (values: {
@@ -80,6 +81,7 @@ export function StoreForm({
     price_max: number | null
   }) => Promise<void>
   onCancel: () => void
+  existingStores?: { name: string; x: number; y: number }[]
 }) {
   const isEdit = !!initialStore
   const [values, setValues] = useState<StoreFormValues>({
@@ -148,6 +150,7 @@ export function StoreForm({
           x={values.x === '' ? null : Number(values.x)}
           y={values.y === '' ? null : Number(values.y)}
           onPick={(x, y) => setValues({ ...values, x: String(x), y: String(y) })}
+          existingStores={existingStores}
         />
         <div className="grid grid-cols-2 gap-3">
           {field('x', 'X座標 (0-400)', 'number')}
