@@ -48,8 +48,8 @@ const schema = z
   .object({
     name: z.string().min(1, '店舗名は必須です'),
     category: z.string().min(1, 'カテゴリは必須です'),
-    x: numberField('X座標', { min: 0, max: 300 }),
-    y: numberField('Y座標', { min: 0, max: 300 }),
+    x: numberField('X座標', { min: 0, max: 400 }),
+    y: numberField('Y座標', { min: 0, max: 400 }),
     open_time: z.string(),
     close_time: z.string(),
     price_min: optionalNumberField('価格帯下限'),
@@ -147,8 +147,8 @@ export function StoreForm({
           onPick={(x, y) => setValues({ ...values, x: String(x), y: String(y) })}
         />
         <div className="grid grid-cols-2 gap-3">
-          {field('x', 'X座標 (0-300)', 'number')}
-          {field('y', 'Y座標 (0-300)', 'number')}
+          {field('x', 'X座標 (0-400)', 'number')}
+          {field('y', 'Y座標 (0-400)', 'number')}
         </div>
         <div className="grid grid-cols-2 gap-3">
           {field('open_time', '開店時刻', 'time')}

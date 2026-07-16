@@ -1,3 +1,4 @@
+import { AREA_NAME, LANDMARKS } from '../area/landmarks.js'
 import { formatCrowdLevelForPrompt, resolveCurrentCrowdLevel } from '../crowd/getCurrentLevel.js'
 import { getStoreReviewStats } from '../social/reviewsRepository.js'
 import { getDistanceTag, scoreStore, type DistanceTag } from './scoring.js'
@@ -88,6 +89,14 @@ function buildPairwiseDistanceTable(stores: StoreForPrompt[]): string {
   return lines.join('\n')
 }
 
+// LANDMARKS はぷかぷか商店街を西端／東端の2点で保持している（地図描画用）が、
+// プロンプトの世界観紹介としては1つの通り名として触れれば十分なため、
+// 「（西端）」「（東端）」等の補足表記を取り除いて重複排除する
+function buildLandmarkSummary(): string {
+  const names = LANDMARKS.map((landmark) => landmark.name.replace(/（.+?）$/, ''))
+  return Array.from(new Set(names)).join('／')
+}
+
 function formatConstraints(request: GeneratePlanRequest): string {
   const parts = [
     request.party_size ? `人数: ${request.party_size}名` : null,
@@ -115,8 +124,11 @@ export function buildPlanPrompt(request: GeneratePlanRequest, stores: StoreConte
   const distanceTable = buildPairwiseDistanceTable(stores)
   const constraints = formatConstraints(request)
 
-  return `あなたは架空エリア「ことこと町」のお出かけプランを提案するAIアシスタントです。
+  return `あなたは架空エリア「${AREA_NAME}」のお出かけプランを提案するAIアシスタントです。
 以下の店舗一覧と、ユーザーの要望をもとに、複数のお出かけプラン案を時系列・移動順序付きで提案してください。
+
+## ${AREA_NAME}の主なランドマーク（世界観の参考。待ち合わせ場所の描写等に自然に使ってよい）
+${buildLandmarkSummary()}
 
 ## 店舗一覧
 ${storeLines}
