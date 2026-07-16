@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../db.js'
+import { unwrap } from '../../unwrap.js'
 import type { Reservation, ReservationStatus } from '../../../shared/types/reservation.js'
 
 export type { Reservation, ReservationStatus }
@@ -69,19 +70,18 @@ export async function getConfirmedPartySizeForSlot(
   reservationDate: string,
   reservationTime: string,
 ): Promise<number> {
-  const { data, error } = await supabaseAdmin
-    .from('reservations')
-    .select('party_size')
-    .eq('store_id', storeId)
-    .eq('reservation_date', reservationDate)
-    .eq('reservation_time', reservationTime)
-    .eq('status', 'confirmed')
+  const rows = unwrap(
+    await supabaseAdmin
+      .from('reservations')
+      .select('party_size')
+      .eq('store_id', storeId)
+      .eq('reservation_date', reservationDate)
+      .eq('reservation_time', reservationTime)
+      .eq('status', 'confirmed'),
+    'getConfirmedPartySizeForSlot',
+  )
 
-  if (error) {
-    throw new Error(`Failed to sum reserved party size: ${error.message}`)
-  }
-
-  return (data ?? []).reduce((sum, row) => sum + row.party_size, 0)
+  return (rows ?? []).reduce((sum, row) => sum + row.party_size, 0)
 }
 
 export interface CreateReservationInput {
@@ -137,29 +137,27 @@ export async function cancelReservation(id: string): Promise<Reservation> {
 }
 
 export async function listUserReservations(userId: string): Promise<Reservation[]> {
-  const { data, error } = await supabaseAdmin
-    .from('reservations')
-    .select('*')
-    .eq('user_id', userId)
-    .order('reservation_date', { ascending: true })
+  const rows = unwrap(
+    await supabaseAdmin
+      .from('reservations')
+      .select('*')
+      .eq('user_id', userId)
+      .order('reservation_date', { ascending: true }),
+    'listUserReservations',
+  )
 
-  if (error) {
-    throw new Error(`Failed to list user reservations: ${error.message}`)
-  }
-
-  return (data ?? []).map(toReservation)
+  return (rows ?? []).map(toReservation)
 }
 
 export async function listStoreReservations(storeId: string): Promise<Reservation[]> {
-  const { data, error } = await supabaseAdmin
-    .from('reservations')
-    .select('*')
-    .eq('store_id', storeId)
-    .order('reservation_date', { ascending: true })
+  const rows = unwrap(
+    await supabaseAdmin
+      .from('reservations')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('reservation_date', { ascending: true }),
+    'listStoreReservations',
+  )
 
-  if (error) {
-    throw new Error(`Failed to list store reservations: ${error.message}`)
-  }
-
-  return (data ?? []).map(toReservation)
+  return (rows ?? []).map(toReservation)
 }

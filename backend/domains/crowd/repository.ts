@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../db.js'
+import { unwrap } from '../../unwrap.js'
 import type { CongestionLevel } from './types.js'
 
 export async function upsertCrowdStatus(
@@ -6,13 +7,12 @@ export async function upsertCrowdStatus(
   level: CongestionLevel,
   updatedBy: string,
 ): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('crowd_status')
-    .upsert({ store_id: storeId, level, updated_by: updatedBy, updated_at: new Date().toISOString() })
-
-  if (error) {
-    throw new Error(`Failed to upsert crowd status: ${error.message}`)
-  }
+  unwrap(
+    await supabaseAdmin
+      .from('crowd_status')
+      .upsert({ store_id: storeId, level, updated_by: updatedBy, updated_at: new Date().toISOString() }),
+    'upsertCrowdStatus',
+  )
 }
 
 export async function insertCrowdHistory(
@@ -20,13 +20,10 @@ export async function insertCrowdHistory(
   level: CongestionLevel,
   recordedBy: string,
 ): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('crowd_history')
-    .insert({ store_id: storeId, level, recorded_by: recordedBy })
-
-  if (error) {
-    throw new Error(`Failed to insert crowd history: ${error.message}`)
-  }
+  unwrap(
+    await supabaseAdmin.from('crowd_history').insert({ store_id: storeId, level, recorded_by: recordedBy }),
+    'insertCrowdHistory',
+  )
 }
 
 export interface CrowdStatusRow {
