@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { cancelReservation, getUserReservations } from '../lib/reservations'
 import { useApiQuery } from '../hooks/useApiQuery'
+import { PageHeader } from '../components/ui/PageHeader'
 import type { AdminStore } from '../components/StoreForm'
 import type { Reservation } from '../types/reservation'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
-import GrassBorder from '../components/decor/GrassBorder'
 
 const STATUS_LABEL: Record<Reservation['status'], string> = {
   pending: '保留中',
@@ -17,7 +16,6 @@ const STATUS_LABEL: Record<Reservation['status'], string> = {
 }
 
 export default function ReservationsListPage() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [storeNames, setStoreNames] = useState<Record<string, string>>({})
   const [operationError, setOperationError] = useState<string | null>(null)
@@ -72,20 +70,11 @@ export default function ReservationsListPage() {
 
   return (
     <div className="ac-page-bg">
-      <header className="ac-header">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="ac-btn-secondary !px-4 !py-2 text-sm"
-          >
-            ← ダッシュボードに戻る
-          </button>
-          <h1 className="text-xl font-extrabold">予約一覧</h1>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="予約一覧"
+        backTo="/dashboard"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {error && (

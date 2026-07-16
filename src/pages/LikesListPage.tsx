@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUserLikes } from '../lib/likes'
 import { useApiQuery } from '../hooks/useApiQuery'
+import { PageHeader } from '../components/ui/PageHeader'
 import Cloud from '../components/decor/Cloud'
 import Flower from '../components/decor/Flower'
-import GrassBorder from '../components/decor/GrassBorder'
 
 type SortKey = 'newest' | 'oldest' | 'name'
 
@@ -60,20 +60,11 @@ export default function LikesListPage() {
 
   return (
     <div className="ac-page-bg relative overflow-hidden">
-      <header className="ac-header">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="ac-btn-secondary !px-4 !py-2 text-sm"
-          >
-            ← ダッシュボードに戻る
-          </button>
-          <h1 className="text-xl font-extrabold">いいね一覧</h1>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="いいね一覧"
+        backTo="/dashboard"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       <Flower className="absolute right-8 top-28 h-10 w-10 opacity-80 md:right-20" />
       <Flower className="absolute left-6 top-1/2 h-8 w-8 opacity-70" color="#ffd07d" center="#ff8fb8" />
