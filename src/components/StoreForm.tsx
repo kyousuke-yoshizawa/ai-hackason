@@ -19,6 +19,8 @@ export interface AdminStore {
   avg_rating?: number
   review_count?: number
   crowd_level?: CongestionLevel | null
+  // 一覧APIのみが返す代表写真URL（Issue #132）。store_mediaが無い店舗はnull
+  thumbnail_url?: string | null
 }
 
 export interface StoreFormValues {

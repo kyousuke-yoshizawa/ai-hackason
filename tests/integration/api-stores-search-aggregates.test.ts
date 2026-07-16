@@ -86,3 +86,60 @@ describe('GET /api/stores (Issue #84: 集計データ結合)', () => {
     expect(popular.crowd_level).toBe('low')
   })
 })
+
+// Issue #132: 店舗一覧カード・プランカードに表示するための代表写真URL（thumbnail_url）を検証する
+describe('GET /api/stores (Issue #132: thumbnail_url)', () => {
+  it('returns thumbnail_url as null for a store with no store_media', async () => {
+    const res = await request(app).get('/api/stores')
+
+    const quiet = res.body.data.find((s: { id: string }) => s.id === 'store-quiet')
+    expect(quiet.thumbnail_url).toBeNull()
+  })
+
+  it('uses the oldest (first-registered) store_media row as the thumbnail', async () => {
+    fakeClient.seed('store_media', [
+      {
+        id: 'media-2',
+        store_id: 'store-popular',
+        file_path: 'store-popular/second.png',
+        created_at: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'media-1',
+        store_id: 'store-popular',
+        file_path: 'store-popular/first.png',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ])
+
+    const res = await request(app).get('/api/stores')
+
+    const popular = res.body.data.find((s: { id: string }) => s.id === 'store-popular')
+    expect(popular.thumbnail_url).toContain('store-popular/first.png')
+    expect(popular.thumbnail_url).not.toContain('second.png')
+  })
+
+  it('resolves distinct thumbnails per store in a single batch (no N+1 leakage across stores)', async () => {
+    fakeClient.seed('store_media', [
+      {
+        id: 'media-quiet',
+        store_id: 'store-quiet',
+        file_path: 'store-quiet/photo.png',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'media-popular',
+        store_id: 'store-popular',
+        file_path: 'store-popular/photo.png',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ])
+
+    const res = await request(app).get('/api/stores')
+
+    const quiet = res.body.data.find((s: { id: string }) => s.id === 'store-quiet')
+    const popular = res.body.data.find((s: { id: string }) => s.id === 'store-popular')
+    expect(quiet.thumbnail_url).toContain('store-quiet/photo.png')
+    expect(popular.thumbnail_url).toContain('store-popular/photo.png')
+  })
+})
