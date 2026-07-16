@@ -1,21 +1,7 @@
 import { supabaseAdmin } from '../../db.js'
+import type { Like, LikeWithStore, StoreRef } from '../../../shared/types/social.js'
 
-export interface Like {
-  id: string
-  user_id: string
-  store_id: string
-  created_at: string
-}
-
-export interface StoreRef {
-  id: string
-  name: string
-  category: string | null
-}
-
-export interface LikeWithStore extends Like {
-  stores: StoreRef | null
-}
+export type { Like, LikeWithStore, StoreRef }
 
 const UNIQUE_VIOLATION = '23505'
 

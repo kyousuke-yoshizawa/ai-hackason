@@ -1,32 +1,8 @@
 import { supabaseAdmin } from '../../db.js'
+import { EMPTY_REVIEW_STATS, type Review, type ReviewStats, type ReviewWithUser } from '../../../shared/types/social.js'
 
-export interface Review {
-  id: string
-  user_id: string
-  store_id: string
-  rating: number
-  comment: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface ReviewWithUser extends Review {
-  users: { name: string } | null
-}
-
-export interface ReviewStats {
-  store_id: string
-  avg_rating: number
-  review_count: number
-  last_updated: string
-}
-
-export const EMPTY_REVIEW_STATS = (storeId: string): ReviewStats => ({
-  store_id: storeId,
-  avg_rating: 0,
-  review_count: 0,
-  last_updated: '',
-})
+export type { Review, ReviewStats, ReviewWithUser }
+export { EMPTY_REVIEW_STATS }
 
 export async function createReview(
   userId: string,

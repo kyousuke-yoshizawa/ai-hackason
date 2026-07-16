@@ -1,4 +1,4 @@
-import type { CongestionLevel } from '../crowd/types.js'
+import { CROWD_LEVEL_LABEL, type CongestionLevel } from '../crowd/types.js'
 
 export interface CongestionReportLink {
   level: CongestionLevel
@@ -12,18 +12,6 @@ export interface CongestionReportData {
   reportLinks?: CongestionReportLink[]
 }
 
-const LEVEL_LABEL: Record<CongestionLevel, string> = {
-  low: '空いています',
-  medium: '混雑しています',
-  high: '非常に混雑しています',
-}
-
-const REPORT_BUTTON_LABEL: Record<CongestionLevel, string> = {
-  low: '空いてる',
-  medium: '普通',
-  high: '混んでる',
-}
-
 const LEVEL_COLOR: Record<CongestionLevel, string> = {
   low: '#16a34a',
   medium: '#d97706',
@@ -31,7 +19,7 @@ const LEVEL_COLOR: Record<CongestionLevel, string> = {
 }
 
 export function renderCongestionReportSubject(data: CongestionReportData): string {
-  return `【混雑通知】${data.storeName} は現在${LEVEL_LABEL[data.level]}`
+  return `【混雑通知】${data.storeName} は現在${CROWD_LEVEL_LABEL[data.level]}`
 }
 
 export function renderCongestionReportHtml(data: CongestionReportData): string {
@@ -41,7 +29,7 @@ export function renderCongestionReportHtml(data: CongestionReportData): string {
          ${data.reportLinks
            .map(
              (link) => `<a href="${link.url}" style="display:inline-block;margin:0 4px 8px 0;padding:10px 16px;background:${LEVEL_COLOR[link.level]};color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;">
-           ${REPORT_BUTTON_LABEL[link.level]}
+           ${CROWD_LEVEL_LABEL[link.level]}
          </a>`,
            )
            .join('')}
@@ -57,7 +45,7 @@ export function renderCongestionReportHtml(data: CongestionReportData): string {
         <td style="padding:24px;">
           <h1 style="font-size:18px;margin:0 0 16px;color:#18181b;">${data.storeName} の混雑状況</h1>
           <p style="font-size:14px;margin:0 0 8px;color:${LEVEL_COLOR[data.level]};font-weight:bold;">
-            ${LEVEL_LABEL[data.level]}
+            ${CROWD_LEVEL_LABEL[data.level]}
           </p>
           <p style="font-size:12px;margin:16px 0 0;color:#71717a;">
             レポート時刻: ${data.updatedAt}

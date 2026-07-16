@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { z } from 'zod'
 import { MapPicker } from './MapPicker'
 import { Modal } from './Modal'
+import type { CongestionLevel } from '../../shared/types/crowd'
 
 export interface AdminStore {
   id: string
@@ -17,7 +18,7 @@ export interface AdminStore {
   like_count?: number
   avg_rating?: number
   review_count?: number
-  crowd_level?: 'low' | 'medium' | 'high' | null
+  crowd_level?: CongestionLevel | null
 }
 
 export interface StoreFormValues {

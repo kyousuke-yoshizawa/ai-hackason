@@ -1,5 +1,5 @@
 import { getCrowdPattern, getCurrentCrowdStatus } from './repository.js'
-import type { CongestionLevel } from './types.js'
+import { CROWD_LEVEL_LABEL, type CongestionLevel } from './types.js'
 
 const FRESHNESS_WINDOW_MS = 30 * 60 * 1000 // 30分
 
@@ -9,12 +9,6 @@ export interface CrowdLevelResult {
   level: CongestionLevel | null
   source: CrowdLevelSource
   updatedAt?: string
-}
-
-const LEVEL_LABEL: Record<CongestionLevel, string> = {
-  low: '空いている',
-  medium: '普通の混雑',
-  high: '混雑している',
 }
 
 /**
@@ -46,5 +40,5 @@ export function formatCrowdLevelForPrompt(storeName: string, result: CrowdLevelR
   }
 
   const sourceLabel = result.source === 'live' ? 'リアルタイム報告' : '想定（事前設定）'
-  return `${storeName}: 現在${LEVEL_LABEL[result.level]}（${sourceLabel}）`
+  return `${storeName}: 現在${CROWD_LEVEL_LABEL[result.level]}（${sourceLabel}）`
 }

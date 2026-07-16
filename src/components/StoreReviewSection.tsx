@@ -10,18 +10,17 @@ import {
   updateReview,
 } from '../lib/reviews'
 import type { ReviewStats, ReviewWithUser } from '../types/social'
+import { EMPTY_REVIEW_STATS } from '../../shared/types/social'
 import Flower from './decor/Flower'
 
 interface StoreReviewSectionProps {
   storeId: string
 }
 
-const EMPTY_STATS: ReviewStats = { store_id: '', avg_rating: 0, review_count: 0, last_updated: '' }
-
 export default function StoreReviewSection({ storeId }: StoreReviewSectionProps) {
   const { user } = useAuth()
   const [reviews, setReviews] = useState<ReviewWithUser[]>([])
-  const [stats, setStats] = useState<ReviewStats>(EMPTY_STATS)
+  const [stats, setStats] = useState<ReviewStats>(EMPTY_REVIEW_STATS(''))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingReview, setEditingReview] = useState<ReviewWithUser | null>(null)
 

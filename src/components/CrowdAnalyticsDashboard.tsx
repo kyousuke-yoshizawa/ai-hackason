@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { Modal } from './Modal'
-
-type CongestionLevel = 'low' | 'medium' | 'high'
+import { CROWD_LEVEL_LABEL, type CongestionLevel } from '../../shared/types/crowd'
 
 interface CrowdAnalyticsRow {
   datePeriod: string
@@ -13,7 +12,6 @@ interface CrowdAnalyticsRow {
 }
 
 const LEVEL_VALUE: Record<CongestionLevel, number> = { low: 0, medium: 1, high: 2 }
-const LEVEL_LABEL: Record<CongestionLevel, string> = { low: '空いている', medium: '普通', high: '混雑' }
 const LEVEL_COLOR: Record<CongestionLevel, string> = { low: 'bg-leaf-500', medium: 'bg-sand-500', high: 'bg-bubble-500' }
 const WEEKDAY_LABEL = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -173,7 +171,7 @@ export function CrowdAnalyticsDashboard({
               <p className="text-xs font-bold text-wood-500">最も混む時間帯</p>
               <p className="text-2xl font-extrabold text-wood-800">{mostCrowded?.label ?? '-'}</p>
               {mostCrowded && (
-                <p className="text-xs text-wood-400">{LEVEL_LABEL[mostCrowded.level]}</p>
+                <p className="text-xs text-wood-400">{CROWD_LEVEL_LABEL[mostCrowded.level]}</p>
               )}
             </div>
           </div>
