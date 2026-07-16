@@ -320,10 +320,15 @@ See `.github/workflows/sync-notion.yml` for PR → Notion sync pipeline.
 
 | 用途 | JST（意図） | `vercel.json`（UTC 表記） |
 |---|---|---|
-| 混雑通知（30分おき・営業時間中） | 9:00–21:30 | `*/30 0-12 * * *` |
+| 混雑通知（本来は30分おき・営業時間中） | 9:00–21:30 | ~~`*/30 0-12 * * *`~~ → **暫定 `0 0 * * *`（1日1回・JST 9:00）** |
 | 混雑分析集計（毎日・営業終了後） | 23:00 | `0 14 * * *` |
 
 ローカル開発用の `scripts/*.ts`（`npm run cron:dev` / `cron:dev:analytics`）は `node-cron` の `timezone: 'Asia/Tokyo'` オプションで JST のまま実行されるため、上記の変換は不要。
+
+⚠️ **暫定対応（2026-07-16、PR #169）**: Vercel Hobbyプランはcronを「1日1回まで」しか許可しておらず（[Cron Jobs Usage & Pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing)）、30分おきの`notify-congestion`がこの制限に抵触してデプロイが失敗するようになったため、暫定的に1日1回（JST 9:00・営業開始時刻）に変更した。
+
+- **影響**: 店舗責任者への混雑報告メールが1日1回になり、`crowd_status`の鮮度（直近30分以内）を満たす機会が激減する。結果として、混雑度表示・プラン生成AIが参照する混雑度はほぼ常に時間帯別の想定パターン（`crowd_patterns`）へフォールバックし、リアルタイム性が実質失われる
+- **恒久対応は未決定**：①Vercel Proプランへのアップグレード、②別方式（GitHub Actions等）への移行のいずれかを検討する必要がある。担当（佐藤・Issue #24/#25/#26）およびKyosukeとの相談が必要
 
 ## Documentation & References
 
