@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { supabaseAdmin } from '../../backend/db.js'
 import { requireAuth } from '../middleware/auth.js'
 import { sendError, zodError } from '../../backend/http/respond.js'
+import { asyncHandler } from '../../backend/http/asyncHandler.js'
 import { loginSchema } from '../../backend/domains/auth/schema.js'
 import { getPermissionsForRole } from '../../backend/domains/auth/permissionsRepository.js'
 
@@ -37,11 +38,11 @@ authRouter.post('/login', async (req, res) => {
   res.json(user)
 })
 
-authRouter.get('/permissions', requireAuth, async (req, res) => {
-  try {
+authRouter.get(
+  '/permissions',
+  requireAuth,
+  asyncHandler(async (req, res) => {
     const permissions = await getPermissionsForRole(req.authedUser!.role)
     res.json({ data: permissions })
-  } catch (error) {
-    sendError(res, 500, 'internal_error', error instanceof Error ? error.message : 'unknown error')
-  }
-})
+  }),
+)
