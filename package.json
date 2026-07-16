@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:e2e",
     "cron:dev": "tsx scripts/notifyCongestionCron.ts",
-    "cron:dev:analytics": "tsx scripts/aggregateCrowdAnalyticsCron.ts"
+    "cron:dev:analytics": "tsx scripts/aggregateCrowdAnalyticsCron.ts",
+    "smoke:seed": "tsx scripts/smoke-check-seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
