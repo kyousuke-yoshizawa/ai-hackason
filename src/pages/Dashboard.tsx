@@ -35,6 +35,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Link to="/plan" className="ac-btn-secondary !px-4 !py-2 text-sm">
+              🤖 AIプラン提案
+            </Link>
             <Link to="/likes" className="ac-btn-secondary !px-4 !py-2 text-sm">
               ♥ いいね一覧
             </Link>

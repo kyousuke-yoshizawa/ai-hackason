@@ -23,7 +23,9 @@ describe('generatePlan (claudeClient)', () => {
     delete process.env.ANTHROPIC_API_KEY
     const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
 
-    await expect(generatePlan('prompt')).rejects.toThrow('ANTHROPIC_API_KEY')
+    await expect(generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])).rejects.toThrow(
+      'ANTHROPIC_API_KEY'
+    )
   })
 
   it('テキストブロックのレスポンスをそのまま返す', async () => {
@@ -31,11 +33,15 @@ describe('generatePlan (claudeClient)', () => {
     mockCreate.mockResolvedValue({ content: [{ type: 'text', text: '{"ok":true}' }] })
 
     const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
-    const result = await generatePlan('prompt')
+    const result = await generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])
 
     expect(result).toBe('{"ok":true}')
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'claude-sonnet-5', messages: [{ role: 'user', content: 'prompt' }] })
+      expect.objectContaining({
+        model: 'claude-sonnet-5',
+        system: 'system prompt',
+        messages: [{ role: 'user', content: 'prompt' }],
+      })
     )
   })
 
@@ -45,7 +51,7 @@ describe('generatePlan (claudeClient)', () => {
     mockCreate.mockResolvedValue({ content: [{ type: 'text', text: 'ok' }] })
 
     const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
-    await generatePlan('prompt')
+    await generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])
 
     expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ model: 'claude-opus-4-8' }))
   })
@@ -55,6 +61,22 @@ describe('generatePlan (claudeClient)', () => {
     mockCreate.mockResolvedValue({ content: [{ type: 'tool_use' }] })
 
     const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
-    await expect(generatePlan('prompt')).rejects.toThrow('テキスト形式')
+    await expect(generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])).rejects.toThrow('テキスト形式')
+  })
+
+  it('複数ターン（過去のuser/assistantペア＋今回のuser発話）をそのままの順序でmessages.createに転送する（U006）', async () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test'
+    mockCreate.mockResolvedValue({ content: [{ type: 'text', text: 'ok' }] })
+
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [
+      { role: 'user', content: 'A案のランチを提案して' },
+      { role: 'assistant', content: '{"candidates":[]}' },
+      { role: 'user', content: 'A案のランチを別の店にして' },
+    ]
+
+    const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
+    await generatePlan('system prompt', messages)
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ system: 'system prompt', messages }))
   })
 })

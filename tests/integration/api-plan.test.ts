@@ -115,10 +115,30 @@ describe('POST /api/plan/generate', () => {
     expect(res.statusCode).toBe(200)
     expect((res.body as { candidates: unknown[] }).candidates).toHaveLength(1)
     expect(mockGeneratePlan).toHaveBeenCalledTimes(1)
-    // Claude API呼び出しは1回に統合されていることを確認
-    const prompt = mockGeneratePlan.mock.calls[0][0] as string
-    expect(prompt).toContain('のんびり亭')
-    expect(prompt).toContain('ランチしたい')
+    // Claude API呼び出しは1回に統合されていることを確認（system/messagesの2引数に分離済み・U006）
+    const [system, messages] = mockGeneratePlan.mock.calls[0] as [string, { role: string; content: string }[]]
+    expect(system).toContain('のんびり亭')
+    expect(messages).toEqual([{ role: 'user', content: expect.stringContaining('ランチしたい') }])
+  })
+
+  it('historyを含むリクエストは過去のやり取りを今回の発話より先にmessagesとして転送する（U006）', async () => {
+    mockGeneratePlan.mockResolvedValue(VALID_CLAUDE_JSON)
+
+    const history = [
+      { role: 'user', content: 'ランチと映画のプランを作って' },
+      { role: 'assistant', content: '{"candidates":[]}' },
+    ]
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'A案のランチを別の店にして', history }), res)
+
+    expect(res.statusCode).toBe(200)
+    const [, messages] = mockGeneratePlan.mock.calls[0] as [string, { role: string; content: string }[]]
+    expect(messages).toHaveLength(3)
+    expect(messages[0]).toEqual(history[0])
+    expect(messages[1]).toEqual(history[1])
+    expect(messages[2].role).toBe('user')
+    expect(messages[2].content).toContain('A案のランチを別の店にして')
   })
 
   it('Claude APIの応答がJSONとして解釈できない場合は502を返す', async () => {

@@ -2,12 +2,17 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db.js'
 import { sendError, zodError } from '../../backend/http/respond.js'
 import { generatePlanRequestSchema, generatePlanResponseSchema } from '../../backend/domains/plan/schema.js'
-import { buildPlanPrompt, buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder.js'
+import {
+  buildPlanSystemPrompt,
+  buildPlanUserTurn,
+  buildStoreContexts,
+  type StoreForPrompt,
+} from '../../backend/domains/plan/promptBuilder.js'
 import { generatePlan } from '../../backend/domains/plan/claudeClient.js'
 
 const STORE_COLUMNS = 'id, name, category, x, y, open_time, close_time, price_min, price_max'
 
-// POST /api/plan/generate { message, party_size?, budget?, time_limit? }
+// POST /api/plan/generate { message, party_size?, budget?, time_limit?, history? }
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -33,8 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const storeContexts = await buildStoreContexts(stores as StoreForPrompt[])
-    const prompt = buildPlanPrompt(parsed.data, storeContexts)
-    const rawResponse = await generatePlan(prompt)
+    const systemPrompt = buildPlanSystemPrompt(storeContexts)
+    // U006: セッション内の会話履歴（DB永続化なし）を過去ターンとして先頭に並べ、
+    // 今回の要望を最後のuserメッセージとして追加する
+    const messages = [
+      ...(parsed.data.history ?? []).map((h) => ({ role: h.role, content: h.content })),
+      { role: 'user' as const, content: buildPlanUserTurn(parsed.data) },
+    ]
+    const rawResponse = await generatePlan(systemPrompt, messages)
 
     let json: unknown
     try {

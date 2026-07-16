@@ -9,6 +9,7 @@ import ReservationsListPage from './pages/ReservationsListPage'
 import LikesListPage from './pages/LikesListPage'
 import AdminPage from './pages/AdminPage'
 import ErrorManagementDashboard from './pages/ErrorManagementDashboard'
+import PlanPage from './pages/PlanPage'
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -66,6 +67,14 @@ function App() {
           element={
             <ProtectedRoute>
               <LikesListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan"
+          element={
+            <ProtectedRoute>
+              <PlanPage />
             </ProtectedRoute>
           }
         />
