@@ -64,7 +64,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="yoshizawa@ai-hackason.example"
+              placeholder="メールアドレスを入力"
               className="ac-input"
               required
               disabled={isLoading}
@@ -91,19 +91,6 @@ export default function LoginPage() {
             {isLoading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
-
-        <div className="mt-6 rounded-2xl bg-sand-100/70 p-3 text-center text-sm text-wood-600">
-          <p className="font-bold">テスト用メールアドレス：</p>
-          <p className="mt-2 text-xs text-wood-500">
-            yoshizawa@ai-hackason.example
-            <br />
-            satoh@ai-hackason.example
-            <br />
-            itagaki@ai-hackason.example
-            <br />
-            takayanagi@ai-hackason.example
-          </p>
-        </div>
       </div>
 
       <GrassBorder className="absolute bottom-0 left-0 h-6 w-full" />
