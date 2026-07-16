@@ -4,16 +4,17 @@ import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 import { StoreMediaPanel } from './StoreMediaPanel'
 import { SortableColumnLabel, SortDirection } from './SortableHeader'
+import { useApiQuery } from '../hooks/useApiQuery'
 
 type StoreSortKey = 'name' | 'category' | 'open_time'
+
+const EMPTY_STORES: AdminStore[] = []
 
 export function StoreManagementPanel({
   onNotify,
 }: {
   onNotify: (message: string, type?: 'success' | 'error') => void
 }) {
-  const [stores, setStores] = useState<AdminStore[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [draftSearchText, setDraftSearchText] = useState('')
   const [draftCategoryFilter, setDraftCategoryFilter] = useState('all')
   const [appliedSearchText, setAppliedSearchText] = useState('')
@@ -24,22 +25,20 @@ export function StoreManagementPanel({
   const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
   const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
 
-  const loadStores = async () => {
-    setIsLoading(true)
-    try {
-      const res = await api.get<{ data: AdminStore[] }>('/api/stores')
-      setStores(res.data)
-    } catch (err) {
-      onNotify(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました', 'error')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const {
+    data: storesData,
+    isLoading,
+    error: loadError,
+    reload: loadStores,
+  } = useApiQuery(async () => (await api.get<{ data: AdminStore[] }>('/api/stores')).data, [], {
+    fallbackMessage: '店舗一覧の取得に失敗しました',
+  })
+  const stores = storesData ?? EMPTY_STORES
 
   useEffect(() => {
-    loadStores()
+    if (loadError) onNotify(loadError, 'error')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loadError])
 
   const handleSubmit = async (values: Omit<AdminStore, 'id'>) => {
     try {

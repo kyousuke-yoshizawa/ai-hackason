@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api, ApiError } from '../lib/api'
+import { api } from '../lib/api'
 import { getStoreLikeCount } from '../lib/likes'
+import { useApiQuery } from '../hooks/useApiQuery'
 import LikeButton from '../components/LikeButton'
 import StoreReviewSection from '../components/StoreReviewSection'
 import ReservationModal from '../components/ReservationModal'
@@ -15,25 +16,21 @@ export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [store, setStore] = useState<AdminStore | null>(null)
-  const [likeCount, setLikeCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isReserving, setIsReserving] = useState(false)
 
-  useEffect(() => {
-    if (!storeId) return
-
-    setIsLoading(true)
-    setError(null)
-    Promise.all([api.get<AdminStore>(`/api/stores/${storeId}`), getStoreLikeCount(storeId)])
-      .then(([storeData, likeResult]) => {
-        setStore(storeData)
-        setLikeCount(likeResult.count)
-      })
-      .catch((err) => setError(err instanceof ApiError ? err.message : '店舗情報の取得に失敗しました'))
-      .finally(() => setIsLoading(false))
-  }, [storeId])
+  const { data, isLoading, error } = useApiQuery(
+    async () => {
+      const [storeData, likeResult] = await Promise.all([
+        api.get<AdminStore>(`/api/stores/${storeId}`),
+        getStoreLikeCount(storeId!),
+      ])
+      return { store: storeData, likeCount: likeResult.count }
+    },
+    [storeId],
+    { enabled: !!storeId, fallbackMessage: '店舗情報の取得に失敗しました' }
+  )
+  const store = data?.store ?? null
+  const likeCount = data?.likeCount ?? 0
 
   if (isLoading) {
     return (

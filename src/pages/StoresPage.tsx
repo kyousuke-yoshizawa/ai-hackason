@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api, ApiError } from '../lib/api'
+import { api } from '../lib/api'
+import { useApiQuery } from '../hooks/useApiQuery'
 import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
@@ -11,26 +12,25 @@ import GrassBorder from '../components/decor/GrassBorder'
 
 type SortKey = 'name' | 'category'
 
+const EMPTY_STORES: AdminStore[] = []
+
 export default function StoresPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [stores, setStores] = useState<AdminStore[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    data: storesData,
+    isLoading,
+    error,
+  } = useApiQuery(async () => (await api.get<{ data: AdminStore[] }>('/api/stores')).data, [], {
+    fallbackMessage: '店舗一覧の取得に失敗しました',
+  })
+  const stores = storesData ?? EMPTY_STORES
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
   const [draftSearchText, setDraftSearchText] = useState('')
   const [draftCategoryFilter, setDraftCategoryFilter] = useState('all')
   const [appliedSearchText, setAppliedSearchText] = useState('')
   const [appliedCategoryFilter, setAppliedCategoryFilter] = useState('all')
   const [sortKey, setSortKey] = useState<SortKey>('name')
-
-  useEffect(() => {
-    api
-      .get<{ data: AdminStore[] }>('/api/stores')
-      .then((res) => setStores(res.data))
-      .catch((err) => setError(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました'))
-      .finally(() => setIsLoading(false))
-  }, [])
 
   const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
 

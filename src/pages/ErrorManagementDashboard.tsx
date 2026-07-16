@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
+import { useApiQuery } from '../hooks/useApiQuery'
 import Leaf from '../components/decor/Leaf'
 import GrassBorder from '../components/decor/GrassBorder'
 
@@ -32,30 +33,31 @@ const STATUS_LABEL: Record<ErrorLog['status'], string> = {
 export default function ErrorManagementDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [errors, setErrors] = useState<ErrorLog[]>([])
   const [statusFilter, setStatusFilter] = useState<'all' | ErrorLog['status']>('all')
   const [selected, setSelected] = useState<ErrorLog | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [operationError, setOperationError] = useState<string | null>(null)
 
-  const fetchErrors = async () => {
-    if (!user) return
-    setIsLoading(true)
-    setErrorMessage(null)
-    try {
+  const {
+    data: fetchedErrors,
+    isLoading,
+    error: loadError,
+  } = useApiQuery(
+    async () => {
       const query = statusFilter === 'all' ? '' : `?status=${statusFilter}`
-      setErrors(await api.get<ErrorLog[]>(`/api/errors${query}`))
-    } catch (err) {
-      setErrorMessage(err instanceof ApiError ? err.message : 'エラー一覧の取得に失敗しました')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+      return api.get<ErrorLog[]>(`/api/errors${query}`)
+    },
+    [statusFilter, user?.id],
+    { enabled: !!user, fallbackMessage: 'エラー一覧の取得に失敗しました' }
+  )
+  // updateStatus後にサーバ再取得を待たず即座に反映するため、ローカルにミラーして編集する
+  const [errors, setErrors] = useState<ErrorLog[]>([])
   useEffect(() => {
-    fetchErrors()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (fetchedErrors) setErrors(fetchedErrors)
+  }, [fetchedErrors])
+  useEffect(() => {
+    setOperationError(null)
   }, [statusFilter])
+  const errorMessage = operationError ?? loadError
 
   const updateStatus = async (errorId: string, status: ErrorLog['status']) => {
     if (!user) return
@@ -64,7 +66,7 @@ export default function ErrorManagementDashboard() {
       setErrors((prev) => prev.map((e) => (e.id === errorId ? updated : e)))
       setSelected((prev) => (prev && prev.id === errorId ? updated : prev))
     } catch (err) {
-      setErrorMessage(err instanceof ApiError ? err.message : 'ステータス更新に失敗しました')
+      setOperationError(err instanceof ApiError ? err.message : 'ステータス更新に失敗しました')
     }
   }
 

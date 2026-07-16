@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { cancelReservation, getUserReservations } from '../lib/reservations'
+import { useApiQuery } from '../hooks/useApiQuery'
 import type { AdminStore } from '../components/StoreForm'
 import type { Reservation } from '../types/reservation'
 import Cloud from '../components/decor/Cloud'
@@ -18,29 +19,27 @@ const STATUS_LABEL: Record<Reservation['status'], string> = {
 export default function ReservationsListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [reservations, setReservations] = useState<Reservation[]>([])
   const [storeNames, setStoreNames] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [operationError, setOperationError] = useState<string | null>(null)
 
-  const reload = useCallback(async () => {
-    if (!user) return
-    setIsLoading(true)
-    const result = await getUserReservations(user.id)
-    if (result.success) {
-      const sorted = [...result.reservations].sort((a, b) =>
+  const {
+    data: reservationsData,
+    isLoading,
+    error: loadError,
+    reload,
+  } = useApiQuery(
+    async () => {
+      const result = await getUserReservations(user!.id)
+      if (!result.success) throw new Error(result.message ?? '予約一覧の取得に失敗しました')
+      return [...result.reservations].sort((a, b) =>
         `${a.reservationDate}T${a.reservationTime}`.localeCompare(`${b.reservationDate}T${b.reservationTime}`)
       )
-      setReservations(sorted)
-    } else {
-      setError(result.message ?? '予約一覧の取得に失敗しました')
-    }
-    setIsLoading(false)
-  }, [user])
-
-  useEffect(() => {
-    reload()
-  }, [reload])
+    },
+    [user?.id],
+    { enabled: !!user, fallbackMessage: '予約一覧の取得に失敗しました' }
+  )
+  const reservations = reservationsData ?? []
+  const error = operationError ?? loadError
 
   useEffect(() => {
     api
@@ -65,7 +64,7 @@ export default function ReservationsListPage() {
 
     const result = await cancelReservation(reservation.id)
     if (!result.success) {
-      setError(result.message ?? 'キャンセルに失敗しました')
+      setOperationError(result.message ?? 'キャンセルに失敗しました')
       return
     }
     await reload()

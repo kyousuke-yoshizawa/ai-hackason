@@ -2,18 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { AdminUser, UserForm, UserFormValues } from './UserForm'
 import { SortableHeader, SortDirection } from './SortableHeader'
+import { useApiQuery } from '../hooks/useApiQuery'
 
 type UserSortKey = 'email' | 'name' | 'role'
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type RoleFilter = 'all' | AdminUser['role']
+
+const EMPTY_USERS: AdminUser[] = []
 
 export function UserManagementPanel({
   onNotify,
 }: {
   onNotify: (message: string, type?: 'success' | 'error') => void
 }) {
-  const [users, setUsers] = useState<AdminUser[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [draftSearchText, setDraftSearchText] = useState('')
   const [draftRoleFilter, setDraftRoleFilter] = useState<RoleFilter>('all')
   const [draftActiveFilter, setDraftActiveFilter] = useState<ActiveFilter>('all')
@@ -24,22 +25,20 @@ export function UserManagementPanel({
   const [sortDir, setSortDir] = useState<SortDirection>('asc')
   const [formMode, setFormMode] = useState<'create' | AdminUser | null>(null)
 
-  const loadUsers = async () => {
-    setIsLoading(true)
-    try {
-      const res = await api.get<{ data: AdminUser[] }>('/api/users?limit=100')
-      setUsers(res.data)
-    } catch (err) {
-      onNotify(err instanceof ApiError ? err.message : 'ユーザ一覧の取得に失敗しました', 'error')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const {
+    data: usersData,
+    isLoading,
+    error: loadError,
+    reload: loadUsers,
+  } = useApiQuery(async () => (await api.get<{ data: AdminUser[] }>('/api/users?limit=100')).data, [], {
+    fallbackMessage: 'ユーザ一覧の取得に失敗しました',
+  })
+  const users = usersData ?? EMPTY_USERS
 
   useEffect(() => {
-    loadUsers()
+    if (loadError) onNotify(loadError, 'error')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loadError])
 
   const handleSubmit = async (values: UserFormValues) => {
     try {

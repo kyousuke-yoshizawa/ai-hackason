@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUserLikes } from '../lib/likes'
+import { useApiQuery } from '../hooks/useApiQuery'
 import Cloud from '../components/decor/Cloud'
 import Flower from '../components/decor/Flower'
 import GrassBorder from '../components/decor/GrassBorder'
@@ -16,39 +17,30 @@ interface LikedStoreRow {
   likedAt: string
 }
 
+const EMPTY_ROWS: LikedStoreRow[] = []
+
 export default function LikesListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [rows, setRows] = useState<LikedStoreRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>('newest')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
 
-  useEffect(() => {
-    if (!user) return
-
-    let cancelled = false
-    setIsLoading(true)
-
-    getUserLikes(user.id).then((result) => {
-      if (cancelled) return
-      if (result.success) {
-        const mapped = result.likes.map((row) => ({
-          likeId: row.id,
-          storeId: row.store_id,
-          storeName: row.stores?.name ?? '（店舗情報なし）',
-          category: row.stores?.category ?? null,
-          likedAt: row.created_at,
-        }))
-        setRows(mapped)
-      }
-      setIsLoading(false)
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [user])
+  const { data: rowsData, isLoading } = useApiQuery<LikedStoreRow[]>(
+    async () => {
+      const result = await getUserLikes(user!.id)
+      if (!result.success) return []
+      return result.likes.map((row) => ({
+        likeId: row.id,
+        storeId: row.store_id,
+        storeName: row.stores?.name ?? '（店舗情報なし）',
+        category: row.stores?.category ?? null,
+        likedAt: row.created_at,
+      }))
+    },
+    [user?.id],
+    { enabled: !!user }
+  )
+  const rows = rowsData ?? EMPTY_ROWS
 
   const categories = useMemo(
     () => Array.from(new Set(rows.map((r) => r.category).filter((c): c is string => !!c))),
