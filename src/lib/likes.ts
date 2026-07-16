@@ -1,48 +1,31 @@
-import { api, ApiError } from './api'
+import { api } from './api'
+import { toApiResult } from './toApiResult'
 import type { ApiResult, Like, LikeWithStore } from '../types/social'
 
 export async function addLike(userId: string, storeId: string): Promise<ApiResult & { like?: Like }> {
-  try {
-    const like = await api.post<Like>('/api/likes', { store_id: storeId })
-    return { success: true, like }
-  } catch (error) {
-    return { success: false, message: error instanceof ApiError ? error.message : 'いいねに失敗しました' }
-  }
+  const result = await toApiResult(api.post<Like>('/api/likes', { store_id: storeId }), 'いいねに失敗しました')
+  return result.success ? { success: true, like: result.data } : result
 }
 
 export async function removeLikeByStore(userId: string, storeId: string): Promise<ApiResult> {
-  try {
-    await api.delete<void>(`/api/likes/${storeId}`)
-    return { success: true }
-  } catch (error) {
-    return { success: false, message: error instanceof ApiError ? error.message : 'いいねの取消に失敗しました' }
-  }
+  const result = await toApiResult(api.delete<void>(`/api/likes/${storeId}`), 'いいねの取消に失敗しました')
+  return result.success ? { success: true } : result
 }
 
 export async function getUserLikes(userId: string): Promise<ApiResult & { likes: LikeWithStore[] }> {
-  try {
-    const { data } = await api.get<{ data: LikeWithStore[] }>(`/api/likes/user/${userId}`)
-    return { success: true, likes: data }
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof ApiError ? error.message : 'いいね一覧の取得に失敗しました',
-      likes: [],
-    }
-  }
+  const result = await toApiResult(
+    api.get<{ data: LikeWithStore[] }>(`/api/likes/user/${userId}`),
+    'いいね一覧の取得に失敗しました'
+  )
+  return result.success ? { success: true, likes: result.data.data } : { ...result, likes: [] }
 }
 
 export async function getStoreLikeCount(storeId: string): Promise<ApiResult & { count: number }> {
-  try {
-    const { count } = await api.get<{ count: number }>(`/api/stores/${storeId}/likes/count`)
-    return { success: true, count }
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof ApiError ? error.message : 'いいね数の取得に失敗しました',
-      count: 0,
-    }
-  }
+  const result = await toApiResult(
+    api.get<{ count: number }>(`/api/stores/${storeId}/likes/count`),
+    'いいね数の取得に失敗しました'
+  )
+  return result.success ? { success: true, count: result.data.count } : { ...result, count: 0 }
 }
 
 export async function isStoreLikedByUser(
