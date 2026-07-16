@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db.js'
 import { sendError, zodError } from '../../backend/http/respond.js'
+import { requireMethod } from '../../backend/http/method.js'
 import { checkRateLimit } from '../../backend/http/rateLimit.js'
 import { generatePlanRequestSchema, generatePlanResponseSchema } from '../../backend/domains/plan/schema.js'
 import { buildPlanPrompt, buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder.js'
@@ -23,10 +24,7 @@ function getRateLimitKey(req: VercelRequest): string {
 
 // POST /api/plan/generate { message, party_size?, budget?, time_limit? }
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
-    return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
-  }
+  if (!requireMethod(req, res, ['POST'])) return
 
   const rateLimit = checkRateLimit(getRateLimitKey(req), PLAN_RATE_LIMIT)
   if (!rateLimit.allowed) {
