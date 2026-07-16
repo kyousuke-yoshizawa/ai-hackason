@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
-import { getStoreLikeCount } from '../lib/likes'
 import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
 import type { AdminStore } from '../components/StoreForm'
@@ -16,7 +15,6 @@ export default function StoresPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [stores, setStores] = useState<AdminStore[]>([])
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
@@ -29,11 +27,7 @@ export default function StoresPage() {
   useEffect(() => {
     api
       .get<{ data: AdminStore[] }>('/api/stores')
-      .then(async (res) => {
-        setStores(res.data)
-        const counts = await Promise.all(res.data.map((store) => getStoreLikeCount(store.id)))
-        setLikeCounts(Object.fromEntries(res.data.map((store, i) => [store.id, counts[i].count])))
-      })
+      .then((res) => setStores(res.data))
       .catch((err) => setError(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました'))
       .finally(() => setIsLoading(false))
   }, [])
@@ -163,7 +157,9 @@ export default function StoresPage() {
                   </p>
                 </button>
                 <div className="flex items-center gap-3">
-                  {user && <LikeButton userId={user.id} storeId={store.id} initialCount={likeCounts[store.id] ?? 0} />}
+                  {user && (
+                    <LikeButton userId={user.id} storeId={store.id} initialCount={store.like_count ?? 0} />
+                  )}
                   <button
                     type="button"
                     onClick={() => setReservingStore(store)}
