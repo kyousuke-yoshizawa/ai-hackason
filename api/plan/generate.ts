@@ -51,10 +51,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return sendError(res, 404, 'no_stores', '店舗マスタが空です')
   }
 
+  const startedAt = Date.now()
   try {
     const storeContexts = await buildStoreContexts(stores as StoreForPrompt[])
     const prompt = buildPlanPrompt(parsed.data, storeContexts)
-    const rawResponse = await generatePlan(prompt)
+    const { result: rawResponse, usage, model } = await generatePlan(prompt)
 
     let json: unknown
     try {
@@ -68,8 +69,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return zodError(res, validated.error, 502)
     }
 
+    // 要件定義書v2 8章「コスト管理」対応。DBテーブルは増やさず、Vercelログで集計する最小実装
+    console.log(
+      JSON.stringify({
+        evt: 'plan_generated',
+        ms: Date.now() - startedAt,
+        input_tokens: usage.inputTokens,
+        output_tokens: usage.outputTokens,
+        model,
+        candidates: validated.data.candidates.length,
+      })
+    )
+
     return res.status(200).json(validated.data)
   } catch (err) {
+    console.log(
+      JSON.stringify({
+        evt: 'plan_generation_failed',
+        ms: Date.now() - startedAt,
+        error: err instanceof Error ? err.message : 'unknown error',
+      })
+    )
     return sendError(res, 502, 'claude_api_error', err instanceof Error ? err.message : 'Claude API呼び出しに失敗しました')
   }
 }
