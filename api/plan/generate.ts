@@ -6,8 +6,7 @@ import { checkRateLimit } from '../../backend/http/rateLimit.js'
 import { generatePlanRequestSchema, generatePlanResponseSchema } from '../../backend/domains/plan/schema.js'
 import { buildPlanPrompt, buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder.js'
 import { generatePlan } from '../../backend/domains/plan/claudeClient.js'
-
-const STORE_COLUMNS = 'id, name, category, x, y, open_time, close_time, price_min, price_max'
+import { STORE_PLAN_COLUMNS } from '../../backend/domains/stores/columns.js'
 
 // デモ期間中に緩めたい場合、再デプロイのみで調整できるよう環境変数化
 const PLAN_RATE_LIMIT = Number(process.env.PLAN_RATE_LIMIT) || 10
@@ -39,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data: stores, error } = await supabaseAdmin
     .from('stores')
-    .select(STORE_COLUMNS)
+    .select(STORE_PLAN_COLUMNS)
     .is('deleted_at', null)
 
   if (error) {

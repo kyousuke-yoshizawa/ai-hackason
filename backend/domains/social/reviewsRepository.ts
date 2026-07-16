@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../db.js'
+import { unwrap } from '../../unwrap.js'
 import { EMPTY_REVIEW_STATS, type Review, type ReviewStats, type ReviewWithUser } from '../../../shared/types/social.js'
 
 export type { Review, ReviewStats, ReviewWithUser }
@@ -10,35 +11,26 @@ export async function createReview(
   rating: number,
   comment: string,
 ): Promise<Review> {
-  const { data, error } = await supabaseAdmin
-    .from('reviews')
-    .insert({ user_id: userId, store_id: storeId, rating, comment })
-    .select()
-    .single()
-
-  if (error) throw new Error(error.message)
-  return data as Review
+  return unwrap(
+    await supabaseAdmin.from('reviews').insert({ user_id: userId, store_id: storeId, rating, comment }).select().single(),
+    'createReview',
+  ) as Review
 }
 
 export async function getStoreReviews(storeId: string): Promise<ReviewWithUser[]> {
-  const { data, error } = await supabaseAdmin
-    .from('reviews')
-    .select('*')
-    .eq('store_id', storeId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(error.message)
-  const reviews = (data ?? []) as Review[]
+  const reviews = (unwrap(
+    await supabaseAdmin.from('reviews').select('*').eq('store_id', storeId).order('created_at', { ascending: false }),
+    'getStoreReviews',
+  ) ?? []) as Review[]
 
   const userIds = [...new Set(reviews.map((review) => review.user_id))]
   const namesById = new Map<string, string>()
   if (userIds.length > 0) {
-    const { data: users, error: usersError } = await supabaseAdmin
-      .from('users')
-      .select('id, name')
-      .in('id', userIds)
-    if (usersError) throw new Error(usersError.message)
-    for (const user of (users ?? []) as { id: string; name: string }[]) {
+    const users = (unwrap(
+      await supabaseAdmin.from('users').select('id, name').in('id', userIds),
+      'getStoreReviews(users)',
+    ) ?? []) as { id: string; name: string }[]
+    for (const user of users) {
       namesById.set(user.id, user.name)
     }
   }
@@ -50,14 +42,12 @@ export async function getStoreReviews(storeId: string): Promise<ReviewWithUser[]
 }
 
 export async function getStoreReviewStats(storeId: string): Promise<ReviewStats> {
-  const { data, error } = await supabaseAdmin
-    .from('review_stats')
-    .select('*')
-    .eq('store_id', storeId)
-    .maybeSingle()
+  const stats = unwrap(
+    await supabaseAdmin.from('review_stats').select('*').eq('store_id', storeId).maybeSingle(),
+    'getStoreReviewStats',
+  ) as ReviewStats | null
 
-  if (error) throw new Error(error.message)
-  return (data as ReviewStats) ?? EMPTY_REVIEW_STATS(storeId)
+  return stats ?? EMPTY_REVIEW_STATS(storeId)
 }
 
 export async function updateReview(
@@ -80,8 +70,8 @@ export async function updateReview(
 
 export async function deleteReview(reviewId: string, userId: string, isAdmin: boolean): Promise<boolean> {
   const query = supabaseAdmin.from('reviews').delete().eq('id', reviewId)
-  const { data, error } = isAdmin ? await query.select() : await query.eq('user_id', userId).select()
+  const result = isAdmin ? await query.select() : await query.eq('user_id', userId).select()
+  const data = unwrap(result, 'deleteReview')
 
-  if (error) throw new Error(error.message)
   return Array.isArray(data) && data.length > 0
 }

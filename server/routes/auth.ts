@@ -6,10 +6,9 @@ import { sendError, zodError } from '../../backend/http/respond.js'
 import { asyncHandler } from '../../backend/http/asyncHandler.js'
 import { loginSchema } from '../../backend/domains/auth/schema.js'
 import { getPermissionsForRole } from '../../backend/domains/auth/permissionsRepository.js'
+import { USER_LOGIN_COLUMNS } from '../../backend/domains/users/columns.js'
 
 export const authRouter = Router()
-
-const USER_PUBLIC_COLUMNS = 'id, email, name, role, store_id'
 
 authRouter.post('/login', async (req, res) => {
   const parsed = loginSchema.safeParse(req.body)
@@ -20,7 +19,7 @@ authRouter.post('/login', async (req, res) => {
 
   const { data, error } = await supabaseAdmin
     .from('users')
-    .select(`${USER_PUBLIC_COLUMNS}, password`)
+    .select(`${USER_LOGIN_COLUMNS}, password`)
     .eq('email', email)
     .eq('is_active', true)
     .single()
