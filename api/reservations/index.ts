@@ -3,13 +3,12 @@ import { createReservation } from '../../backend/domains/reservations/repository
 import { validateReservationRequest } from '../../backend/domains/reservations/validation.js'
 import { createReservationBodySchema } from '../../backend/domains/reservations/schema.js'
 import { sendError, zodError } from '../../backend/http/respond.js'
+import { requireMethod } from '../../backend/http/method.js'
+import { withErrorHandling } from '../../backend/http/withErrorHandling.js'
 
 // POST /api/reservations { store_id, user_id, reservation_date, reservation_time, party_size }
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
-    return sendError(res, 405, 'method_not_allowed', 'Method not allowed')
-  }
+async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireMethod(req, res, ['POST'])) return
 
   const parsed = createReservationBodySchema.safeParse(req.body)
   if (!parsed.success) {
@@ -41,10 +40,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return sendError(res, statusByReason[validation.reason] ?? 422, validation.reason, validation.message)
   }
 
-  try {
-    const reservation = await createReservation({ storeId, userId, reservationDate, reservationTime, partySize })
-    return res.status(201).json(reservation)
-  } catch (error) {
-    return sendError(res, 500, 'internal_error', error instanceof Error ? error.message : 'unknown error')
-  }
+  const reservation = await createReservation({ storeId, userId, reservationDate, reservationTime, partySize })
+  return res.status(201).json(reservation)
 }
+
+export default withErrorHandling(handler)

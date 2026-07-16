@@ -18,11 +18,23 @@ function getClient(): Anthropic {
   return client
 }
 
+export interface GeneratePlanUsage {
+  inputTokens: number
+  outputTokens: number
+}
+
+export interface GeneratePlanResult {
+  result: string
+  usage: GeneratePlanUsage
+  model: string
+}
+
 // プラン生成用のClaude API呼び出しをこの1箇所に集約する（要件定義書v2: API呼び出しは1回に統合）
-export async function generatePlan(prompt: string): Promise<string> {
+export async function generatePlan(prompt: string): Promise<GeneratePlanResult> {
   const anthropic = getClient()
+  const model = process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL
   const response = await anthropic.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
+    model,
     max_tokens: MAX_TOKENS,
     messages: [{ role: 'user', content: prompt }],
   })
@@ -31,5 +43,12 @@ export async function generatePlan(prompt: string): Promise<string> {
   if (!textBlock || textBlock.type !== 'text') {
     throw new Error('Claude APIからテキスト形式のレスポンスが得られませんでした')
   }
-  return textBlock.text
+  return {
+    result: textBlock.text,
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    },
+    model,
+  }
 }

@@ -39,4 +39,9 @@ describe('scoreStore', () => {
     const score = scoreStore({ distanceTag: 'near', rating: 5, crowdLevel: 'low', hasOffer: true })
     expect(score).toBeLessThanOrEqual(1.0)
   })
+
+  it('オファー無しの満点店舗は0.85が理論上限になる（要件定義書v2 5章: 加重合計85%+オファー加点15%の別枠方式）', () => {
+    const score = scoreStore({ distanceTag: 'near', rating: 5, crowdLevel: 'low', hasOffer: false })
+    expect(score).toBeCloseTo(0.85, 5)
+  })
 })

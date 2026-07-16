@@ -4,10 +4,10 @@ import { supabaseAdmin } from '../../backend/db.js'
 import { requireAdmin, requireAdminOrSelf, requireAuth } from '../middleware/auth.js'
 import { sendError, zodError } from '../../backend/http/respond.js'
 import { createUserSchema, updateUserSchema } from '../../backend/domains/users/schema.js'
+import { USER_PUBLIC_COLUMNS } from '../../backend/domains/users/columns.js'
+import { buildPartialUpdate } from '../../backend/http/partialUpdate.js'
 
 export const usersRouter = Router()
-
-const USER_PUBLIC_COLUMNS = 'id, email, name, role, store_id, is_active, created_at, updated_at'
 
 usersRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
   const parsed = createUserSchema.safeParse(req.body)
@@ -73,22 +73,18 @@ usersRouter.put('/:id', requireAuth, requireAdminOrSelf(), async (req, res) => {
     return zodError(res, parsed.error)
   }
   const { name, role, password } = parsed.data
-  const updates: Record<string, unknown> = {}
 
-  if (name !== undefined) updates.name = name
-  if (password !== undefined) updates.password = await bcrypt.hash(password, 10)
-
-  if (role !== undefined) {
-    if (req.authedUser?.role !== 'admin') {
-      return sendError(res, 403, 'forbidden', 'role の変更は管理者のみ可能です')
-    }
-    updates.role = role
+  if (role !== undefined && req.authedUser?.role !== 'admin') {
+    return sendError(res, 403, 'forbidden', 'role の変更は管理者のみ可能です')
   }
 
-  if (Object.keys(updates).length === 0) {
+  const updates = buildPartialUpdate(
+    { name, role, password: password !== undefined ? await bcrypt.hash(password, 10) : undefined },
+    ['name', 'role', 'password'],
+  )
+  if (!updates) {
     return sendError(res, 400, 'no_updates', '更新内容がありません')
   }
-  updates.updated_at = new Date().toISOString()
 
   const { data, error } = await supabaseAdmin
     .from('users')

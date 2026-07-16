@@ -1,6 +1,6 @@
 import { MouseEvent, useRef, useState } from 'react'
 
-const GRID_SIZE = 300
+const GRID_SIZE = 400
 const GRID_STEP = 30
 
 export function MapPicker({

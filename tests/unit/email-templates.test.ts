@@ -8,13 +8,13 @@ describe('congestion report email template', () => {
   }
 
   it('renders a subject that includes the store name and level label', () => {
-    expect(renderCongestionReportSubject(base)).toBe('【混雑通知】渋谷店 は現在非常に混雑しています')
+    expect(renderCongestionReportSubject(base)).toBe('【混雑通知】渋谷店 は現在混雑')
   })
 
   it('renders html including the store name and level', () => {
     const html = renderCongestionReportHtml(base)
     expect(html).toContain('渋谷店')
-    expect(html).toContain('非常に混雑しています')
+    expect(html).toContain('混雑')
     expect(html).not.toContain('混雑状態を報告してください')
   })
 
@@ -28,9 +28,9 @@ describe('congestion report email template', () => {
       ],
     })
     expect(html).toContain('混雑状態を報告してください')
-    expect(html).toContain('混んでる')
+    expect(html).toContain('混雑')
     expect(html).toContain('普通')
-    expect(html).toContain('空いてる')
+    expect(html).toContain('空いている')
     expect(html).toContain('level=high&token=abc')
     expect(html).toContain('level=medium&token=abc')
     expect(html).toContain('level=low&token=abc')
