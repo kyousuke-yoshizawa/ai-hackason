@@ -8,6 +8,7 @@ import LikeButton from '../components/LikeButton'
 import StoreReviewSection from '../components/StoreReviewSection'
 import ReservationModal from '../components/ReservationModal'
 import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
 import type { AdminStore } from '../components/StoreForm'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
@@ -35,7 +36,7 @@ export default function StoreDetailPage() {
   if (isLoading) {
     return (
       <div className="ac-page-bg flex items-center justify-center">
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+        <LoadingText />
       </div>
     )
   }

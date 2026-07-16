@@ -6,6 +6,9 @@ import { useApiQuery } from '../hooks/useApiQuery'
 import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
 import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
+import { ErrorBanner } from '../components/ui/ErrorBanner'
+import { EmptyCard } from '../components/ui/EmptyCard'
 import type { AdminStore } from '../components/StoreForm'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
@@ -72,11 +75,7 @@ export default function StoresPage() {
       />
 
       <main className="relative mx-auto max-w-4xl px-4 py-8">
-        {error && (
-          <p className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-4 py-2 text-sm font-bold text-bubble-700">
-            {error}
-          </p>
-        )}
+        {error && <ErrorBanner message={error} />}
 
         <div className="flex flex-wrap gap-3 mb-6">
           <input
@@ -120,16 +119,11 @@ export default function StoresPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+          <LoadingText />
         ) : stores.length === 0 ? (
-          <div className="ac-card relative text-center text-wood-500">
-            <Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />
-            店舗がありません
-          </div>
+          <EmptyCard message="店舗がありません" decor={<Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />} />
         ) : visibleStores.length === 0 ? (
-          <div className="ac-card relative text-center text-wood-500">
-            検索条件に一致する店舗がありません
-          </div>
+          <EmptyCard message="検索条件に一致する店舗がありません" />
         ) : (
           <ul className="space-y-3">
             {visibleStores.map((store) => (

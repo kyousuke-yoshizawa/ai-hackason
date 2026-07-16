@@ -3,6 +3,9 @@ import { Modal } from './Modal'
 import { ApiError } from '../lib/api'
 import { deleteStoreMedia, getStoreMedia, StoreMedia, uploadStoreMedia } from '../lib/storeMedia'
 import { useApiQuery } from '../hooks/useApiQuery'
+import { LoadingText } from './ui/LoadingText'
+import { ErrorBanner } from './ui/ErrorBanner'
+import { EmptyCard } from './ui/EmptyCard'
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf']
 
@@ -104,17 +107,16 @@ export function StoreMediaPanel({
       </div>
 
       {error && (
-        <p className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-3 py-2 text-sm font-bold text-bubble-700">
-          {error}
-        </p>
+        <ErrorBanner
+          message={error}
+          className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-3 py-2 text-sm font-bold text-bubble-700"
+        />
       )}
 
       {isLoading ? (
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+        <LoadingText />
       ) : !media || media.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-wood-200 bg-sand-50/60 px-4 py-6 text-center text-sm text-wood-400">
-          ファイルがまだありません
-        </p>
+        <EmptyCard variant="dashed" message="ファイルがまだありません" />
       ) : (
         <ul className="grid grid-cols-2 gap-3">
           {media.map((item) => (

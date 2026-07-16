@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { api } from '../lib/api'
 import { Modal } from './Modal'
 import { useApiQuery } from '../hooks/useApiQuery'
+import { LoadingText } from './ui/LoadingText'
 import { CROWD_LEVEL_LABEL, type CongestionLevel } from '../../shared/types/crowd'
 
 interface CrowdAnalyticsRow {
@@ -138,7 +139,7 @@ export function CrowdAnalyticsDashboard({
       </div>
 
       {isLoading ? (
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+        <LoadingText />
       ) : error ? (
         <p className="text-sm font-bold text-bubble-600">{error}</p>
       ) : rows.length === 0 ? (

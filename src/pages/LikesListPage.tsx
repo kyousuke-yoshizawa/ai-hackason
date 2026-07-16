@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { getUserLikes } from '../lib/likes'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
+import { EmptyCard } from '../components/ui/EmptyCard'
 import Cloud from '../components/decor/Cloud'
 import Flower from '../components/decor/Flower'
 
@@ -98,11 +100,9 @@ export default function LikesListPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-wood-500 text-sm font-bold">読み込み中...</p>
+          <LoadingText />
         ) : visibleRows.length === 0 ? (
-          <div className="ac-card text-center text-wood-500">
-            まだいいねした店舗がありません
-          </div>
+          <EmptyCard message="まだいいねした店舗がありません" />
         ) : (
           <ul className="space-y-3">
             {visibleRows.map((row) => (

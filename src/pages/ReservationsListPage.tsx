@@ -4,6 +4,9 @@ import { api } from '../lib/api'
 import { cancelReservation, getUserReservations } from '../lib/reservations'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
+import { ErrorBanner } from '../components/ui/ErrorBanner'
+import { EmptyCard } from '../components/ui/EmptyCard'
 import type { AdminStore } from '../components/StoreForm'
 import type { Reservation } from '../types/reservation'
 import Cloud from '../components/decor/Cloud'
@@ -77,19 +80,12 @@ export default function ReservationsListPage() {
       />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {error && (
-          <p className="mb-4 text-sm font-bold text-bubble-700 bg-bubble-50 border-2 border-bubble-200 rounded-2xl px-4 py-2">
-            {error}
-          </p>
-        )}
+        {error && <ErrorBanner message={error} />}
 
         {isLoading ? (
-          <p className="text-wood-500 text-sm font-bold">読み込み中...</p>
+          <LoadingText />
         ) : reservations.length === 0 ? (
-          <div className="ac-card relative text-center text-wood-500">
-            <Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />
-            まだ予約がありません
-          </div>
+          <EmptyCard message="まだ予約がありません" decor={<Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />} />
         ) : (
           <ul className="space-y-3">
             {reservations.map((reservation) => (

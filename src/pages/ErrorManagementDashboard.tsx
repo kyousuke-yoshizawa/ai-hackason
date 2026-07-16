@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { api, ApiError } from '../lib/api'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { PageHeader } from '../components/ui/PageHeader'
+import { ErrorBanner } from '../components/ui/ErrorBanner'
 import Leaf from '../components/decor/Leaf'
 
 interface ErrorLog {
@@ -97,11 +98,7 @@ export default function ErrorManagementDashboard() {
           </select>
         </div>
 
-        {errorMessage && (
-          <div className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-4 py-2 text-sm font-bold text-bubble-700">
-            {errorMessage}
-          </div>
-        )}
+        {errorMessage && <ErrorBanner message={errorMessage} />}
 
         <div className="ac-card overflow-x-auto !p-0">
           <table className="min-w-full divide-y divide-sand-200 text-sm">
