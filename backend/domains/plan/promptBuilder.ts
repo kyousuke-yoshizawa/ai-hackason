@@ -1,3 +1,4 @@
+import { AREA_NAME, LANDMARKS } from '../area/landmarks.js'
 import { formatCrowdLevelForPrompt, resolveCurrentCrowdLevel } from '../crowd/getCurrentLevel.js'
 import { getStoreReviewStats } from '../social/reviewsRepository.js'
 import { getDistanceTag, scoreStore, type DistanceTag } from './scoring.js'
@@ -88,6 +89,14 @@ function buildPairwiseDistanceTable(stores: StoreForPrompt[]): string {
   return lines.join('\n')
 }
 
+// LANDMARKS はぷかぷか商店街を西端／東端の2点で保持している（地図描画用）が、
+// プロンプトの世界観紹介としては1つの通り名として触れれば十分なため、
+// 「（西端）」「（東端）」等の補足表記を取り除いて重複排除する
+function buildLandmarkSummary(): string {
+  const names = LANDMARKS.map((landmark) => landmark.name.replace(/（.+?）$/, ''))
+  return Array.from(new Set(names)).join('／')
+}
+
 function formatConstraints(request: GeneratePlanRequest): string {
   const parts = [
     request.party_size ? `人数: ${request.party_size}名` : null,
@@ -118,8 +127,11 @@ export function buildPlanSystemPrompt(stores: StoreContext[]): string {
 
   const distanceTable = buildPairwiseDistanceTable(stores)
 
-  return `あなたは架空エリア「ことこと町」のお出かけプランを提案するAIアシスタントです。
+  return `あなたは架空エリア「${AREA_NAME}」のお出かけプランを提案するAIアシスタントです。
 以下の店舗一覧と、ユーザーの要望をもとに、複数のお出かけプラン案を時系列・移動順序付きで提案してください。
+
+## ${AREA_NAME}の主なランドマーク（世界観の参考。待ち合わせ場所の描写等に自然に使ってよい）
+${buildLandmarkSummary()}
 
 ## 店舗一覧
 ${storeLines}
@@ -129,7 +141,7 @@ ${distanceTable}
 
 ## 指示
 - 移動順序を決める際は「店舗間の距離感」を参照し、「近い」店舗同士を優先的に組み合わせてください。それらしい徒歩移動時間（例: 徒歩5分程度）を travel_note に生成してください。厳密な数値計算は不要です。
-- 参考スコアは距離感35%・評価25%・混雑度25%・オファー15%の重み付けで算出した、店舗単体の目安です。各案の score（0〜1の1つの数値）は、選んだ店舗の参考スコアの単純平均程度を目安にしてください（複数店舗の参考スコアを合計しないこと）。
+- 参考スコアは距離感・評価・混雑度（合計85%: 35%/25%/25%）の加重合計にオファー加点（最大15%）を加えた、店舗単体の0〜1の目安です。各案の score（0〜1の1つの数値）は、選んだ店舗の参考スコアの単純平均程度を目安にしてください（複数店舗の参考スコアを合計しないこと）。
 - 各店舗の営業時間内に収まるようにプランを組んでください。
 - 各stopのrating・open_time・close_time・crowd_noteには、「## 店舗一覧」に記載されているその店舗の評価・営業時間・混雑状況をそのまま（数値・文言を変えずに）転記してください。評価が「未評価」の場合はratingにnullを入れてください。
 - offer_noteはオファー機能が未実装のため、必ずnull を返してください（内容を考案しないこと）。

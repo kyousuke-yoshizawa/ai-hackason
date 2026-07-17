@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { StoreManagementPanel } from '../components/StoreManagementPanel'
 import { ToastContainer, useToast } from '../components/Toast'
 import { UserManagementPanel } from '../components/UserManagementPanel'
@@ -7,24 +6,17 @@ import Leaf from '../components/decor/Leaf'
 import GrassBorder from '../components/decor/GrassBorder'
 
 export default function AdminPage() {
-  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'users' | 'stores'>('users')
   const { toast, showToast } = useToast()
 
   return (
-    <div className="ac-page-bg">
+    <>
       <header className="ac-header relative">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-4">
           <div>
             <h1 className="text-2xl font-extrabold">管理画面</h1>
             <p className="text-sm font-bold text-leaf-100">ユーザ・店舗マスタ管理</p>
           </div>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="ac-btn-secondary !px-4 !py-2 text-sm"
-          >
-            ← ダッシュボードに戻る
-          </button>
         </div>
         <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
       </header>
@@ -64,6 +56,6 @@ export default function AdminPage() {
       </main>
 
       <ToastContainer toast={toast} />
-    </div>
+    </>
   )
 }

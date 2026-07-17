@@ -6,11 +6,11 @@ import { verifyLinkToken, type LinkTokenPayload } from '../../backend/domains/em
 import { getNotificationById, markNotificationLinkUsed } from '../../backend/domains/email/repository.js'
 import { upsertCrowdStatus, insertCrowdHistory } from '../../backend/domains/crowd/repository.js'
 import { requireStoreAccess } from '../_http/requireStoreAccess.js'
-import type { CongestionLevel } from '../../backend/domains/crowd/types.js'
+import { CROWD_LEVEL_LABEL, type CongestionLevel } from '../../backend/domains/crowd/types.js'
 import { reportCrowdBodySchema } from '../../backend/domains/crowd/schema.js'
 import { zodError } from '../../backend/http/respond.js'
 
-const VALID_LEVELS: CongestionLevel[] = ['low', 'medium', 'high']
+const VALID_LEVELS = Object.keys(CROWD_LEVEL_LABEL) as CongestionLevel[]
 
 // POST /api/crowd/report { store_id, level } （store_manager もしくは admin が認証ヘッダ x-user-id 付きで直接報告する場合）
 async function handlePost(req: VercelRequest, res: VercelResponse) {
@@ -92,15 +92,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   await insertCrowdHistory(storeId, level as CongestionLevel, payload.managerId)
   await markNotificationLinkUsed(payload.notificationId)
 
-  const LEVEL_LABEL: Record<CongestionLevel, string> = {
-    low: '空いてる',
-    medium: '普通',
-    high: '混んでる',
-  }
   const page = renderResultPage(
     200,
     'ご報告ありがとうございます',
-    `混雑状況「${LEVEL_LABEL[level as CongestionLevel]}」を記録しました。`,
+    `混雑状況「${CROWD_LEVEL_LABEL[level as CongestionLevel]}」を記録しました。`,
   )
   return res.status(page.status).setHeader('Content-Type', 'text/html; charset=utf-8').send(page.html)
 }

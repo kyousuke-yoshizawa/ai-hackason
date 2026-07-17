@@ -1,21 +1,8 @@
 import { supabaseAdmin } from '../../db.js'
+import { unwrap } from '../../unwrap.js'
+import type { Like, LikeWithStore, StoreRef } from '../../../shared/types/social.js'
 
-export interface Like {
-  id: string
-  user_id: string
-  store_id: string
-  created_at: string
-}
-
-export interface StoreRef {
-  id: string
-  name: string
-  category: string | null
-}
-
-export interface LikeWithStore extends Like {
-  stores: StoreRef | null
-}
+export type { Like, LikeWithStore, StoreRef }
 
 const UNIQUE_VIOLATION = '23505'
 
@@ -39,29 +26,26 @@ export async function addLike(userId: string, storeId: string): Promise<AddLikeR
 }
 
 export async function removeLikeByStore(userId: string, storeId: string): Promise<void> {
-  const { error } = await supabaseAdmin.from('likes').delete().eq('user_id', userId).eq('store_id', storeId)
-  if (error) throw new Error(error.message)
+  unwrap(
+    await supabaseAdmin.from('likes').delete().eq('user_id', userId).eq('store_id', storeId),
+    'removeLikeByStore',
+  )
 }
 
 export async function getUserLikes(userId: string): Promise<LikeWithStore[]> {
-  const { data, error } = await supabaseAdmin
-    .from('likes')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(error.message)
-  const likes = (data ?? []) as Like[]
+  const likes = (unwrap(
+    await supabaseAdmin.from('likes').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    'getUserLikes',
+  ) ?? []) as Like[]
 
   const storeIds = [...new Set(likes.map((like) => like.store_id))]
   const storesById = new Map<string, StoreRef>()
   if (storeIds.length > 0) {
-    const { data: stores, error: storesError } = await supabaseAdmin
-      .from('stores')
-      .select('id, name, category')
-      .in('id', storeIds)
-    if (storesError) throw new Error(storesError.message)
-    for (const store of (stores ?? []) as StoreRef[]) {
+    const stores = (unwrap(
+      await supabaseAdmin.from('stores').select('id, name, category').in('id', storeIds),
+      'getUserLikes(stores)',
+    ) ?? []) as StoreRef[]
+    for (const store of stores) {
       storesById.set(store.id, store)
     }
   }
@@ -70,13 +54,9 @@ export async function getUserLikes(userId: string): Promise<LikeWithStore[]> {
 }
 
 export async function getStoreLikeCount(storeId: string): Promise<number> {
-  const { count, error } = await supabaseAdmin
-    .from('likes')
-    .select('*', { count: 'exact', head: true })
-    .eq('store_id', storeId)
-
-  if (error) throw new Error(error.message)
-  return count ?? 0
+  const result = await supabaseAdmin.from('likes').select('*', { count: 'exact', head: true }).eq('store_id', storeId)
+  unwrap(result, 'getStoreLikeCount')
+  return result.count ?? 0
 }
 
 export async function isStoreLikedByUser(

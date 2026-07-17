@@ -1,5 +1,6 @@
 import { api, ApiError } from './api'
 import type { ApiResult, Review, ReviewStats, ReviewWithUser } from '../types/social'
+import { EMPTY_REVIEW_STATS } from '../../shared/types/social'
 
 export const REVIEW_COMMENT_MAX_LENGTH = 500
 
@@ -35,7 +36,7 @@ export async function getStoreReviews(
 export async function getStoreReviewStats(
   storeId: string
 ): Promise<ApiResult & { stats: ReviewStats }> {
-  const empty: ReviewStats = { store_id: storeId, avg_rating: 0, review_count: 0, last_updated: '' }
+  const empty: ReviewStats = EMPTY_REVIEW_STATS(storeId)
   try {
     const stats = await api.get<ReviewStats>(`/api/stores/${storeId}/reviews/stats`)
     return { success: true, stats }

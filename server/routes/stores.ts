@@ -4,11 +4,10 @@ import { requireAdmin, requireAdminOrStoreManager, requireAuth } from '../middle
 import { sendError, zodError } from '../../backend/http/respond.js'
 import { createStoreSchema, updateStoreSchema } from '../../backend/domains/stores/schema.js'
 import { enrichStoresWithAggregates } from '../../backend/domains/stores/enrichWithAggregates.js'
+import { STORE_COLUMNS } from '../../backend/domains/stores/columns.js'
+import { buildPartialUpdate } from '../../backend/http/partialUpdate.js'
 
 export const storesRouter = Router()
-
-const STORE_COLUMNS =
-  'id, name, category, x, y, open_time, close_time, price_min, price_max, created_by, created_at, updated_at'
 
 storesRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
   const parsed = createStoreSchema.safeParse(req.body)
@@ -78,22 +77,19 @@ storesRouter.put('/:id', requireAuth, requireAdminOrStoreManager(), async (req, 
   if (!parsed.success) {
     return zodError(res, parsed.error)
   }
-  const { name, category, x, y, open_time, close_time, price_min, price_max } = parsed.data
-  const updates: Record<string, unknown> = {}
-
-  if (name !== undefined) updates.name = name
-  if (category !== undefined) updates.category = category
-  if (x !== undefined) updates.x = x
-  if (y !== undefined) updates.y = y
-  if (open_time !== undefined) updates.open_time = open_time
-  if (close_time !== undefined) updates.close_time = close_time
-  if (price_min !== undefined) updates.price_min = price_min
-  if (price_max !== undefined) updates.price_max = price_max
-
-  if (Object.keys(updates).length === 0) {
+  const updates = buildPartialUpdate(parsed.data, [
+    'name',
+    'category',
+    'x',
+    'y',
+    'open_time',
+    'close_time',
+    'price_min',
+    'price_max',
+  ])
+  if (!updates) {
     return sendError(res, 400, 'no_updates', '更新内容がありません')
   }
-  updates.updated_at = new Date().toISOString()
 
   const { data, error } = await supabaseAdmin
     .from('stores')

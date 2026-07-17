@@ -107,7 +107,11 @@ describe('POST /api/plan/generate', () => {
   })
 
   it('Claude APIの応答が正しいJSONであれば200でプランを返す', async () => {
-    mockGeneratePlan.mockResolvedValue(VALID_CLAUDE_JSON)
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_JSON,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
 
     const res = createMockRes()
     await handler(createReq('POST', { message: 'ランチしたい', party_size: 2 }), res)
@@ -122,7 +126,11 @@ describe('POST /api/plan/generate', () => {
   })
 
   it('historyを含むリクエストは過去のやり取りを今回の発話より先にmessagesとして転送する（U006）', async () => {
-    mockGeneratePlan.mockResolvedValue(VALID_CLAUDE_JSON)
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_JSON,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
 
     const history = [
       { role: 'user', content: 'ランチと映画のプランを作って' },
@@ -142,7 +150,11 @@ describe('POST /api/plan/generate', () => {
   })
 
   it('Claude APIの応答がJSONとして解釈できない場合は502を返す', async () => {
-    mockGeneratePlan.mockResolvedValue('これはJSONではありません')
+    mockGeneratePlan.mockResolvedValue({
+      result: 'これはJSONではありません',
+      usage: { inputTokens: 10, outputTokens: 5 },
+      model: 'claude-sonnet-5',
+    })
 
     const res = createMockRes()
     await handler(createReq('POST', { message: 'ランチしたい' }), res)
@@ -152,7 +164,11 @@ describe('POST /api/plan/generate', () => {
   })
 
   it('Claude APIの応答がスキーマに一致しない場合は502を返す', async () => {
-    mockGeneratePlan.mockResolvedValue(JSON.stringify({ intent: {}, candidates: [] }))
+    mockGeneratePlan.mockResolvedValue({
+      result: JSON.stringify({ intent: {}, candidates: [] }),
+      usage: { inputTokens: 10, outputTokens: 5 },
+      model: 'claude-sonnet-5',
+    })
 
     const res = createMockRes()
     await handler(createReq('POST', { message: 'ランチしたい' }), res)

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { generatePlan, summarizePlanForHistory } from '../lib/plan'
 import { api } from '../lib/api'
 import type { PlanCandidate } from '../types/plan'
@@ -14,7 +13,6 @@ type Turn =
   | { role: 'assistant'; candidates: PlanCandidate[] }
 
 export default function PlanPage() {
-  const navigate = useNavigate()
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -72,17 +70,10 @@ export default function PlanPage() {
   )
 
   return (
-    <div className="ac-page-bg">
+    <>
       <header className="ac-header relative">
         <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
         <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="ac-btn-ghost !px-3 !py-1.5 text-sm !text-white hover:!bg-white/20"
-          >
-            ← ダッシュボードに戻る
-          </button>
           <h1 className="text-xl font-extrabold">AIお出かけプラン提案</h1>
         </div>
         <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
@@ -198,6 +189,6 @@ export default function PlanPage() {
           </p>
         )}
       </main>
-    </div>
+    </>
   )
 }

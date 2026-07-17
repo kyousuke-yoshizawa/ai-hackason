@@ -18,16 +18,28 @@ function getClient(): Anthropic {
   return client
 }
 
+export interface GeneratePlanUsage {
+  inputTokens: number
+  outputTokens: number
+}
+
+export interface GeneratePlanResult {
+  result: string
+  usage: GeneratePlanUsage
+  model: string
+}
+
 // プラン生成用のClaude API呼び出しをこの1箇所に集約する（要件定義書v2: API呼び出しは1回に統合）。
 // U006（セッション内会話履歴）対応で、ターン間で不変のsystemプロンプトと、
 // 過去ターン＋今回のユーザー発話からなるmessages配列を呼び出し側から受け取る形に変更
 export async function generatePlan(
   system: string,
   messages: { role: 'user' | 'assistant'; content: string }[]
-): Promise<string> {
+): Promise<GeneratePlanResult> {
   const anthropic = getClient()
+  const model = process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL
   const response = await anthropic.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
+    model,
     max_tokens: MAX_TOKENS,
     system,
     messages,
@@ -37,5 +49,12 @@ export async function generatePlan(
   if (!textBlock || textBlock.type !== 'text') {
     throw new Error('Claude APIからテキスト形式のレスポンスが得られませんでした')
   }
-  return textBlock.text
+  return {
+    result: textBlock.text,
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    },
+    model,
+  }
 }

@@ -28,14 +28,19 @@ describe('generatePlan (claudeClient)', () => {
     )
   })
 
-  it('テキストブロックのレスポンスをそのまま返す', async () => {
+  it('テキストブロックのレスポンスと usage・model を返す', async () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test'
-    mockCreate.mockResolvedValue({ content: [{ type: 'text', text: '{"ok":true}' }] })
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: '{"ok":true}' }],
+      usage: { input_tokens: 123, output_tokens: 45 },
+    })
 
     const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
-    const result = await generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])
+    const { result, usage, model } = await generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])
 
     expect(result).toBe('{"ok":true}')
+    expect(usage).toEqual({ inputTokens: 123, outputTokens: 45 })
+    expect(model).toBe('claude-sonnet-5')
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'claude-sonnet-5',
@@ -48,11 +53,15 @@ describe('generatePlan (claudeClient)', () => {
   it('ANTHROPIC_MODEL が設定されていればそのモデルを使う', async () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test'
     process.env.ANTHROPIC_MODEL = 'claude-opus-4-8'
-    mockCreate.mockResolvedValue({ content: [{ type: 'text', text: 'ok' }] })
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+    })
 
     const { generatePlan } = await import('../../backend/domains/plan/claudeClient')
-    await generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])
+    const { model } = await generatePlan('system prompt', [{ role: 'user', content: 'prompt' }])
 
+    expect(model).toBe('claude-opus-4-8')
     expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ model: 'claude-opus-4-8' }))
   })
 
@@ -66,7 +75,10 @@ describe('generatePlan (claudeClient)', () => {
 
   it('複数ターン（過去のuser/assistantペア＋今回のuser発話）をそのままの順序でmessages.createに転送する（U006）', async () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test'
-    mockCreate.mockResolvedValue({ content: [{ type: 'text', text: 'ok' }] })
+    mockCreate.mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+    })
 
     const messages: { role: 'user' | 'assistant'; content: string }[] = [
       { role: 'user', content: 'A案のランチを提案して' },
