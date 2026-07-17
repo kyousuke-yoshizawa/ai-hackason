@@ -66,6 +66,29 @@ describe('buildPlanSystemPrompt', () => {
 
     expect(prompt).toContain('合計しないこと')
   })
+
+  it('現在日時（JST・曜日）をsystemプロンプトに含める（Issue #116）', () => {
+    // 2026-07-16T02:30:00Z は JST（UTC+9）で 2026-07-16 11:30、木曜日
+    const now = new Date('2026-07-16T02:30:00Z')
+    const prompt = buildPlanSystemPrompt([STORE_A], now)
+
+    expect(prompt).toContain('## 現在日時')
+    expect(prompt).toContain('2026-07-16（木） 11:30 JST')
+    expect(prompt).toContain('この時刻以降に開始')
+  })
+
+  it('プロセスのローカルTZに関わらずJSTで現在日時を算出する', () => {
+    const originalTz = process.env.TZ
+    process.env.TZ = 'UTC'
+    try {
+      const now = new Date('2026-07-16T02:30:00Z')
+      const prompt = buildPlanSystemPrompt([STORE_A], now)
+
+      expect(prompt).toContain('2026-07-16（木） 11:30 JST')
+    } finally {
+      process.env.TZ = originalTz
+    }
+  })
 })
 
 describe('buildPlanUserTurn', () => {
@@ -93,5 +116,11 @@ describe('buildPlanUserTurn', () => {
     const turn = buildPlanUserTurn({ message: 'カフェに行きたい' })
 
     expect(turn).not.toContain('## 制約条件')
+  })
+
+  it('start_time を指定した場合は制約条件に含める（Issue #116・現在時刻より優先）', () => {
+    const turn = buildPlanUserTurn({ message: '子連れでのんびりしたい', start_time: '19:00' })
+
+    expect(turn).toContain('19:00から')
   })
 })

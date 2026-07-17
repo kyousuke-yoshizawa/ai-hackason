@@ -140,6 +140,7 @@ claude
 | PRがマージできない（コンフリクト） | `references/pr-review-merge-flow.md` の「コンフリクト解消」セクション参照 |
 | Vercelのデプロイが失敗する | 環境変数（Supabaseキー等）がVercel側に登録されているか確認 |
 | Notionが更新されない | GitHub Actionsの実行ログ（Actionsタブ）を確認し、Kyosukeに連絡 |
+| ANTHROPIC_API_KEY が無い場合 | `.env` に `PLAN_MOCK=1` を設定するとモックプランで動作確認できます（本番には設定しないこと） |
 
 ## 7. 用語集
 
