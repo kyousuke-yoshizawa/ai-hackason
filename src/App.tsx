@@ -10,6 +10,7 @@ import ReservationsListPage from './pages/ReservationsListPage'
 import LikesListPage from './pages/LikesListPage'
 import AdminPage from './pages/AdminPage'
 import ErrorManagementDashboard from './pages/ErrorManagementDashboard'
+import PlanPage from './pages/PlanPage'
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -49,6 +50,7 @@ function App() {
           <Route path="/stores/:storeId" element={<StoreDetailPage />} />
           <Route path="/reservations" element={<ReservationsListPage />} />
           <Route path="/likes" element={<LikesListPage />} />
+          <Route path="/plan" element={<PlanPage />} />
           <Route
             path="/admin"
             element={

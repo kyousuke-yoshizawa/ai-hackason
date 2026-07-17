@@ -4,7 +4,12 @@ import { sendError, zodError } from '../../backend/http/respond.js'
 import { requireMethod } from '../../backend/http/method.js'
 import { checkRateLimit } from '../../backend/http/rateLimit.js'
 import { generatePlanRequestSchema, generatePlanResponseSchema } from '../../backend/domains/plan/schema.js'
-import { buildPlanPrompt, buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder.js'
+import {
+  buildPlanSystemPrompt,
+  buildPlanUserTurn,
+  buildStoreContexts,
+  type StoreForPrompt,
+} from '../../backend/domains/plan/promptBuilder.js'
 import { generatePlan } from '../../backend/domains/plan/claudeClient.js'
 import { STORE_PLAN_COLUMNS } from '../../backend/domains/stores/columns.js'
 
@@ -21,7 +26,7 @@ function getRateLimitKey(req: VercelRequest): string {
   return ip?.trim() || 'unknown'
 }
 
-// POST /api/plan/generate { message, party_size?, budget?, time_limit? }
+// POST /api/plan/generate { message, party_size?, budget?, time_limit?, history? }
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireMethod(req, res, ['POST'])) return
 
@@ -51,8 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startedAt = Date.now()
   try {
     const storeContexts = await buildStoreContexts(stores as StoreForPrompt[])
-    const prompt = buildPlanPrompt(parsed.data, storeContexts)
-    const { result: rawResponse, usage, model } = await generatePlan(prompt)
+    const systemPrompt = buildPlanSystemPrompt(storeContexts)
+    // U006: セッション内の会話履歴（DB永続化なし）を過去ターンとして先頭に並べ、
+    // 今回の要望を最後のuserメッセージとして追加する
+    const messages = [
+      ...(parsed.data.history ?? []).map((h) => ({ role: h.role, content: h.content })),
+      { role: 'user' as const, content: buildPlanUserTurn(parsed.data) },
+    ]
+    const { result: rawResponse, usage, model } = await generatePlan(systemPrompt, messages)
 
     let json: unknown
     try {

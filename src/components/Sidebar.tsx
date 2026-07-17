@@ -20,6 +20,7 @@ export default function Sidebar() {
 
   const items: SidebarMenuItem[] = [
     { icon: '🏠', label: 'ダッシュボード', to: '/dashboard', enabled: true },
+    { icon: '🤖', label: 'AIプラン提案', to: '/plan', enabled: true },
     { icon: '🏪', label: '店舗一覧・予約', to: '/stores', enabled: true },
     { icon: '📅', label: '予約一覧', to: '/reservations', enabled: true },
     { icon: '♥', label: 'いいね一覧', to: '/likes', enabled: true },
