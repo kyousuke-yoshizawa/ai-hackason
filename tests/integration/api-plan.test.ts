@@ -4,20 +4,26 @@ jest.mock('../../backend/db', () => {
   return { supabaseAdmin: createFakeSupabaseClient() }
 })
 
-jest.mock('../../backend/domains/plan/claudeClient', () => ({
-  generatePlan: jest.fn(),
-}))
+jest.mock('../../backend/domains/plan/claudeClient', () => {
+  // generatePlanだけをモックし、PlanGenerationError/PlanResponseParseErrorは実物を使う
+  // （api/plan/generate.tsのcatch節がinstanceofで分類するため、モッククラスだと一致しない）
+  const actual = jest.requireActual('../../backend/domains/plan/claudeClient')
+  return { ...actual, generatePlan: jest.fn() }
+})
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import { generatePlan } from '../../backend/domains/plan/claudeClient'
+import { generatePlan, PlanGenerationError, PlanResponseParseError } from '../../backend/domains/plan/claudeClient'
 import handler from '../../api/plan/generate'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 const mockGeneratePlan = generatePlan as jest.Mock
 
-const VALID_CLAUDE_JSON = JSON.stringify({
+// Issue #118（Tool use）以降、generatePlan()の戻り値resultはJSON文字列ではなく
+// パース済みのオブジェクトになる。generatePlanはこのテストファイル内でjest.mockされているため、
+// 実際にオブジェクトかJSON文字列かを決めるのはこのモックの戻り値そのもの
+const VALID_CLAUDE_RESULT = {
   intent: { desires: ['ランチ'], party_size: 2, budget: null, time_limit: null },
   candidates: [
     {
@@ -36,7 +42,7 @@ const VALID_CLAUDE_JSON = JSON.stringify({
       summary: 'ランチプラン',
     },
   ],
-})
+}
 
 function createMockRes() {
   const res: Partial<VercelResponse> & { statusCode?: number; body?: unknown; headers?: Record<string, string> } = {
@@ -80,7 +86,25 @@ beforeEach(() => {
   ])
 })
 
+afterEach(() => {
+  // Issue #121: PLAN_MOCKのテストが他のテストに漏れ出さないよう毎回削除する
+  delete process.env.PLAN_MOCK
+})
+
 describe('POST /api/plan/generate', () => {
+  it('PLAN_MOCK=1の場合はDB・Claude APIを呼ばずモックプランを200で返す（Issue #121）', async () => {
+    process.env.PLAN_MOCK = '1'
+    fakeClient.reset() // 店舗マスタが空でも、DBに触れずに応答できることを示す
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(200)
+    expect((res.body as { candidates: unknown[] }).candidates.length).toBeGreaterThan(0)
+    expect(mockGeneratePlan).not.toHaveBeenCalled()
+  })
+
+
   it('GET等の許可外メソッドは405を返す', async () => {
     const res = createMockRes()
     await handler(createReq('GET'), res)
@@ -108,7 +132,7 @@ describe('POST /api/plan/generate', () => {
 
   it('Claude APIの応答が正しいJSONであれば200でプランを返す', async () => {
     mockGeneratePlan.mockResolvedValue({
-      result: VALID_CLAUDE_JSON,
+      result: VALID_CLAUDE_RESULT,
       usage: { inputTokens: 100, outputTokens: 50 },
       model: 'claude-sonnet-5',
     })
@@ -127,7 +151,7 @@ describe('POST /api/plan/generate', () => {
 
   it('historyを含むリクエストは過去のやり取りを今回の発話より先にmessagesとして転送する（U006）', async () => {
     mockGeneratePlan.mockResolvedValue({
-      result: VALID_CLAUDE_JSON,
+      result: VALID_CLAUDE_RESULT,
       usage: { inputTokens: 100, outputTokens: 50 },
       model: 'claude-sonnet-5',
     })
@@ -149,23 +173,15 @@ describe('POST /api/plan/generate', () => {
     expect(messages[2].content).toContain('A案のランチを別の店にして')
   })
 
-  it('Claude APIの応答がJSONとして解釈できない場合は502を返す', async () => {
-    mockGeneratePlan.mockResolvedValue({
-      result: 'これはJSONではありません',
-      usage: { inputTokens: 10, outputTokens: 5 },
-      model: 'claude-sonnet-5',
-    })
-
-    const res = createMockRes()
-    await handler(createReq('POST', { message: 'ランチしたい' }), res)
-
-    expect(res.statusCode).toBe(502)
-    expect((res.body as { error: string }).error).toBe('invalid_ai_response')
-  })
+  // 「Claude APIの応答がJSONとして解釈できない場合は502を返す」という旧テストは、
+  // Issue #118でハンドラ側のJSON.parseを撤去したことで削除した。このテストファイルでは
+  // generatePlan自体をjest.mockしているため、そのパース失敗（テキストのコードフェンス剥がし等）は
+  // 実際にはbackend/domains/plan/claudeClient.tsの中でしか発生しなくなった。
+  // 該当の失敗モードは tests/unit/planClaudeClient.test.ts 側でカバーしている
 
   it('Claude APIの応答がスキーマに一致しない場合は502を返す', async () => {
     mockGeneratePlan.mockResolvedValue({
-      result: JSON.stringify({ intent: {}, candidates: [] }),
+      result: { intent: {}, candidates: [] },
       usage: { inputTokens: 10, outputTokens: 5 },
       model: 'claude-sonnet-5',
     })
@@ -177,13 +193,39 @@ describe('POST /api/plan/generate', () => {
     expect((res.body as { error: string }).error).toBe('validation_error')
   })
 
-  it('Claude API呼び出し自体が失敗した場合は502を返す', async () => {
+  it('claudeClient.tsがPlanResponseParseErrorを投げた場合は502 invalid_ai_responseを返す（Issue #118）', async () => {
+    mockGeneratePlan.mockRejectedValue(new PlanResponseParseError())
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(502)
+    expect((res.body as { error: string }).error).toBe('invalid_ai_response')
+  })
+
+  it('claudeClient.tsがPlanGenerationErrorを投げた場合はuserMessageを502レスポンスに使う（Issue #117）', async () => {
+    mockGeneratePlan.mockRejectedValue(
+      new PlanGenerationError('プラン生成が混み合っています。少し待ってもう一度お試しください')
+    )
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(502)
+    expect((res.body as { error: string; message: string }).error).toBe('claude_api_error')
+    expect((res.body as { error: string; message: string }).message).toContain('混み合っています')
+  })
+
+  it('Claude API呼び出し自体が失敗した場合（未分類のエラー）は502 claude_api_errorを、内部のエラー詳細を含めずに返す', async () => {
     mockGeneratePlan.mockRejectedValue(new Error('ANTHROPIC_API_KEY が設定されていません'))
 
     const res = createMockRes()
     await handler(createReq('POST', { message: 'ランチしたい' }), res)
 
     expect(res.statusCode).toBe(502)
+    // 内部の生エラーメッセージ（ANTHROPIC_API_KEY が設定されていません）をそのまま
+    // クライアントに返さないことを確認する（Issue #117の内部詳細リーク修正）
+    expect((res.body as { message: string }).message).not.toContain('ANTHROPIC_API_KEY')
     expect((res.body as { error: string }).error).toBe('claude_api_error')
   })
 })

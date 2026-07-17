@@ -95,6 +95,21 @@ describe('generatePlanRequestSchema', () => {
 
     expect(result.success).toBe(false)
   })
+
+  it('start_time を含むリクエストを検証できる（Issue #116）', () => {
+    const result = generatePlanRequestSchema.safeParse({ message: 'ランチしたい', start_time: '19:00' })
+
+    expect(result.success).toBe(true)
+  })
+
+  it('start_time が上限（20文字）を超えると検証に失敗する', () => {
+    const result = generatePlanRequestSchema.safeParse({
+      message: 'ランチしたい',
+      start_time: 'a'.repeat(21),
+    })
+
+    expect(result.success).toBe(false)
+  })
 })
 
 describe('generatePlanResponseSchema', () => {
