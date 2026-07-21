@@ -10,11 +10,10 @@ export default function AdminPage() {
   const { toast, showToast } = useToast()
 
   return (
-    <div className="ac-page-bg">
+    <>
       <PageHeader
         title="管理画面"
         subtitle="ユーザ・店舗マスタ管理"
-        backTo="/dashboard"
         maxWidth="max-w-7xl"
       />
 
@@ -53,6 +52,6 @@ export default function AdminPage() {
       </main>
 
       <ToastContainer toast={toast} />
-    </div>
+    </>
   )
 }

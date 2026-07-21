@@ -65,12 +65,9 @@ export default function StoresPage() {
   }, [stores, appliedSearchText, appliedCategoryFilter, sortKey])
 
   return (
-    <div className="ac-page-bg">
+    <>
       <PageHeader
         title="店舗一覧"
-        backTo="/dashboard"
-        backLabel="← ダッシュボードに戻る"
-        backVariant="ghost"
         decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
       />
 
@@ -172,6 +169,6 @@ export default function StoresPage() {
           onViewReservations={() => navigate('/reservations')}
         />
       )}
-    </div>
+    </>
   )
 }

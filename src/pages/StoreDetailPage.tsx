@@ -35,7 +35,7 @@ export default function StoreDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="ac-page-bg flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-20">
         <LoadingText />
       </div>
     )
@@ -43,7 +43,7 @@ export default function StoreDetailPage() {
 
   if (error || !store) {
     return (
-      <div className="ac-page-bg flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-20">
         <div className="ac-card relative text-center">
           <Leaf className="absolute -top-6 -left-6 h-14 w-14 -rotate-12 drop-shadow" />
           <p className="mb-4 text-sm font-bold text-bubble-700">{error ?? '店舗が見つかりません'}</p>
@@ -60,7 +60,7 @@ export default function StoreDetailPage() {
   }
 
   return (
-    <div className="ac-page-bg">
+    <>
       <PageHeader
         title="店舗詳細"
         backTo="/stores"
@@ -107,6 +107,6 @@ export default function StoreDetailPage() {
           onViewReservations={() => navigate('/reservations')}
         />
       )}
-    </div>
+    </>
   )
 }

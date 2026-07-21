@@ -61,10 +61,9 @@ export default function LikesListPage() {
   }, [rows, sortKey, categoryFilter])
 
   return (
-    <div className="ac-page-bg relative overflow-hidden">
+    <div className="relative overflow-hidden">
       <PageHeader
         title="いいね一覧"
-        backTo="/dashboard"
         decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
       />
 

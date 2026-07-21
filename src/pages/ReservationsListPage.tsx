@@ -72,10 +72,9 @@ export default function ReservationsListPage() {
   }
 
   return (
-    <div className="ac-page-bg">
+    <>
       <PageHeader
         title="予約一覧"
-        backTo="/dashboard"
         decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
       />
 
@@ -124,6 +123,6 @@ export default function ReservationsListPage() {
           </ul>
         )}
       </main>
-    </div>
+    </>
   )
 }

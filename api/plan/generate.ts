@@ -4,9 +4,15 @@ import { sendError, zodError } from '../../backend/http/respond.js'
 import { requireMethod } from '../../backend/http/method.js'
 import { checkRateLimit } from '../../backend/http/rateLimit.js'
 import { generatePlanRequestSchema, generatePlanResponseSchema } from '../../backend/domains/plan/schema.js'
-import { buildPlanPrompt, buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder.js'
-import { generatePlan } from '../../backend/domains/plan/claudeClient.js'
+import {
+  buildPlanSystemPrompt,
+  buildPlanUserTurn,
+  buildStoreContexts,
+  type StoreForPrompt,
+} from '../../backend/domains/plan/promptBuilder.js'
+import { generatePlan, PlanGenerationError, PlanResponseParseError } from '../../backend/domains/plan/claudeClient.js'
 import { STORE_PLAN_COLUMNS } from '../../backend/domains/stores/columns.js'
+import { MOCK_PLAN_RESPONSE } from '../../backend/domains/plan/mockResponse.js'
 
 // デモ期間中に緩めたい場合、再デプロイのみで調整できるよう環境変数化
 const PLAN_RATE_LIMIT = Number(process.env.PLAN_RATE_LIMIT) || 10
@@ -21,7 +27,7 @@ function getRateLimitKey(req: VercelRequest): string {
   return ip?.trim() || 'unknown'
 }
 
-// POST /api/plan/generate { message, party_size?, budget?, time_limit? }
+// POST /api/plan/generate { message, party_size?, budget?, time_limit?, history? }
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireMethod(req, res, ['POST'])) return
 
@@ -34,6 +40,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const parsed = generatePlanRequestSchema.safeParse(req.body)
   if (!parsed.success) {
     return zodError(res, parsed.error)
+  }
+
+  // Issue #121（モックモード）: ANTHROPIC_API_KEYが無い状態でもフロント開発・デモができるよう、
+  // DB・Claude APIのどちらにも触れずに固定のプランを返す。本番（Vercel）環境変数には
+  // 絶対に設定しないこと（.env.exampleのコメント参照）
+  if (process.env.PLAN_MOCK === '1') {
+    await new Promise((resolve) => setTimeout(resolve, 800)) // ローディングUI確認用の擬似遅延
+    return res.status(200).json(MOCK_PLAN_RESPONSE)
   }
 
   const { data: stores, error } = await supabaseAdmin
@@ -51,17 +65,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startedAt = Date.now()
   try {
     const storeContexts = await buildStoreContexts(stores as StoreForPrompt[])
-    const prompt = buildPlanPrompt(parsed.data, storeContexts)
-    const { result: rawResponse, usage, model } = await generatePlan(prompt)
+    const systemPrompt = buildPlanSystemPrompt(storeContexts)
+    // U006: セッション内の会話履歴（DB永続化なし）を過去ターンとして先頭に並べ、
+    // 今回の要望を最後のuserメッセージとして追加する
+    const messages = [
+      ...(parsed.data.history ?? []).map((h) => ({ role: h.role, content: h.content })),
+      { role: 'user' as const, content: buildPlanUserTurn(parsed.data) },
+    ]
+    const { result, usage, model } = await generatePlan(systemPrompt, messages)
 
-    let json: unknown
-    try {
-      json = JSON.parse(rawResponse)
-    } catch {
-      return sendError(res, 502, 'invalid_ai_response', 'Claude APIの応答をJSONとして解釈できませんでした')
-    }
-
-    const validated = generatePlanResponseSchema.safeParse(json)
+    const validated = generatePlanResponseSchema.safeParse(result)
     if (!validated.success) {
       return zodError(res, validated.error, 502)
     }
@@ -87,6 +100,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: err instanceof Error ? err.message : 'unknown error',
       })
     )
-    return sendError(res, 502, 'claude_api_error', err instanceof Error ? err.message : 'Claude API呼び出しに失敗しました')
+
+    // Issue #117: err.messageを直接HTTPレスポンスに含めない（内部詳細のクライアントへの
+    // 漏洩を避ける）。ユーザー向けに安全な文言を持つエラーはそれぞれの分類から取り出し、
+    // それ以外は固定の汎用メッセージにフォールバックする
+    if (err instanceof PlanResponseParseError) {
+      return sendError(res, 502, 'invalid_ai_response', err.message)
+    }
+    if (err instanceof PlanGenerationError) {
+      return sendError(res, 502, 'claude_api_error', err.userMessage)
+    }
+    return sendError(res, 502, 'claude_api_error', 'プラン生成に失敗しました')
   }
 }

@@ -71,12 +71,10 @@ export default function ErrorManagementDashboard() {
   }
 
   return (
-    <div className="ac-page-bg">
+    <>
       <PageHeader
         title="エラー管理ダッシュボード"
         subtitle="admin 専用"
-        backTo="/dashboard"
-        backLabel="ダッシュボードに戻る"
         maxWidth="max-w-7xl"
         decor={<Leaf className="absolute right-6 top-2 h-8 w-8 opacity-30" color="#dff1cf" />}
       />
@@ -203,6 +201,6 @@ export default function ErrorManagementDashboard() {
           </div>
         </Modal>
       )}
-    </div>
+    </>
   )
 }

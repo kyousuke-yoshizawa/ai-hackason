@@ -1,7 +1,7 @@
 import { render, fireEvent, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import LoginPage from '../../src/pages/LoginPage'
-import Dashboard from '../../src/pages/Dashboard'
+import Sidebar from '../../src/components/Sidebar'
 import { AuthContext } from '../../src/context/AuthContext'
 
 // レビュー指摘（T10）: ログイン/ログアウト時のnavigate()がhistoryを積み、
@@ -44,6 +44,9 @@ describe('ログイン/ログアウト時のnavigateはreplace:trueでhistoryを
   })
 
   it('ログアウト時、/loginへreplaceで遷移する', async () => {
+    // T10のレビュー対応時はDashboardがSidebar/ログアウトボタンを埋め込んでいたが、
+    // サイドメニューは全画面共通レイアウト（AppLayout）に移動したため、
+    // 本来の検証対象であるSidebarのログアウト動作を直接レンダリングして確認する。
     const authValue = {
       user: { id: 'user-1', email: 'a@example.com', name: 'テスト', role: 'user' },
       permissions: [],
@@ -57,7 +60,7 @@ describe('ログイン/ログアウト時のnavigateはreplace:trueでhistoryを
     render(
       <AuthContext.Provider value={authValue}>
         <MemoryRouter>
-          <Dashboard />
+          <Sidebar />
         </MemoryRouter>
       </AuthContext.Provider>
     )
