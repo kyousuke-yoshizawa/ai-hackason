@@ -153,4 +153,44 @@ describe('generatePlanResponseSchema', () => {
 
     expect(result.success).toBe(true)
   })
+
+  it('単一の欲求しか読み取れない入力等、candidatesが1件のみでも検証できる（min(1)の確認・Issue #119）', () => {
+    const result = generatePlanResponseSchema.safeParse({
+      intent: { desires: ['ランチ'] },
+      candidates: [
+        {
+          label: '案A',
+          stops: [BASE_STOP],
+          score: 0.8,
+          summary: 'ランチプラン',
+        },
+      ],
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it('candidatesが0件だと検証に失敗する（min(1)）', () => {
+    const result = generatePlanResponseSchema.safeParse({
+      intent: { desires: ['ランチ'] },
+      candidates: [],
+    })
+
+    expect(result.success).toBe(false)
+  })
+
+  it('candidatesが5件以上だと検証に失敗する（max(4)・暴走的な生成の拒否・Issue #119）', () => {
+    const candidate = {
+      label: '案A',
+      stops: [BASE_STOP],
+      score: 0.8,
+      summary: 'ランチプラン',
+    }
+    const result = generatePlanResponseSchema.safeParse({
+      intent: { desires: ['ランチ'] },
+      candidates: [candidate, candidate, candidate, candidate, candidate],
+    })
+
+    expect(result.success).toBe(false)
+  })
 })
