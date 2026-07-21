@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import type { PlanCandidate } from '../types/plan'
 import type { AdminStore } from '../components/StoreForm'
 import PlanCard from '../components/PlanCard'
-import MapView from '../components/MapView'
+import MapView, { type Landmark } from '../components/MapView'
 import Cloud from '../components/decor/Cloud'
 import GrassBorder from '../components/decor/GrassBorder'
 
@@ -19,6 +19,7 @@ export default function PlanPage() {
   const [turns, setTurns] = useState<Turn[]>([])
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0)
   const [stores, setStores] = useState<AdminStore[]>([])
+  const [landmarks, setLandmarks] = useState<Landmark[]>([])
 
   useEffect(() => {
     api
@@ -26,6 +27,15 @@ export default function PlanPage() {
       .then((res) => setStores(res.data))
       .catch(() => {
         // マップ用の座標補完に使うだけなので、取得失敗してもプラン生成自体は継続する
+      })
+  }, [])
+
+  useEffect(() => {
+    api
+      .get<{ area_name: string; landmarks: Landmark[] }>('/api/area')
+      .then((res) => setLandmarks(res.landmarks))
+      .catch(() => {
+        // マップ背景装飾用のみなので、取得失敗してもプラン生成自体は継続する
       })
   }, [])
 
@@ -131,7 +141,7 @@ export default function PlanPage() {
                       ))}
 
                       {isLatest && selectedCandidate && (
-                        <MapView stops={selectedCandidate.stops} stores={stores} />
+                        <MapView stops={selectedCandidate.stops} stores={stores} landmarks={landmarks} />
                       )}
                     </>
                   )}
