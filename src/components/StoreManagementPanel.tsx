@@ -1,11 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError } from '../lib/api'
+import { reportCrowdLevel } from '../lib/crowd'
 import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 import { StoreMediaPanel } from './StoreMediaPanel'
 import { SortableColumnLabel, SortDirection } from './SortableHeader'
+import type { CongestionLevel } from '../../shared/types/crowd'
+import { CROWD_LEVEL_LABEL } from '../../shared/types/crowd'
 
 type StoreSortKey = 'name' | 'category' | 'open_time'
+
+const CROWD_BADGE_CLASS: Record<CongestionLevel, string> = {
+  low: 'bg-leaf-100 text-leaf-700',
+  medium: 'bg-amber-100 text-amber-700',
+  high: 'bg-bubble-100 text-bubble-700',
+}
+
+function CrowdStatusBadge({ level }: { level?: CongestionLevel | null }) {
+  if (!level) {
+    return <span className="ac-badge bg-gray-100 text-gray-500">未報告</span>
+  }
+  return <span className={`ac-badge ${CROWD_BADGE_CLASS[level]}`}>{CROWD_LEVEL_LABEL[level]}</span>
+}
 
 export function StoreManagementPanel({
   onNotify,
@@ -65,6 +81,16 @@ export function StoreManagementPanel({
       await loadStores()
     } catch (err) {
       onNotify(err instanceof ApiError ? err.message : '削除に失敗しました', 'error')
+    }
+  }
+
+  const handleReportCrowd = async (store: AdminStore, level: 'low' | 'high') => {
+    const result = await reportCrowdLevel(store.id, level)
+    if (result.success) {
+      onNotify(`${store.name} の混雑状況を「${CROWD_LEVEL_LABEL[level]}」に更新しました`)
+      await loadStores()
+    } else {
+      onNotify(result.message ?? '混雑状況の報告に失敗しました', 'error')
     }
   }
 
@@ -150,7 +176,7 @@ export function StoreManagementPanel({
         <p className="text-sm font-bold text-wood-500">読み込み中...</p>
       ) : (
         <div className="space-y-3">
-          <div className="hidden gap-4 px-4 text-xs font-bold text-wood-500 md:grid md:grid-cols-[2fr_1.2fr_1.5fr_2.3fr]">
+          <div className="hidden gap-4 px-4 text-xs font-bold text-wood-500 md:grid md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_2.3fr]">
             <SortableColumnLabel
               label="名前"
               sortKey="name"
@@ -172,13 +198,14 @@ export function StoreManagementPanel({
               currentSortDir={sortDir}
               onSort={handleSort}
             />
+            <span>本日の混雑</span>
             <span>アクション</span>
           </div>
           {visibleStores.map((s) => (
             <div
               key={s.id}
               data-testid="store-row"
-              className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-wood-200 bg-sand-50 p-4 md:grid-cols-[2fr_1.2fr_1.5fr_2.3fr] md:items-center"
+              className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-wood-200 bg-sand-50 p-4 md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_2.3fr] md:items-center"
             >
               <p className="font-bold text-wood-800">{s.name}</p>
               <p>
@@ -187,6 +214,23 @@ export function StoreManagementPanel({
               <p className="text-sm text-wood-600">
                 {s.open_time && s.close_time ? `${s.open_time} - ${s.close_time}` : '-'}
               </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <CrowdStatusBadge level={s.crowd_level} />
+                <div className="flex flex-wrap gap-1.5 text-xs">
+                  <button
+                    onClick={() => handleReportCrowd(s, 'low')}
+                    className="rounded-full border-2 border-leaf-300 bg-white px-2.5 py-1 font-bold text-leaf-700 transition hover:bg-leaf-50 focus:outline-none focus:ring-2 focus:ring-leaf-300"
+                  >
+                    空いてる
+                  </button>
+                  <button
+                    onClick={() => handleReportCrowd(s, 'high')}
+                    className="rounded-full border-2 border-bubble-300 bg-white px-2.5 py-1 font-bold text-bubble-700 transition hover:bg-bubble-50 focus:outline-none focus:ring-2 focus:ring-bubble-300"
+                  >
+                    混んでる
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-3 text-sm">
                 <button onClick={() => setFormMode(s)} className="font-bold text-leaf-600 hover:underline">
                   編集
