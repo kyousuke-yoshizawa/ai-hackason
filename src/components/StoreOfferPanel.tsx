@@ -175,7 +175,7 @@ export function StoreOfferPanel({ storeId, storeName, storeCategory, onNotify }:
     const subject = storeCategory ?? storeName ?? 'このお店'
     const message = `${subject}のカテゴリで、お得に行きたい`
 
-    const result = await generatePlan({ message })
+    const result = await generatePlan({ message, preview: true })
     setIsPreviewing(false)
 
     if (!result.success || !result.plan) {

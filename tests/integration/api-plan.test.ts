@@ -326,6 +326,25 @@ describe('POST /api/plan/generate', () => {
     expect(rows[0].store_id).toBe('store-1')
   })
 
+  // Issue #135: 店舗管理者のプレビュー呼び出し（preview: true）は、Issue #136の
+  // plan_suggestions記録を水増ししてしまうため記録しないことを検証する
+  it('preview: trueの場合はplan_suggestionsを記録しない（Issue #135）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(
+      createReq('POST', { message: 'ランチしたい', preview: true }, { 'x-user-id': 'preview-flag-test' }),
+      res,
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(fakeClient.getRows('plan_suggestions')).toHaveLength(0)
+  })
+
   it('Claude API呼び出し自体が失敗した場合（未分類のエラー）は502 claude_api_errorを、内部のエラー詳細を含めずに返す', async () => {
     mockGeneratePlan.mockRejectedValue(new Error('ANTHROPIC_API_KEY が設定されていません'))
 

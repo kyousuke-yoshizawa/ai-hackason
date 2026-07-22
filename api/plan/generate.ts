@@ -122,8 +122,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Issue #136（店舗ダッシュボードにプラン提案回数を表示）: 候補に含まれた店舗の
     // 提案回数を記録する。recordPlanSuggestions自体が内部で例外を握るため、
-    // 失敗してもここから先のレスポンス返却には影響しない
-    await recordPlanSuggestions(collectStoreIdsFromCandidates(validated.data.candidates))
+    // 失敗してもここから先のレスポンス返却には影響しない。
+    // Issue #135のプレビュー呼び出し（preview: true）は店舗管理者の自己テストであり、
+    // 実際のユーザー提案ではないため記録をスキップする
+    if (!parsed.data.preview) {
+      await recordPlanSuggestions(collectStoreIdsFromCandidates(validated.data.candidates))
+    }
 
     // 要件定義書v2 8章「コスト管理」対応。DBテーブルは増やさず、Vercelログで集計する最小実装
     console.log(

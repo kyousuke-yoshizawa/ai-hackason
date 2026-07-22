@@ -4,6 +4,9 @@ export interface PlanRequest {
   budget?: number
   time_limit?: string
   history?: { role: 'user' | 'assistant'; content: string }[]
+  // Issue #135: 店舗管理者の「試す」プレビュー呼び出しであることを示すフラグ。
+  // trueの場合、サーバー側でIssue #136のplan_suggestions記録をスキップする
+  preview?: boolean
 }
 
 export interface PlanStop {

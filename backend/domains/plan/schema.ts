@@ -18,6 +18,10 @@ export const generatePlanRequestSchema = z.object({
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(4000) }))
     .max(10)
     .optional(),
+  // Issue #135（オファーのプラン反映プレビュー）: 店舗管理者の「試す」ボタンからの
+  // 呼び出しであることを示すフラグ。trueの場合、Issue #136のplan_suggestions記録を
+  // スキップする（管理者の自己テストが「本日の提案回数」を水増ししてしまうのを防ぐ）
+  preview: z.boolean().optional(),
 })
 
 export const planStopSchema = z.object({
