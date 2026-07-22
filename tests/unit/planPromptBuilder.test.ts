@@ -81,6 +81,21 @@ describe('buildPlanSystemPrompt', () => {
     expect(prompt).toContain('合計しないこと')
   })
 
+  it('プラン案数（2〜3案）と切り口を変える指示を含める（Issue #119）', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    expect(prompt).toContain('2〜3案')
+    expect(prompt).toContain('切り口')
+  })
+
+  it('各stopのprice_min・price_maxに店舗の価格帯を転記する指示を含める（Issue #123: プラン合計予算の概算表示と予算超過警告）', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    expect(prompt).toContain('price_min')
+    expect(prompt).toContain('price_max')
+    expect(prompt).toContain('価格帯')
+  })
+
   it('現在日時（JST・曜日）をsystemプロンプトに含める（Issue #116）', () => {
     // 2026-07-16T02:30:00Z は JST（UTC+9）で 2026-07-16 11:30、木曜日
     const now = new Date('2026-07-16T02:30:00Z')

@@ -21,6 +21,8 @@ export interface PlanStop {
   close_time?: string | null
   crowd_note?: string | null
   offer_note?: string | null
+  price_min?: number | null
+  price_max?: number | null
 }
 
 export interface PlanCandidate {

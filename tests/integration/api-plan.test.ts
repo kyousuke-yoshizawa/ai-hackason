@@ -242,6 +242,79 @@ describe('POST /api/plan/generate', () => {
     expect(messages).toEqual([{ role: 'user', content: expect.stringContaining('ランチしたい') }])
   })
 
+  it('Claude応答のstore_idが捏造でもstore_nameが正しければ補正して200を返す（Issue #120）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: {
+        intent: { desires: ['ランチ'], party_size: null, budget: null, time_limit: null },
+        candidates: [
+          {
+            label: '案A',
+            stops: [
+              {
+                store_id: 'typo-id-999', // 店舗マスタに実在しないID
+                store_name: 'のんびり亭', // 名前は正しい
+                start_time: '12:00',
+                end_time: '13:00',
+                travel_note: '徒歩5分',
+                reason: 'ランチに最適',
+              },
+            ],
+            score: 0.8,
+            summary: 'ランチプラン',
+          },
+        ],
+      },
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    // Issue #120のテスト専用のx-user-idでレート制限バケットを分離する（このファイルの
+    // 他のテストは無指定=キー'unknown'を共有しており、上限ちょうどの件数で運用されているため）
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'test-issue-120-reconcile' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const body = res.body as { candidates: { stops: { store_id: string; store_name: string }[] }[] }
+    expect(body.candidates).toHaveLength(1)
+    expect(body.candidates[0].stops[0].store_id).toBe('store-1')
+    expect(body.candidates[0].stops[0].store_name).toBe('のんびり亭')
+  })
+
+  it('全candidateのstopsが店舗マスタと照合できない場合は502 invalid_ai_responseを返す（Issue #120）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: {
+        intent: { desires: ['ランチ'], party_size: null, budget: null, time_limit: null },
+        candidates: [
+          {
+            label: '案A',
+            stops: [
+              {
+                store_id: 'ghost-id',
+                store_name: '存在しない店',
+                start_time: '12:00',
+                end_time: '13:00',
+                travel_note: '徒歩5分',
+                reason: 'ランチに最適',
+              },
+            ],
+            score: 0.8,
+            summary: 'ランチプラン',
+          },
+        ],
+      },
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    // Issue #120のテスト専用のx-user-idでレート制限バケットを分離する（このファイルの
+    // 他のテストは無指定=キー'unknown'を共有しており、上限ちょうどの件数で運用されているため）
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'test-issue-120-all-unresolvable' }), res)
+
+    expect(res.statusCode).toBe(502)
+    expect((res.body as { error: string }).error).toBe('invalid_ai_response')
+  })
+
   it('historyを含むリクエストは過去のやり取りを今回の発話より先にmessagesとして転送する（U006）', async () => {
     mockGeneratePlan.mockResolvedValue({
       result: VALID_CLAUDE_RESULT,

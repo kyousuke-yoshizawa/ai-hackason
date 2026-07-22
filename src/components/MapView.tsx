@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { PlanStop } from '../types/plan'
+import MapDecorations from './MapDecorations'
 
 const GRID_SIZE = 400
 const GRID_STEP = 40
@@ -8,9 +10,10 @@ interface StorePoint {
   name: string
   x: number
   y: number
+  category?: string
 }
 
-interface Landmark {
+export interface Landmark {
   name: string
   x: number
   y: number
@@ -76,7 +79,17 @@ function renderLandmarkShape(landmark: Landmark, key: string) {
   )
 }
 
+// reasonをポップアップ内で1〜2行に収めるための簡易truncate（line-clampの
+// フォールバック。長さの目安は表示幅から適当に決めた定数）
+function truncateReason(reason: string): string {
+  const MAX_LENGTH = 60
+  return reason.length > MAX_LENGTH ? `${reason.slice(0, MAX_LENGTH)}…` : reason
+}
+
 export default function MapView({ stops, stores, landmarks }: MapViewProps) {
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
+  const [pinnedKey, setPinnedKey] = useState<string | null>(null)
+
   const storeById = new Map(stores.map((store) => [store.id, store]))
 
   const sortedStops = [...stops].sort((a, b) => a.start_time.localeCompare(b.start_time))
@@ -103,42 +116,124 @@ export default function MapView({ stops, stores, landmarks }: MapViewProps) {
 
   const routePoints = resolvedStops.map(({ store }) => `${store.x},${store.y}`).join(' ')
 
+  const activeKey = pinnedKey ?? hoverKey
+  const activeResolvedStop = resolvedStops.find(
+    (resolved, index) => `${resolved.stop.store_id}-${index}` === activeKey
+  )
+
+  const handleToggle = (key: string) => {
+    setPinnedKey((prev) => (prev === key ? null : key))
+  }
+
   return (
     <div className="ac-card" data-testid="map-view">
       <p className="mb-2 text-sm font-bold text-wood-700">移動ルート</p>
-      <svg viewBox={`0 0 ${GRID_SIZE} ${GRID_SIZE}`} className="w-full rounded-2xl border-2 border-wood-200">
-        <rect x={0} y={0} width={GRID_SIZE} height={GRID_SIZE} fill="#f1f9ec" />
-        {gridLines}
+      <div className="relative">
+        <svg viewBox={`0 0 ${GRID_SIZE} ${GRID_SIZE}`} className="w-full rounded-2xl border-2 border-wood-200">
+          <rect x={0} y={0} width={GRID_SIZE} height={GRID_SIZE} fill="#f1f9ec" />
 
-        {otherStores.map((store) => (
-          <circle key={store.id} cx={store.x} cy={store.y} r={2.5} fill="#9ca3af" opacity={0.5} />
-        ))}
+          <MapDecorations landmarks={landmarks ?? []} />
 
-        {landmarks?.map((landmark, index) => renderLandmarkShape(landmark, `landmark-${index}`))}
+          {gridLines}
 
-        {resolvedStops.length > 1 && (
-          <polyline
-            data-testid="map-route-line"
-            points={routePoints}
-            fill="none"
-            stroke="#664429"
-            strokeWidth={2}
-            strokeDasharray="6 4"
+          {otherStores.map((store) => (
+            <circle key={store.id} cx={store.x} cy={store.y} r={2.5} fill="#9ca3af" opacity={0.5} />
+          ))}
+
+          {landmarks?.map((landmark, index) => renderLandmarkShape(landmark, `landmark-${index}`))}
+
+          {resolvedStops.length > 1 && (
+            <polyline
+              data-testid="map-route-line"
+              points={routePoints}
+              fill="none"
+              stroke="#664429"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+            />
+          )}
+
+          {resolvedStops.map(({ stop, store }, index) => {
+            const key = `${stop.store_id}-${index}`
+            const isActive = activeKey === key
+
+            return (
+              <g key={key} data-testid="map-store-marker">
+                {isActive && (
+                  <circle
+                    cx={store.x}
+                    cy={store.y}
+                    r={15}
+                    fill="none"
+                    stroke="#f89c2e"
+                    strokeWidth={2}
+                    data-testid="map-store-marker-ring"
+                  />
+                )}
+                <circle
+                  cx={store.x}
+                  cy={store.y}
+                  r={isActive ? 12 : 10}
+                  fill="#664429"
+                  stroke="white"
+                  strokeWidth={2}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${stop.store_name}の詳細`}
+                  className="cursor-pointer outline-none"
+                  data-testid="map-store-marker-circle"
+                  onMouseEnter={() => setHoverKey(key)}
+                  onMouseLeave={() => setHoverKey(null)}
+                  onFocus={() => setHoverKey(key)}
+                  onBlur={() => setHoverKey(null)}
+                  onClick={() => handleToggle(key)}
+                />
+                <text x={store.x} y={store.y + 4} textAnchor="middle" fontSize={10} fill="white" fontWeight="bold">
+                  {index + 1}
+                </text>
+                <text x={store.x} y={store.y + 22} textAnchor="middle" fontSize={9} fill="#543823" fontWeight="bold">
+                  {store.name}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+
+        {activeResolvedStop && (
+          <MapStorePopup
+            stop={activeResolvedStop.stop}
+            store={activeResolvedStop.store}
           />
         )}
+      </div>
+    </div>
+  )
+}
 
-        {resolvedStops.map(({ stop, store }, index) => (
-          <g key={`${stop.store_id}-${index}`} data-testid="map-store-marker">
-            <circle cx={store.x} cy={store.y} r={10} fill="#664429" stroke="white" strokeWidth={2} />
-            <text x={store.x} y={store.y + 4} textAnchor="middle" fontSize={10} fill="white" fontWeight="bold">
-              {index + 1}
-            </text>
-            <text x={store.x} y={store.y + 22} textAnchor="middle" fontSize={9} fill="#543823" fontWeight="bold">
-              {store.name}
-            </text>
-          </g>
-        ))}
-      </svg>
+function MapStorePopup({ stop, store }: { stop: PlanStop; store: StorePoint }) {
+  const openLeft = store.x > GRID_SIZE / 2
+
+  return (
+    <div
+      data-testid="map-store-popup"
+      className={`absolute z-10 w-48 -translate-y-full rounded-xl border-2 border-wood-300 bg-white/95 p-2 text-left shadow-ac-sm ${
+        openLeft ? '-translate-x-full -ml-3' : 'ml-3'
+      }`}
+      style={{
+        left: `${(store.x / GRID_SIZE) * 100}%`,
+        top: `${(store.y / GRID_SIZE) * 100}%`,
+      }}
+    >
+      <p className="text-xs font-bold text-wood-800">{stop.store_name}</p>
+      {store.category && <p className="text-[10px] font-semibold text-leaf-600">{store.category}</p>}
+      <p className="text-[10px] text-wood-500">
+        {stop.start_time}〜{stop.end_time}
+      </p>
+      {stop.reason && (
+        <p className="line-clamp-2 text-[10px] text-wood-600">{truncateReason(stop.reason)}</p>
+      )}
+      {stop.crowd_note && <p className="text-[10px] text-sand-700">{stop.crowd_note}</p>}
+      {stop.offer_note && <p className="text-[10px] text-bubble-600">{stop.offer_note}</p>}
     </div>
   )
 }

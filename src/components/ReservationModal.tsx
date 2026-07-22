@@ -11,6 +11,8 @@ interface ReservationModalProps {
   storeName: string
   openTime?: string | null
   closeTime?: string | null
+  initialTime?: string
+  initialPartySize?: number
   onCreated?: (reservation: Reservation) => void
   onViewReservations?: () => void
 }
@@ -45,14 +47,20 @@ export default function ReservationModal({
   storeName,
   openTime,
   closeTime,
+  initialTime,
+  initialPartySize,
   onCreated,
   onViewReservations,
 }: ReservationModalProps) {
   const { user } = useAuth()
   const timeSlots = buildTimeSlots(openTime, closeTime)
+  // #122: プランの立ち寄り時刻をそのまま予約時刻の初期値にできるよう、渡された値が
+  // 計算済みスロットに含まれる場合のみ採用し、含まれない/未指定なら従来通り先頭スロットにフォールバックする
   const [date, setDate] = useState(todayIsoDate())
-  const [time, setTime] = useState(timeSlots[0] ?? '')
-  const [partySize, setPartySize] = useState(2)
+  const [time, setTime] = useState(
+    initialTime != null && timeSlots.includes(initialTime) ? initialTime : timeSlots[0] ?? ''
+  )
+  const [partySize, setPartySize] = useState(initialPartySize ?? 2)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState<Reservation | null>(null)

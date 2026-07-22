@@ -1,24 +1,36 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { generatePlan, summarizePlanForHistory } from '../lib/plan'
 import { api } from '../lib/api'
-import type { PlanCandidate } from '../types/plan'
+import type { PlanCandidate, PlanIntent } from '../types/plan'
 import type { AdminStore } from '../components/StoreForm'
 import PlanCard from '../components/PlanCard'
-import MapView from '../components/MapView'
+import ReservationModal from '../components/ReservationModal'
+import MapView, { type Landmark } from '../components/MapView'
 import Cloud from '../components/decor/Cloud'
 import GrassBorder from '../components/decor/GrassBorder'
 
 type Turn =
   | { role: 'user'; message: string }
-  | { role: 'assistant'; candidates: PlanCandidate[] }
+  | { role: 'assistant'; candidates: PlanCandidate[]; intent: PlanIntent }
+
+interface ReservingStop {
+  storeId: string
+  storeName: string
+  time: string
+  partySize: number
+}
 
 export default function PlanPage() {
+  const navigate = useNavigate()
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [turns, setTurns] = useState<Turn[]>([])
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState(0)
   const [stores, setStores] = useState<AdminStore[]>([])
+  const [landmarks, setLandmarks] = useState<Landmark[]>([])
+  const [reservingStop, setReservingStop] = useState<ReservingStop | null>(null)
 
   useEffect(() => {
     api
@@ -26,6 +38,15 @@ export default function PlanPage() {
       .then((res) => setStores(res.data))
       .catch(() => {
         // マップ用の座標補完に使うだけなので、取得失敗してもプラン生成自体は継続する
+      })
+  }, [])
+
+  useEffect(() => {
+    api
+      .get<{ area_name: string; landmarks: Landmark[] }>('/api/area')
+      .then((res) => setLandmarks(res.landmarks))
+      .catch(() => {
+        // マップ背景装飾用のみなので、取得失敗してもプラン生成自体は継続する
       })
   }, [])
 
@@ -48,7 +69,10 @@ export default function PlanPage() {
     const result = await generatePlan({ message: trimmed, history })
 
     if (result.success && result.plan) {
-      setTurns((prev) => [...prev, { role: 'assistant', candidates: result.plan!.candidates }])
+      setTurns((prev) => [
+        ...prev,
+        { role: 'assistant', candidates: result.plan!.candidates, intent: result.plan!.intent },
+      ])
       setSelectedCandidateIndex(0)
       setMessage('')
     } else {
@@ -127,11 +151,18 @@ export default function PlanPage() {
                       )}
 
                       {turn.candidates.map((candidate, candidateIndex) => (
-                        <PlanCard key={`${candidate.label}-${candidateIndex}`} candidate={candidate} />
+                        <PlanCard
+                          key={`${candidate.label}-${candidateIndex}`}
+                          candidate={candidate}
+                          stores={stores}
+                          partySize={turn.intent.party_size}
+                          budget={turn.intent.budget}
+                          onReserve={(params) => setReservingStop(params)}
+                        />
                       ))}
 
                       {isLatest && selectedCandidate && (
-                        <MapView stops={selectedCandidate.stops} stores={stores} />
+                        <MapView stops={selectedCandidate.stops} stores={stores} landmarks={landmarks} />
                       )}
                     </>
                   )}
@@ -189,6 +220,25 @@ export default function PlanPage() {
           </p>
         )}
       </main>
+
+      {reservingStop &&
+        (() => {
+          // #122: 予約モーダルの時刻スロット生成に使う営業時間は、店舗マスタ（stores）から補完する
+          const matchedStore = stores.find((s) => s.id === reservingStop.storeId)
+          return (
+            <ReservationModal
+              isOpen
+              onClose={() => setReservingStop(null)}
+              storeId={reservingStop.storeId}
+              storeName={reservingStop.storeName}
+              openTime={matchedStore?.open_time}
+              closeTime={matchedStore?.close_time}
+              initialTime={reservingStop.time}
+              initialPartySize={reservingStop.partySize}
+              onViewReservations={() => navigate('/reservations')}
+            />
+          )
+        })()}
     </>
   )
 }
