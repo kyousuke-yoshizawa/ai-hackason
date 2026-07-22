@@ -2,17 +2,20 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { reportCrowdLevel } from '../lib/crowd'
 import { remainingMinutes } from '../lib/crowdLive'
+import { useMasterTable } from '../hooks/useMasterTable'
 import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 import { CrowdPatternGrid } from './CrowdPatternGrid'
 import { Modal } from './Modal'
 import { StoreMediaPanel } from './StoreMediaPanel'
 import { StoreOfferPanel } from './StoreOfferPanel'
-import { SortableColumnLabel, SortDirection } from './SortableHeader'
+import { CategorySelect } from './ui/CategorySelect'
+import { SortableColumnLabel } from './SortableHeader'
 import type { CongestionLevel } from '../../shared/types/crowd'
 import { CROWD_LEVEL_LABEL } from '../../shared/types/crowd'
 
 type StoreSortKey = 'name' | 'category' | 'open_time'
+type StoreFilters = { category: string }
 
 const CROWD_BADGE_CLASS: Record<CongestionLevel, string> = {
   low: 'bg-leaf-100 text-leaf-700',
@@ -45,15 +48,6 @@ export function StoreManagementPanel({
 }: {
   onNotify: (message: string, type?: 'success' | 'error') => void
 }) {
-  const [stores, setStores] = useState<AdminStore[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [draftSearchText, setDraftSearchText] = useState('')
-  const [draftCategoryFilter, setDraftCategoryFilter] = useState('all')
-  const [appliedSearchText, setAppliedSearchText] = useState('')
-  const [appliedCategoryFilter, setAppliedCategoryFilter] = useState('all')
-  const [sortKey, setSortKey] = useState<StoreSortKey>('name')
-  const [sortDir, setSortDir] = useState<SortDirection>('asc')
-  const [formMode, setFormMode] = useState<'create' | AdminStore | null>(null)
   const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
   const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
   const [patternStore, setPatternStore] = useState<AdminStore | null>(null)
@@ -66,22 +60,33 @@ export function StoreManagementPanel({
     return () => clearInterval(id)
   }, [])
 
-  const loadStores = async () => {
-    setIsLoading(true)
-    try {
+  const {
+    items: stores,
+    isLoading,
+    reload: loadStores,
+    draftSearchText,
+    setDraftSearchText,
+    appliedSearchText,
+    draftFilters,
+    setDraftFilter,
+    appliedFilters,
+    sortKey,
+    sortDir,
+    handleSort,
+    formMode,
+    setFormMode,
+    handleSearch,
+    handleClear,
+  } = useMasterTable<AdminStore, StoreSortKey, StoreFilters>({
+    fetchItems: async () => {
       const res = await api.get<{ data: AdminStore[] }>('/api/stores')
-      setStores(res.data)
-    } catch (err) {
-      onNotify(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました', 'error')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadStores()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      return res.data
+    },
+    loadErrorMessage: '店舗一覧の取得に失敗しました',
+    onNotify,
+    initialSortKey: 'name',
+    initialFilters: { category: 'all' },
+  })
 
   const handleSubmit = async (values: Omit<AdminStore, 'id'>) => {
     try {
@@ -120,34 +125,13 @@ export function StoreManagementPanel({
     }
   }
 
-  const handleSort = (key: StoreSortKey) => {
-    if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
-    }
-  }
-
-  const handleSearch = () => {
-    setAppliedSearchText(draftSearchText)
-    setAppliedCategoryFilter(draftCategoryFilter)
-  }
-
-  const handleClear = () => {
-    setDraftSearchText('')
-    setDraftCategoryFilter('all')
-    setAppliedSearchText('')
-    setAppliedCategoryFilter('all')
-  }
-
   const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
 
   const visibleStores = useMemo(() => {
     const text = appliedSearchText.trim().toLowerCase()
     const filtered = stores.filter((s) => {
       const matchesText = text === '' || s.name.toLowerCase().includes(text)
-      const matchesCategory = appliedCategoryFilter === 'all' || s.category === appliedCategoryFilter
+      const matchesCategory = appliedFilters.category === 'all' || s.category === appliedFilters.category
       return matchesText && matchesCategory
     })
 
@@ -160,7 +144,7 @@ export function StoreManagementPanel({
       if (primary !== 0) return primary * dir
       return sortKey === 'name' ? 0 : a.name.localeCompare(b.name, 'ja')
     })
-  }, [stores, appliedSearchText, appliedCategoryFilter, sortKey, sortDir])
+  }, [stores, appliedSearchText, appliedFilters, sortKey, sortDir])
 
   return (
     <div>
@@ -174,18 +158,11 @@ export function StoreManagementPanel({
             onChange={(e) => setDraftSearchText(e.target.value)}
             className="ac-input !w-auto"
           />
-          <select
-            value={draftCategoryFilter}
-            onChange={(e) => setDraftCategoryFilter(e.target.value)}
-            className="ac-input !w-auto"
-          >
-            <option value="all">すべてのカテゴリ</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <CategorySelect
+            categories={categories}
+            value={draftFilters.category}
+            onChange={(value) => setDraftFilter('category', value)}
+          />
           <button onClick={handleSearch} className="ac-btn-secondary">
             検索
           </button>

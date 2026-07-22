@@ -1,7 +1,7 @@
-import { FormEvent, useState } from 'react'
 import { z } from 'zod'
 import { MapPicker } from './MapPicker'
 import { Modal } from './Modal'
+import { useZodForm } from '../hooks/useZodForm'
 import type { CongestionLevel } from '../../shared/types/crowd'
 
 // 推奨タグ語彙（Issue #126）。自由入力ではなくチェックボックスで選択させる
@@ -60,6 +60,8 @@ export interface StoreFormValues {
   last_order_time: string
   description: string
   sub_area: string
+  tags: string[]
+  closed_days: number[]
 }
 
 const numberField = (label: string, opts: { min?: number; max?: number } = {}) =>
@@ -75,7 +77,7 @@ const optionalNumberField = (label: string) =>
     .string()
     .refine((v) => v === '' || !Number.isNaN(Number(v)), `${label}は数値で入力してください`)
 
-const schema = z
+const schema: z.ZodType<StoreFormValues> = z
   .object({
     name: z.string().min(1, '店舗名は必須です'),
     category: z.string().min(1, 'カテゴリは必須です'),
@@ -122,75 +124,66 @@ export function StoreForm({
   existingStores?: { name: string; x: number; y: number }[]
 }) {
   const isEdit = !!initialStore
-  const [values, setValues] = useState<StoreFormValues>({
-    name: initialStore?.name ?? '',
-    category: initialStore?.category ?? '',
-    x: initialStore ? String(initialStore.x) : '',
-    y: initialStore ? String(initialStore.y) : '',
-    open_time: initialStore?.open_time ?? '',
-    close_time: initialStore?.close_time ?? '',
-    price_min: initialStore?.price_min != null ? String(initialStore.price_min) : '',
-    price_max: initialStore?.price_max != null ? String(initialStore.price_max) : '',
-    last_order_time: initialStore?.last_order_time ?? '',
-    description: initialStore?.description ?? '',
-    sub_area: initialStore?.sub_area ?? '',
-  })
-  const [tags, setTags] = useState<string[]>(initialStore?.tags ?? [])
-  const [closedDays, setClosedDays] = useState<number[]>(initialStore?.closed_days ?? [])
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { values, setValue, setValues, errors, isSubmitting, handleSubmit } = useZodForm<StoreFormValues>(
+    schema,
+    {
+      name: initialStore?.name ?? '',
+      category: initialStore?.category ?? '',
+      x: initialStore ? String(initialStore.x) : '',
+      y: initialStore ? String(initialStore.y) : '',
+      open_time: initialStore?.open_time ?? '',
+      close_time: initialStore?.close_time ?? '',
+      price_min: initialStore?.price_min != null ? String(initialStore.price_min) : '',
+      price_max: initialStore?.price_max != null ? String(initialStore.price_max) : '',
+      last_order_time: initialStore?.last_order_time ?? '',
+      description: initialStore?.description ?? '',
+      sub_area: initialStore?.sub_area ?? '',
+      tags: initialStore?.tags ?? [],
+      closed_days: initialStore?.closed_days ?? [],
+    }
+  )
 
   const toggleTag = (tag: string) => {
-    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
+    setValues((prev) => ({
+      ...prev,
+      tags: prev.tags.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag],
+    }))
   }
 
   const toggleClosedDay = (day: number) => {
-    setClosedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
+    setValues((prev) => ({
+      ...prev,
+      closed_days: prev.closed_days.includes(day)
+        ? prev.closed_days.filter((d) => d !== day)
+        : [...prev.closed_days, day],
+    }))
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    const result = schema.safeParse({ ...values, tags, closed_days: closedDays })
-
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
-      for (const issue of result.error.issues) {
-        fieldErrors[String(issue.path[0])] = issue.message
-      }
-      setErrors(fieldErrors)
-      return
-    }
-
-    setErrors({})
-    setIsSubmitting(true)
-    try {
-      await onSubmit({
-        name: values.name,
-        category: values.category,
-        x: Number(values.x),
-        y: Number(values.y),
-        open_time: values.open_time || null,
-        close_time: values.close_time || null,
-        price_min: values.price_min === '' ? null : Number(values.price_min),
-        price_max: values.price_max === '' ? null : Number(values.price_max),
-        tags,
-        closed_days: closedDays,
-        last_order_time: values.last_order_time || null,
-        description: values.description || null,
-        sub_area: values.sub_area || null,
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+  const onValid = async (data: StoreFormValues) => {
+    await onSubmit({
+      name: data.name,
+      category: data.category,
+      x: Number(data.x),
+      y: Number(data.y),
+      open_time: data.open_time || null,
+      close_time: data.close_time || null,
+      price_min: data.price_min === '' ? null : Number(data.price_min),
+      price_max: data.price_max === '' ? null : Number(data.price_max),
+      tags: data.tags,
+      closed_days: data.closed_days,
+      last_order_time: data.last_order_time || null,
+      description: data.description || null,
+      sub_area: data.sub_area || null,
+    })
   }
 
-  const field = (key: keyof StoreFormValues, label: string, type = 'text') => (
+  const field = (key: keyof Omit<StoreFormValues, 'tags' | 'closed_days'>, label: string, type = 'text') => (
     <div>
       <label className="ac-label">{label}</label>
       <input
         type={type}
         value={values[key]}
-        onChange={(e) => setValues({ ...values, [key]: e.target.value })}
+        onChange={(e) => setValue(key, e.target.value)}
         className="ac-input"
       />
       {errors[key] && <p className="mt-1 text-xs font-bold text-bubble-600">{errors[key]}</p>}
@@ -199,13 +192,13 @@ export function StoreForm({
 
   return (
     <Modal title={isEdit ? '店舗編集' : '店舗新規登録'} onClose={onCancel}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onValid)} className="space-y-4">
         {field('name', '店舗名')}
         {field('category', 'カテゴリ')}
         <MapPicker
           x={values.x === '' ? null : Number(values.x)}
           y={values.y === '' ? null : Number(values.y)}
-          onPick={(x, y) => setValues({ ...values, x: String(x), y: String(y) })}
+          onPick={(x, y) => setValues((prev) => ({ ...prev, x: String(x), y: String(y) }))}
           existingStores={existingStores}
         />
         <div className="grid grid-cols-2 gap-3">
@@ -228,7 +221,7 @@ export function StoreForm({
               <label key={tag} className="flex items-center gap-1.5 text-sm text-wood-700">
                 <input
                   type="checkbox"
-                  checked={tags.includes(tag)}
+                  checked={values.tags.includes(tag)}
                   onChange={() => toggleTag(tag)}
                   className="h-4 w-4 rounded border-2 border-sand-300 text-leaf-500 focus:ring-2 focus:ring-leaf-300"
                 />
@@ -246,7 +239,7 @@ export function StoreForm({
               <label key={day} className="flex items-center gap-1.5 text-sm text-wood-700">
                 <input
                   type="checkbox"
-                  checked={closedDays.includes(day)}
+                  checked={values.closed_days.includes(day)}
                   onChange={() => toggleClosedDay(day)}
                   className="h-4 w-4 rounded border-2 border-sand-300 text-leaf-500 focus:ring-2 focus:ring-leaf-300"
                 />
@@ -263,7 +256,7 @@ export function StoreForm({
             <label className="ac-label">エリア（任意）</label>
             <select
               value={values.sub_area}
-              onChange={(e) => setValues({ ...values, sub_area: e.target.value })}
+              onChange={(e) => setValue('sub_area', e.target.value)}
               className="ac-input"
             >
               <option value="">未設定</option>
@@ -280,7 +273,7 @@ export function StoreForm({
           <label className="ac-label">紹介文（任意）</label>
           <textarea
             value={values.description}
-            onChange={(e) => setValues({ ...values, description: e.target.value.slice(0, 500) })}
+            onChange={(e) => setValue('description', e.target.value.slice(0, 500))}
             rows={3}
             className="ac-input resize-none text-sm"
           />

@@ -1,6 +1,6 @@
-import { FormEvent, useState } from 'react'
 import { z } from 'zod'
 import { Modal } from './Modal'
+import { useZodForm } from '../hooks/useZodForm'
 
 export interface AdminUser {
   id: string
@@ -39,50 +39,30 @@ export function UserForm({
   onCancel: () => void
 }) {
   const isEdit = !!initialUser
-  const [values, setValues] = useState<UserFormValues>({
+  const schema: z.ZodType<UserFormValues> = isEdit ? editSchema : createSchema
+  const { values, setValue, errors, isSubmitting, handleSubmit } = useZodForm<UserFormValues>(schema, {
     email: initialUser?.email ?? '',
     password: '',
     name: initialUser?.name ?? '',
     role: initialUser?.role ?? 'user',
   })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    const schema = isEdit ? editSchema : createSchema
-    const result = schema.safeParse(values)
-
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
-      for (const issue of result.error.issues) {
-        fieldErrors[String(issue.path[0])] = issue.message
-      }
-      setErrors(fieldErrors)
-      return
-    }
-
-    setErrors({})
-    setIsSubmitting(true)
-    try {
-      const submitValues = { ...values }
-      if (isEdit && !submitValues.password) delete submitValues.password
-      await onSubmit(submitValues)
-    } finally {
-      setIsSubmitting(false)
-    }
+  const onValid = async (data: UserFormValues) => {
+    const submitValues = { ...data }
+    if (isEdit && !submitValues.password) delete submitValues.password
+    await onSubmit(submitValues)
   }
 
   return (
     <Modal title={isEdit ? 'ユーザ編集' : 'ユーザ新規登録'} onClose={onCancel}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onValid)} className="space-y-4">
         <div>
           <label className="ac-label">メールアドレス</label>
           <input
             type="email"
             disabled={isEdit}
             value={values.email}
-            onChange={(e) => setValues({ ...values, email: e.target.value })}
+            onChange={(e) => setValue('email', e.target.value)}
             className="ac-input disabled:bg-sand-200/60 disabled:text-wood-400"
           />
           {errors.email && <p className="mt-1 text-xs font-bold text-bubble-600">{errors.email}</p>}
@@ -95,7 +75,7 @@ export function UserForm({
           <input
             type="password"
             value={values.password}
-            onChange={(e) => setValues({ ...values, password: e.target.value })}
+            onChange={(e) => setValue('password', e.target.value)}
             className="ac-input"
           />
           {errors.password && <p className="mt-1 text-xs font-bold text-bubble-600">{errors.password}</p>}
@@ -106,7 +86,7 @@ export function UserForm({
           <input
             type="text"
             value={values.name}
-            onChange={(e) => setValues({ ...values, name: e.target.value })}
+            onChange={(e) => setValue('name', e.target.value)}
             className="ac-input"
           />
           {errors.name && <p className="mt-1 text-xs font-bold text-bubble-600">{errors.name}</p>}
@@ -116,7 +96,7 @@ export function UserForm({
           <label className="ac-label">ロール</label>
           <select
             value={values.role}
-            onChange={(e) => setValues({ ...values, role: e.target.value as AdminUser['role'] })}
+            onChange={(e) => setValue('role', e.target.value as AdminUser['role'])}
             className="ac-input"
           >
             <option value="user">user</option>
