@@ -67,17 +67,10 @@ export default function LikesListPage() {
   }, [rows, sortKey, categoryFilter])
 
   return (
-    <div className="ac-page-bg relative overflow-hidden">
+    <div className="relative overflow-hidden">
       <header className="ac-header">
         <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="ac-btn-secondary !px-4 !py-2 text-sm"
-          >
-            ← ダッシュボードに戻る
-          </button>
           <h1 className="text-xl font-extrabold">いいね一覧</h1>
         </div>
         <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />

@@ -47,7 +47,7 @@ export default function StoreDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="ac-page-bg flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-20">
         <p className="text-sm font-bold text-wood-500">読み込み中...</p>
       </div>
     )
@@ -55,7 +55,7 @@ export default function StoreDetailPage() {
 
   if (error || !store) {
     return (
-      <div className="ac-page-bg flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-20">
         <div className="ac-card relative text-center">
           <Leaf className="absolute -top-6 -left-6 h-14 w-14 -rotate-12 drop-shadow" />
           <p className="mb-4 text-sm font-bold text-bubble-700">{error ?? '店舗が見つかりません'}</p>
@@ -72,7 +72,7 @@ export default function StoreDetailPage() {
   }
 
   return (
-    <div className="ac-page-bg">
+    <>
       <header className="ac-header relative">
         <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
         <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
@@ -152,6 +152,6 @@ export default function StoreDetailPage() {
           onViewReservations={() => navigate('/reservations')}
         />
       )}
-    </div>
+    </>
   )
 }

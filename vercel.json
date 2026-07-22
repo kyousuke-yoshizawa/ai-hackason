@@ -3,6 +3,11 @@
     { "source": "/api/(auth|users|stores|likes|reviews|health)(/.*)?", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
+  "functions": {
+    "api/plan/generate.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/notify-congestion",

@@ -1,62 +1,29 @@
-import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
 import GrassBorder from '../components/decor/GrassBorder'
 
 export default function Dashboard() {
-  const { user, logout, hasPermission } = useAuth()
-  const navigate = useNavigate()
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/login', { replace: true })
-  }
+  const { user, hasPermission } = useAuth()
 
   if (!user) {
     return (
-      <div className="ac-page-bg flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-20">
         <p className="font-bold text-wood-600">ログインしてください</p>
       </div>
     )
   }
 
   return (
-    <div className="ac-page-bg">
+    <>
       {/* ヘッダー */}
       <header className="ac-header">
         <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <div className="flex items-center gap-2">
-            <Leaf className="h-9 w-9" color="#dff1cf" />
-            <div>
-              <h1 className="text-xl font-extrabold">ことこと町</h1>
-              <p className="text-xs font-bold text-leaf-100">お出かけプラン ダッシュボード</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link to="/likes" className="ac-btn-secondary !px-4 !py-2 text-sm">
-              ♥ いいね一覧
-            </Link>
-            <Link to="/stores" className="ac-btn-secondary !px-4 !py-2 text-sm">
-              店舗一覧・予約
-            </Link>
-            <Link to="/reservations" className="ac-btn-secondary !px-4 !py-2 text-sm">
-              予約一覧
-            </Link>
-            {user.role === 'admin' && (
-              <Link to="/admin" className="ac-btn-primary !px-4 !py-2 text-sm">
-                管理画面
-              </Link>
-            )}
-            {hasPermission('users', 'delete') && (
-              <Link to="/admin/errors" className="ac-btn-primary !px-4 !py-2 text-sm">
-                エラー管理
-              </Link>
-            )}
-            <button onClick={handleLogout} className="ac-btn-danger !px-4 !py-2 text-sm">
-              ログアウト
-            </button>
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-4">
+          <Leaf className="h-9 w-9" color="#dff1cf" />
+          <div>
+            <h1 className="text-xl font-extrabold">ことこと町</h1>
+            <p className="text-xs font-bold text-leaf-100">お出かけプラン ダッシュボード</p>
           </div>
         </div>
         <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
@@ -99,41 +66,13 @@ export default function Dashboard() {
 
         {/* 管理者専用メニュー */}
         {hasPermission('users', 'delete') && (
-          <div className="ac-card mb-8 border-sand-400">
+          <div className="ac-card border-sand-400">
             <h3 className="mb-2 text-lg font-extrabold text-wood-800">管理者メニュー</h3>
             <p className="text-sm text-wood-500">
               このセクションは admin 権限を持つユーザにのみ表示されます。
             </p>
           </div>
         )}
-
-        {/* アクティビティセクション */}
-        <div className="ac-card">
-          <h3 className="mb-4 text-lg font-extrabold text-wood-800">最近のアクティビティ</h3>
-          <div className="space-y-3">
-            <div className="flex gap-3 border-b border-sand-200 py-2 last:border-b-0">
-              <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-leaf-500"></div>
-              <div>
-                <p className="text-sm font-bold text-wood-800">ログイン画面の実装が完了しました</p>
-                <p className="text-xs text-wood-400">本日</p>
-              </div>
-            </div>
-            <div className="flex gap-3 border-b border-sand-200 py-2 last:border-b-0">
-              <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-leaf-500"></div>
-              <div>
-                <p className="text-sm font-bold text-wood-800">ダッシュボード画面がセットアップされました</p>
-                <p className="text-xs text-wood-400">本日</p>
-              </div>
-            </div>
-            <div className="flex gap-3 py-2">
-              <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-sky-500"></div>
-              <div>
-                <p className="text-sm font-bold text-wood-800">プロジェクトが開始されました</p>
-                <p className="text-xs text-wood-400">3日前</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </main>
 
       {/* フッター */}
@@ -142,6 +81,6 @@ export default function Dashboard() {
           <p className="text-sm text-wood-200">🍃 2026 ことこと町. All rights reserved.</p>
         </div>
       </footer>
-    </div>
+    </>
   )
 }

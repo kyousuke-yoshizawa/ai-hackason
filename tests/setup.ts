@@ -1,4 +1,16 @@
 import '@testing-library/jest-dom'
+import { TextEncoder, TextDecoder } from 'util'
+
+// jsdom（testEnvironment）にはTextEncoder/TextDecoderが無いため、実際の
+// @anthropic-ai/sdkモジュールをロードするテスト（Issue #117/#118対応で
+// PlanGenerationError/RateLimitError等の実クラスをinstanceof判定に使うテストを追加）が
+// 起動時エラーになる。Node標準のutilモジュールから補ってグローバルに登録する
+if (typeof (global as { TextEncoder?: unknown }).TextEncoder === 'undefined') {
+  (global as unknown as { TextEncoder: typeof TextEncoder }).TextEncoder = TextEncoder
+}
+if (typeof (global as { TextDecoder?: unknown }).TextDecoder === 'undefined') {
+  (global as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder = TextDecoder
+}
 
 // Mock API client（import.meta.env を使うため、ts-jest(CommonJS)下では直接読み込めない）
 jest.mock('../src/lib/api', () => ({
