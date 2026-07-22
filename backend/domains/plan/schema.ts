@@ -33,7 +33,8 @@ export const planStopSchema = z.object({
   open_time: z.string().nullable().optional(),
   close_time: z.string().nullable().optional(),
   crowd_note: z.string().nullable().optional(),
-  // オファー機能（要件定義書v2 S004）は未実装のため、Claudeには常にnullを返させる
+  // オファー機能（要件定義書v2 S004）: 対象店舗に現在時刻適用中のオファーがある場合のみ
+  // その内容が入る。無い場合はnull（promptBuilder.buildPlanSystemPrompt参照）
   offer_note: z.string().nullable().optional(),
 })
 

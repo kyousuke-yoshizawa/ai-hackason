@@ -26,6 +26,7 @@ const STORE: StoreForPrompt = {
   last_order_time: null,
   description: null,
   sub_area: null,
+  offers: [],
 }
 
 beforeEach(() => {
@@ -69,5 +70,36 @@ describe('buildStoreContexts', () => {
     expect(contexts[0].score).toBeGreaterThan(0)
 
     spy.mockRestore()
+  })
+
+  // Issue #98（S004・オファー機能）: 現在時刻適用中のオファーがあればscoreに加点し、offerTextに内容を積む
+  it('現在時刻適用中のオファーがあればスコアに加点し、offerTextに内容を含める', async () => {
+    const now = new Date('2026-07-16T05:00:00Z') // JST 14:00, 木曜日
+    const storeWithOffer: StoreForPrompt = {
+      ...STORE,
+      offers: [
+        { description: '14-16時は狙い目！20%OFF', start_time: '14:00', end_time: '16:00', weekdays_only: false, is_active: true },
+      ],
+    }
+
+    const [withOffer] = await buildStoreContexts([storeWithOffer], now)
+    const [without] = await buildStoreContexts([STORE], now)
+
+    expect(withOffer.offerText).toBe('14-16時は狙い目！20%OFF（14:00〜16:00）')
+    expect(withOffer.score).toBeGreaterThan(without.score)
+  })
+
+  it('現在時刻適用外のオファーはscoreに反映せず、offerTextはnullのままにする', async () => {
+    const now = new Date('2026-07-16T00:00:00Z') // JST 09:00
+    const storeWithOffer: StoreForPrompt = {
+      ...STORE,
+      offers: [
+        { description: '14-16時は狙い目！20%OFF', start_time: '14:00', end_time: '16:00', weekdays_only: false, is_active: true },
+      ],
+    }
+
+    const [context] = await buildStoreContexts([storeWithOffer], now)
+
+    expect(context.offerText).toBeNull()
   })
 })

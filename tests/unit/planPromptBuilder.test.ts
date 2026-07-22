@@ -24,10 +24,12 @@ const STORE_A: StoreContext = {
   last_order_time: null,
   description: null,
   sub_area: null,
+  offers: [],
   distanceTag: 'near',
   rating: 4.2,
   crowdText: 'のんびり亭: 現在空いている（想定（事前設定））',
   score: 0.82,
+  offerText: null,
 }
 
 const STORE_B: StoreContext = {
@@ -45,10 +47,12 @@ const STORE_B: StoreContext = {
   last_order_time: null,
   description: null,
   sub_area: null,
+  offers: [],
   distanceTag: 'far',
   rating: null,
   crowdText: 'つきみ座: 混雑情報なし',
   score: 0.5,
+  offerText: null,
 }
 
 describe('buildPlanSystemPrompt', () => {
@@ -169,6 +173,25 @@ describe('buildPlanUserTurn', () => {
 
     expect(prompt).not.toContain('タグ:')
     expect(prompt).not.toContain('エリア:')
+  })
+
+  // Issue #98（S004・オファー機能）
+  it('offerTextがある店舗はプロンプトにオファー内容を含める', () => {
+    const storeWithOffer: StoreContext = {
+      ...STORE_A,
+      offerText: '14-16時は狙い目！20%OFF（14:00〜16:00）',
+    }
+    const prompt = buildPlanSystemPrompt([storeWithOffer])
+
+    expect(prompt).toContain('オファー: 14-16時は狙い目！20%OFF（14:00〜16:00）')
+  })
+
+  it('offerTextが無い店舗は店舗一覧の行にオファー欄を含めない', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    // "## 指示"セクションのoffer_note転記に関する説明文自体に「オファー: ...」という
+    // 表記が含まれるため、店舗一覧の行フォーマット（`、オファー: `）に限定して確認する
+    expect(prompt).not.toContain('、オファー:')
   })
 
   it('L.O.に関する入店タイミングの指示をプロンプトに含める', () => {

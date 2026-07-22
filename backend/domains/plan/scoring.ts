@@ -30,8 +30,9 @@ export interface ScoreInput {
 }
 
 // レビュー無し・混雑情報不明の店舗は中間値（0.5 / medium相当）を割り当てる。
-// オファー機能（S004）は現時点でDBスキーマが存在しないため、常にfalseを渡す運用
-// （将来オファーテーブルが追加された時点でこの関数自体は変更不要）
+// オファー機能（S004）: hasOfferは呼び出し側（backend/domains/plan/promptBuilder.tsの
+// buildStoreContexts）が、backend/domains/offers/activeCheck.tsのisOfferActiveNowで
+// 「その店舗に現在時刻適用中のオファーが1件でもあるか」を判定した結果を渡す
 export function scoreStore({ distanceTag, rating, crowdLevel, hasOffer }: ScoreInput): number {
   const distanceScore = DISTANCE_SCORE[distanceTag] * DISTANCE_WEIGHT
   const ratingScore = (rating !== null ? rating / 5 : 0.5) * RATING_WEIGHT

@@ -1,8 +1,21 @@
 import { AREA_NAME, LANDMARKS } from '../area/landmarks.js'
 import { formatCrowdLevelForPrompt, resolveCurrentCrowdLevel } from '../crowd/getCurrentLevel.js'
+import { isOfferActiveNow } from '../offers/activeCheck.js'
 import { getStoreReviewStats } from '../social/reviewsRepository.js'
 import { getDistanceTag, scoreStore, type DistanceTag } from './scoring.js'
 import type { GeneratePlanRequest } from './schema.js'
+
+// オファー機能（要件定義書v2 S004）: プラン生成のたびに店舗ごと問い合わせるのではなく、
+// 呼び出し側（api/plan/generate.ts）が listActiveOffers() で一括取得したオファーのうち
+// 対象店舗に紐づく分をこのフィールドに詰めて渡す（backend/domains/offers/repository.tsの
+// OfferRowのサブセット。start_time/end_timeは他のTIME型カラムと同じ"HH:MM"文字列規約）
+export interface OfferForPrompt {
+  description: string
+  start_time: string
+  end_time: string
+  weekdays_only: boolean
+  is_active: boolean
+}
 
 export interface StoreForPrompt {
   id: string
@@ -19,6 +32,7 @@ export interface StoreForPrompt {
   last_order_time: string | null
   description: string | null
   sub_area: string | null
+  offers: OfferForPrompt[]
 }
 
 export interface StoreContext extends StoreForPrompt {
@@ -26,6 +40,8 @@ export interface StoreContext extends StoreForPrompt {
   rating: number | null
   crowdText: string
   score: number
+  // 現在時刻適用中のオファーが1件でもあればその内容（複数あれば" / "区切り）。無ければnull
+  offerText: string | null
 }
 
 const DISTANCE_LABEL: Record<DistanceTag, string> = { near: '近い', normal: '普通', far: '遠い' }
@@ -50,7 +66,7 @@ async function getStoreReviewStatsSafely(storeId: string): ReturnType<typeof get
   }
 }
 
-export async function buildStoreContexts(stores: StoreForPrompt[]): Promise<StoreContext[]> {
+export async function buildStoreContexts(stores: StoreForPrompt[], now: Date = new Date()): Promise<StoreContext[]> {
   return Promise.all(
     stores.map(async (store) => {
       const [crowdResult, stats] = await Promise.all([
@@ -59,12 +75,12 @@ export async function buildStoreContexts(stores: StoreForPrompt[]): Promise<Stor
       ])
       const distanceTag = getDistanceTag(store.x - TOWN_CENTER.x, store.y - TOWN_CENTER.y)
       const rating = stats.review_count > 0 ? stats.avg_rating : null
+      const activeOffers = store.offers.filter((offer) => isOfferActiveNow(offer, now))
       const score = scoreStore({
         distanceTag,
         rating,
         crowdLevel: crowdResult.level,
-        // オファー機能（要件定義書v2 S004）はDBスキーマ未実装のため常にfalse
-        hasOffer: false,
+        hasOffer: activeOffers.length > 0,
       })
 
       return {
@@ -73,6 +89,10 @@ export async function buildStoreContexts(stores: StoreForPrompt[]): Promise<Stor
         rating,
         crowdText: formatCrowdLevelForPrompt(store.name, crowdResult),
         score,
+        offerText:
+          activeOffers.length > 0
+            ? activeOffers.map((offer) => `${offer.description}（${offer.start_time}〜${offer.end_time}）`).join(' / ')
+            : null,
       }
     })
   )
@@ -153,6 +173,7 @@ export function buildPlanSystemPrompt(stores: StoreContext[], now: Date = new Da
         (s.last_order_time ? `（L.O. ${s.last_order_time}）` : '')
       const tagsPart = s.tags.length > 0 ? `、タグ: ${s.tags.join('／')}` : ''
       const areaPart = s.sub_area ? `、エリア: ${s.sub_area}` : ''
+      const offerPart = s.offerText ? `、オファー: ${s.offerText}` : ''
       const descriptionPart = s.description ? `\n  ${s.description}` : ''
 
       return (
@@ -162,6 +183,7 @@ export function buildPlanSystemPrompt(stores: StoreContext[], now: Date = new Da
         `評価 ${s.rating !== null ? s.rating.toFixed(1) : '未評価'}` +
         `${tagsPart}${areaPart}、` +
         `${s.crowdText}、参考スコア ${s.score.toFixed(2)}（店舗ID: ${s.id}）` +
+        `${offerPart}` +
         descriptionPart
       )
     })
@@ -192,7 +214,7 @@ ${distanceTable}
 - 各店舗の営業時間内に収まるようにプランを組んでください。
 - L.O.が設定されている店舗は、L.O.の30分前までに入店するプランにすること。L.O.未設定の店舗も閉店30分前以降の入店は避けること。
 - 各stopのrating・open_time・close_time・crowd_noteには、「## 店舗一覧」に記載されているその店舗の評価・営業時間・混雑状況をそのまま（数値・文言を変えずに）転記してください。評価が「未評価」の場合はratingにnullを入れてください。
-- offer_noteはオファー機能が未実装のため、必ずnull を返してください（内容を考案しないこと）。
+- 各stopのoffer_noteには、「## 店舗一覧」にその店舗の「オファー: ...」が記載されている場合はその内容をそのまま転記してください。記載が無い店舗はnullを返してください（オファー内容を自作しないこと）。
 - store_idは「## 店舗一覧」に記載されているIDを一字一句そのまま使ってください（typoや自作のIDを作らないこと）。
 - プラン案は2〜3案生成してください。labelは「A案」「B案」（3案目は「C案」）とし、案ごとに切り口を変えてください（例: A案=要望を最も満たす王道案、B案=混雑回避重視、C案=予算重視やオファー活用重視）。各案のsummaryの冒頭で、その案がどんな切り口かを一言添えてください。
 - 以下の形式のプランを \`submit_plan\` ツールで提出してください。
