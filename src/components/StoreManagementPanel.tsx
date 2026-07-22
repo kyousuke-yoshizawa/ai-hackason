@@ -326,7 +326,12 @@ export function StoreManagementPanel({
 
       {offerStore && (
         <Modal title={`オファー管理 - ${offerStore.name}`} onClose={() => setOfferStore(null)} maxWidth="max-w-2xl">
-          <StoreOfferPanel storeId={offerStore.id} onNotify={onNotify} />
+          <StoreOfferPanel
+            storeId={offerStore.id}
+            storeName={offerStore.name}
+            storeCategory={offerStore.category}
+            onNotify={onNotify}
+          />
         </Modal>
       )}
     </div>

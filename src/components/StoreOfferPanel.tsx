@@ -1,10 +1,14 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { z } from 'zod'
-import { createOffer, deleteOffer, getOffers, updateOffer } from '../lib/offers'
+import { createOffer, deleteOffer, getOffers, isOfferActiveNow, updateOffer } from '../lib/offers'
 import type { Offer } from '../lib/offers'
+import { generatePlan } from '../lib/plan'
+import type { PlanCandidate } from '../types/plan'
 
 interface StoreOfferPanelProps {
   storeId: string
+  storeName?: string
+  storeCategory?: string
   onNotify?: (message: string, type?: 'success' | 'error') => void
 }
 
@@ -47,10 +51,14 @@ function toFormValues(offer: Offer): OfferFormValues {
   }
 }
 
-export function StoreOfferPanel({ storeId, onNotify }: StoreOfferPanelProps) {
+export function StoreOfferPanel({ storeId, storeName, storeCategory, onNotify }: StoreOfferPanelProps) {
   const [offers, setOffers] = useState<Offer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+
+  const [isPreviewing, setIsPreviewing] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const [previewCandidates, setPreviewCandidates] = useState<PlanCandidate[] | null>(null)
 
   const [newOffer, setNewOffer] = useState<OfferFormValues>(EMPTY_FORM)
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({})
@@ -152,6 +160,29 @@ export function StoreOfferPanel({ storeId, onNotify }: StoreOfferPanelProps) {
     } else {
       onNotify?.(result.message ?? 'オファーの削除に失敗しました', 'error')
     }
+  }
+
+  // Issue #135: オファーが実際にAIプランへ反映されるかを、店舗管理者がその場で
+  // 試せるようにするプレビュー機能。店舗名/カテゴリを含む固定文言で1回だけプラン生成を
+  // 呼び出し、返ってきた候補に自店舗が含まれるかを表示する。
+  // PLAN_MOCK=1環境（ANTHROPIC_API_KEY未設定時のモックモード）では、実際のオファー内容に
+  // かかわらず固定のモック応答が返るため、このプレビューでもオファーの反映は確認できない。
+  const handlePreview = async () => {
+    setIsPreviewing(true)
+    setPreviewError(null)
+    setPreviewCandidates(null)
+
+    const subject = storeCategory ?? storeName ?? 'このお店'
+    const message = `${subject}のカテゴリで、お得に行きたい`
+
+    const result = await generatePlan({ message })
+    setIsPreviewing(false)
+
+    if (!result.success || !result.plan) {
+      setPreviewError(result.message ?? 'プラン生成に失敗しました')
+      return
+    }
+    setPreviewCandidates(result.plan.candidates)
   }
 
   return (
@@ -316,6 +347,18 @@ export function StoreOfferPanel({ storeId, onNotify }: StoreOfferPanelProps) {
                       {offer.start_time} - {offer.end_time}
                       {offer.weekdays_only ? '（平日限定）' : ''}
                     </p>
+                    <p className="mt-1 text-xs font-bold">
+                      {isOfferActiveNow(offer) ? (
+                        <span className="text-leaf-600">🟢 いまプラン生成で加点中（+15%）</span>
+                      ) : !offer.is_active ? (
+                        <span className="text-wood-400">⏸ 無効のため加点対象外</span>
+                      ) : (
+                        <span className="text-wood-400">
+                          ⏸ {offer.weekdays_only ? '平日の' : ''}
+                          {offer.start_time}〜{offer.end_time} に加点
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <span
@@ -340,6 +383,49 @@ export function StoreOfferPanel({ storeId, onNotify }: StoreOfferPanelProps) {
           ))}
         </ul>
       )}
+
+      <div className="rounded-2xl border-2 border-sky-200 bg-sky-50/60 p-4 space-y-3">
+        <p className="text-xs text-wood-500">
+          オファーが有効な時間帯は、AIプランのスコアが+15%加点され、プラン文面にオファー内容が紹介されます。
+        </p>
+        <button
+          type="button"
+          onClick={handlePreview}
+          disabled={isPreviewing}
+          className="ac-btn-secondary !px-4 !py-2 text-sm"
+        >
+          {isPreviewing ? '確認中...' : 'プランでの見え方を試す'}
+        </button>
+
+        {previewError && <p className="text-sm font-bold text-bubble-600">{previewError}</p>}
+
+        {previewCandidates && (
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-wood-700">プラン候補への反映結果</p>
+            {previewCandidates.map((candidate, index) => {
+              const ownStop = candidate.stops.find((stop) => stop.store_id === storeId)
+              return (
+                <div key={`${candidate.label}-${index}`} className="rounded-xl border-2 border-wood-200 bg-white p-3 text-sm">
+                  <p className="font-bold text-wood-800">{candidate.label}</p>
+                  {ownStop ? (
+                    <>
+                      <p className="mt-1 text-leaf-700">
+                        ✅ この店舗が案に含まれています（{ownStop.start_time}〜{ownStop.end_time}）
+                      </p>
+                      {ownStop.reason && <p className="mt-1 text-xs text-wood-500">理由: {ownStop.reason}</p>}
+                      {ownStop.offer_note && (
+                        <p className="mt-1 text-xs text-bubble-600">オファー言及: {ownStop.offer_note}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="mt-1 text-wood-400">この案には含まれていません</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
