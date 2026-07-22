@@ -18,6 +18,8 @@ describe('planStopSchema', () => {
       close_time: '21:00',
       crowd_note: '12時台は混雑',
       offer_note: null,
+      price_min: 900,
+      price_max: 1300,
     })
 
     expect(result.success).toBe(true)
@@ -37,6 +39,8 @@ describe('planStopSchema', () => {
       close_time: null,
       crowd_note: null,
       offer_note: null,
+      price_min: null,
+      price_max: null,
     })
 
     expect(result.success).toBe(true)
@@ -46,6 +50,32 @@ describe('planStopSchema', () => {
     const result = planStopSchema.safeParse({ ...BASE_STOP, rating: 5.5 })
 
     expect(result.success).toBe(false)
+  })
+
+  it('price_min・price_maxを含むstopを検証できる（Issue #123: プラン合計予算の概算表示）', () => {
+    const result = planStopSchema.safeParse({
+      ...BASE_STOP,
+      price_min: 900,
+      price_max: 1300,
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it('price_min・price_maxがnullでも検証できる（店舗の価格帯が未設定のケース）', () => {
+    const result = planStopSchema.safeParse({
+      ...BASE_STOP,
+      price_min: null,
+      price_max: null,
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it('price_min・price_maxが無い（省略された）stopも引き続き検証できる（後方互換）', () => {
+    const result = planStopSchema.safeParse(BASE_STOP)
+
+    expect(result.success).toBe(true)
   })
 })
 
@@ -127,6 +157,8 @@ describe('generatePlanResponseSchema', () => {
               close_time: '21:00',
               crowd_note: '12時台は混雑',
               offer_note: null,
+              price_min: 900,
+              price_max: 1300,
             },
           ],
           score: 0.8,

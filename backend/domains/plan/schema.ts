@@ -35,6 +35,10 @@ export const planStopSchema = z.object({
   crowd_note: z.string().nullable().optional(),
   // オファー機能（要件定義書v2 S004）は未実装のため、Claudeには常にnullを返させる
   offer_note: z.string().nullable().optional(),
+  // Issue #123（U005拡張: プラン合計予算の概算表示と予算超過警告）向けの追加フィールド。
+  // フロント側の予算計算に使う店舗の価格帯。既存フィールドと同様、後方互換のため任意
+  price_min: z.number().nullable().optional(),
+  price_max: z.number().nullable().optional(),
 })
 
 export const planCandidateSchema = z.object({
@@ -112,6 +116,8 @@ export const PLAN_RESULT_JSON_SCHEMA: {
                 close_time: { type: ['string', 'null'] },
                 crowd_note: { type: ['string', 'null'] },
                 offer_note: { type: ['string', 'null'] },
+                price_min: { type: ['number', 'null'] },
+                price_max: { type: ['number', 'null'] },
               },
               required: ['store_id', 'store_name', 'start_time', 'end_time', 'travel_note', 'reason'],
             },

@@ -174,7 +174,7 @@ ${distanceTable}
 - 移動順序を決める際は「店舗間の距離感」を参照し、「近い」店舗同士を優先的に組み合わせてください。それらしい徒歩移動時間（例: 徒歩5分程度）を travel_note に生成してください。厳密な数値計算は不要です。
 - 参考スコアは距離感・評価・混雑度（合計85%: 35%/25%/25%）の加重合計にオファー加点（最大15%）を加えた、店舗単体の0〜1の目安です。各案の score（0〜1の1つの数値）は、選んだ店舗の参考スコアの単純平均程度を目安にしてください（複数店舗の参考スコアを合計しないこと）。
 - 各店舗の営業時間内に収まるようにプランを組んでください。
-- 各stopのrating・open_time・close_time・crowd_noteには、「## 店舗一覧」に記載されているその店舗の評価・営業時間・混雑状況をそのまま（数値・文言を変えずに）転記してください。評価が「未評価」の場合はratingにnullを入れてください。
+- 各stopのrating・open_time・close_time・crowd_note・price_min・price_maxには、「## 店舗一覧」に記載されているその店舗の評価・営業時間・混雑状況・価格帯をそのまま（数値・文言を変えずに）転記してください。評価が「未評価」の場合はratingにnullを入れてください。
 - offer_noteはオファー機能が未実装のため、必ずnull を返してください（内容を考案しないこと）。
 - store_idは「## 店舗一覧」に記載されているIDを一字一句そのまま使ってください（typoや自作のIDを作らないこと）。
 - プラン案は2〜3案生成してください。labelは「A案」「B案」（3案目は「C案」）とし、案ごとに切り口を変えてください（例: A案=要望を最も満たす王道案、B案=混雑回避重視、C案=予算重視やオファー活用重視）。各案のsummaryの冒頭で、その案がどんな切り口かを一言添えてください。
@@ -197,7 +197,9 @@ ${distanceTable}
           "open_time": string | null,
           "close_time": string | null,
           "crowd_note": string | null,
-          "offer_note": null
+          "offer_note": null,
+          "price_min": number | null,
+          "price_max": number | null
         }
       ],
       "score": number,
@@ -217,7 +219,9 @@ ${distanceTable}
           "open_time": string | null,
           "close_time": string | null,
           "crowd_note": string | null,
-          "offer_note": null
+          "offer_note": null,
+          "price_min": number | null,
+          "price_max": number | null
         }
       ],
       "score": number,
