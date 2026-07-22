@@ -1,6 +1,6 @@
 type Row = Record<string, unknown>
 
-type FilterOp = 'eq' | 'lte' | 'is' | 'in'
+type FilterOp = 'eq' | 'lte' | 'gte' | 'is' | 'in'
 
 interface Filter {
   op: FilterOp
@@ -23,7 +23,8 @@ type FakeError = { message: string; code?: string }
 class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError | null; count?: number }> {
   private op: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select'
   private filters: Filter[] = []
-  private insertObj: Row | null = null
+  private insertObj: Row | Row[] | null = null
+  private upsertObj: Row | null = null
   private updateObj: Row | null = null
   private orderColumn: string | null = null
   private orderAscending = true
@@ -35,7 +36,7 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError 
 
   constructor(private table: FakeTable) {}
 
-  insert(obj: Row): this {
+  insert(obj: Row | Row[]): this {
     this.op = 'insert'
     this.insertObj = obj
     return this
@@ -43,7 +44,7 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError 
 
   upsert(obj: Row): this {
     this.op = 'upsert'
-    this.insertObj = obj
+    this.upsertObj = obj
     return this
   }
 
@@ -71,6 +72,11 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError 
 
   lte(column: string, value: unknown): this {
     this.filters.push({ op: 'lte', column, value })
+    return this
+  }
+
+  gte(column: string, value: unknown): this {
+    this.filters.push({ op: 'gte', column, value })
     return this
   }
 
@@ -112,6 +118,7 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError 
       const filterValue = filter.value as string | number
       if (filter.op === 'eq') return rowValue === filterValue
       if (filter.op === 'lte') return rowValue <= filterValue
+      if (filter.op === 'gte') return rowValue >= filterValue
       if (filter.op === 'is') return (rowValue ?? null) === filterValue
       if (filter.op === 'in') return (filter.value as unknown[]).includes(rowValue)
       return true
@@ -124,18 +131,38 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError 
     )
   }
 
+  // 同一バルクinsertバッチ内での重複も一意制約違反として検出する（real Supabaseの挙動を模倣）。
+  private hasIntraBatchConflict(candidates: Row[], index: number): boolean {
+    const candidate = candidates[index]
+    return this.table.uniqueColumns.some((columns) =>
+      candidates.some(
+        (other, otherIndex) => otherIndex !== index && columns.every((column) => other[column] === candidate[column]),
+      ),
+    )
+  }
+
   private execute(): { data: unknown; error: FakeError | null; count?: number } {
     if (this.op === 'insert' && this.insertObj) {
-      if (this.findUniqueConflict(this.insertObj)) {
+      // 単一オブジェクトと配列（bulk insert）の両方に対応。real Supabase の
+      // .insert([...]) 相当を模倣し、all-or-nothing（1件でも一意制約違反があれば何も挿入しない）にする。
+      const candidates = Array.isArray(this.insertObj) ? this.insertObj : [this.insertObj]
+      const hasConflict = candidates.some(
+        (candidate, index) => this.findUniqueConflict(candidate) || this.hasIntraBatchConflict(candidates, index),
+      )
+      if (hasConflict) {
         return {
           data: null,
           error: { message: 'duplicate key value violates unique constraint', code: '23505' },
         }
       }
       const now = new Date().toISOString()
-      const row: Row = { id: this.table.generateId(), created_at: now, ...this.insertObj }
-      this.table.rows.push(row)
-      return { data: this.singleMode ? row : [row], error: null }
+      const rows: Row[] = candidates.map((candidate) => ({
+        id: this.table.generateId(),
+        created_at: now,
+        ...candidate,
+      }))
+      this.table.rows.push(...rows)
+      return { data: this.singleMode ? rows[0] : rows, error: null }
     }
 
     if (this.op === 'update') {
@@ -150,15 +177,15 @@ class FakeQueryBuilder implements PromiseLike<{ data: unknown; error: FakeError 
       return { data: matched, error: null }
     }
 
-    if (this.op === 'upsert' && this.insertObj) {
-      const matchKey = 'store_id' in this.insertObj ? 'store_id' : 'id'
-      const existing = this.table.rows.find((row) => row[matchKey] === this.insertObj![matchKey])
+    if (this.op === 'upsert' && this.upsertObj) {
+      const matchKey = 'store_id' in this.upsertObj ? 'store_id' : 'id'
+      const existing = this.table.rows.find((row) => row[matchKey] === this.upsertObj![matchKey])
       if (existing) {
-        Object.assign(existing, this.insertObj)
+        Object.assign(existing, this.upsertObj)
         return { data: this.singleMode ? existing : [existing], error: null }
       }
       const now = new Date().toISOString()
-      const row: Row = { id: this.table.generateId(), created_at: now, ...this.insertObj }
+      const row: Row = { id: this.table.generateId(), created_at: now, ...this.upsertObj }
       this.table.rows.push(row)
       return { data: this.singleMode ? row : [row], error: null }
     }

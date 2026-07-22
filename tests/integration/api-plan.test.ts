@@ -63,8 +63,12 @@ function createMockRes() {
   return res as VercelResponse & { statusCode: number; body: unknown; headers: Record<string, string> }
 }
 
-function createReq(method: string, body: Record<string, unknown> = {}): VercelRequest {
-  return { method, body, headers: {}, query: {} } as unknown as VercelRequest
+function createReq(
+  method: string,
+  body: Record<string, unknown> = {},
+  headers: Record<string, string> = {},
+): VercelRequest {
+  return { method, body, headers, query: {} } as unknown as VercelRequest
 }
 
 beforeEach(() => {
@@ -81,6 +85,11 @@ beforeEach(() => {
       close_time: '21:00',
       price_min: 900,
       price_max: 1300,
+      tags: [],
+      closed_days: [],
+      last_order_time: null,
+      description: null,
+      sub_area: null,
       deleted_at: null,
     },
   ])
@@ -128,6 +137,90 @@ describe('POST /api/plan/generate', () => {
 
     expect(res.statusCode).toBe(404)
     expect((res.body as { error: string }).error).toBe('no_stores')
+  })
+
+  it('全店舗が本日定休日の場合は404 no_storesを返す（当日除外方式）', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-22T03:00:00Z')) // JST水曜（day=3）
+    fakeClient.seed('stores', [
+      {
+        id: 'store-1',
+        name: 'のんびり亭',
+        category: '定食屋・ランチ',
+        x: -100,
+        y: 30,
+        open_time: '11:00',
+        close_time: '21:00',
+        price_min: 900,
+        price_max: 1300,
+        tags: [],
+        closed_days: [3],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+    ])
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'closed-days-test-1' }), res)
+
+    expect(res.statusCode).toBe(404)
+    expect((res.body as { error: string }).error).toBe('no_stores')
+    jest.useRealTimers()
+  })
+
+  it('本日定休日の店舗はプロンプトに含めず、営業中の店舗のみで生成する', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-22T03:00:00Z')) // JST水曜（day=3）
+    fakeClient.seed('stores', [
+      {
+        id: 'store-1',
+        name: 'のんびり亭',
+        category: '定食屋・ランチ',
+        x: -100,
+        y: 30,
+        open_time: '11:00',
+        close_time: '21:00',
+        price_min: 900,
+        price_max: 1300,
+        tags: [],
+        closed_days: [],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+      {
+        id: 'store-2',
+        name: 'つきみ座',
+        category: '映画館',
+        x: -180,
+        y: -50,
+        open_time: '10:00',
+        close_time: '22:00',
+        price_min: 1200,
+        price_max: 1800,
+        tags: [],
+        closed_days: [3],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+    ])
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'closed-days-test-2' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const prompt = mockGeneratePlan.mock.calls[0][0] as string
+    expect(prompt).toContain('のんびり亭')
+    expect(prompt).not.toContain('つきみ座')
+    jest.useRealTimers()
   })
 
   it('Claude APIの応答が正しいJSONであれば200でプランを返す', async () => {
@@ -214,6 +307,42 @@ describe('POST /api/plan/generate', () => {
     expect(res.statusCode).toBe(502)
     expect((res.body as { error: string; message: string }).error).toBe('claude_api_error')
     expect((res.body as { error: string; message: string }).message).toContain('混み合っています')
+  })
+
+  // Issue #136: プラン生成成功時に候補内の店舗へplan_suggestionsを記録することを検証する
+  it('プラン生成成功時に候補stopsの店舗ごとにplan_suggestionsを1件ずつ記録する（Issue #136）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const rows = fakeClient.getRows('plan_suggestions')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].store_id).toBe('store-1')
+  })
+
+  // Issue #135: 店舗管理者のプレビュー呼び出し（preview: true）は、Issue #136の
+  // plan_suggestions記録を水増ししてしまうため記録しないことを検証する
+  it('preview: trueの場合はplan_suggestionsを記録しない（Issue #135）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(
+      createReq('POST', { message: 'ランチしたい', preview: true }, { 'x-user-id': 'preview-flag-test' }),
+      res,
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(fakeClient.getRows('plan_suggestions')).toHaveLength(0)
   })
 
   it('Claude API呼び出し自体が失敗した場合（未分類のエラー）は502 claude_api_errorを、内部のエラー詳細を含めずに返す', async () => {

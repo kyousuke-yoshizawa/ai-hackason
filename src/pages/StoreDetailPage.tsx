@@ -11,6 +11,16 @@ import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
 import GrassBorder from '../components/decor/GrassBorder'
 
+// 0=日曜〜6=土曜（JSのDate.getDay()と同じ規約、Issue #127）
+const DAY_NAMES = ['日曜', '月曜', '火曜', '水曜', '木曜', '金曜', '土曜']
+
+function formatClosedDays(closedDays: number[]): string {
+  return closedDays
+    .filter((d) => d >= 0 && d <= 6)
+    .map((d) => DAY_NAMES[d])
+    .join('・')
+}
+
 export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const navigate = useNavigate()
@@ -88,10 +98,36 @@ export default function StoreDetailPage() {
               <p className="mt-1 text-sm text-wood-500">
                 {store.category}
                 {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
+                {store.last_order_time && `（L.O. ${store.last_order_time}）`}
               </p>
+              {store.sub_area && (
+                <p className="mt-1 text-sm text-wood-500">エリア: {store.sub_area}</p>
+              )}
+              {store.closed_days && store.closed_days.length > 0 && (
+                <p className="mt-1 text-sm text-wood-500">
+                  定休日: {formatClosedDays(store.closed_days)}
+                </p>
+              )}
             </div>
             {user && <LikeButton userId={user.id} storeId={store.id} initialCount={likeCount} />}
           </div>
+
+          {store.description && (
+            <p className="mt-3 whitespace-pre-wrap text-sm text-wood-600">{store.description}</p>
+          )}
+
+          {store.tags && store.tags.length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-1.5 text-sm font-bold text-wood-700">タグ</h3>
+              <div className="flex flex-wrap gap-2">
+                {store.tags.map((tag) => (
+                  <span key={tag} className="ac-badge bg-leaf-100 text-leaf-700">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             type="button"
