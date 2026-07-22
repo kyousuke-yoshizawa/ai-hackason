@@ -1,10 +1,26 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getUserReservations } from '../lib/reservations'
+import { getUserLikes } from '../lib/likes'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
 import GrassBorder from '../components/decor/GrassBorder'
 
 export default function Dashboard() {
   const { user, hasPermission } = useAuth()
+  const [reservationCount, setReservationCount] = useState<number | null>(null)
+  const [likeCount, setLikeCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    getUserReservations(user.id).then((res) => {
+      if (res.success) setReservationCount(res.reservations.length)
+    })
+    getUserLikes(user.id).then((res) => {
+      if (res.success) setLikeCount(res.likes.length)
+    })
+  }, [user])
 
   if (!user) {
     return (
@@ -43,25 +59,23 @@ export default function Dashboard() {
           </div>
 
           {/* スタットカード */}
-          <div className="ac-card-sm">
-            <h3 className="mb-2 text-sm font-bold text-wood-500">プロジェクト状態</h3>
-            <p className="mb-2 text-3xl font-extrabold text-leaf-600">進行中</p>
-            <p className="text-xs text-wood-400">開発フェーズ</p>
-          </div>
+          <Link to="/plan" className="ac-card-sm block transition hover:shadow-ac">
+            <h3 className="mb-2 text-sm font-bold text-wood-500">AIお出かけプラン</h3>
+            <p className="mb-2 text-2xl font-extrabold text-leaf-600">🤖 提案してもらう</p>
+            <p className="text-xs text-wood-400">今日のお出かけプランを相談</p>
+          </Link>
 
-          <div className="ac-card-sm">
-            <h3 className="mb-2 text-sm font-bold text-wood-500">チームメンバー</h3>
-            <p className="mb-2 text-3xl font-extrabold text-sky-600">4</p>
-            <p className="text-xs text-wood-400">名</p>
-          </div>
+          <Link to="/reservations" className="ac-card-sm block transition hover:shadow-ac">
+            <h3 className="mb-2 text-sm font-bold text-wood-500">あなたの予約</h3>
+            <p className="mb-2 text-3xl font-extrabold text-sky-600">{reservationCount ?? '–'}</p>
+            <p className="text-xs text-wood-400">件</p>
+          </Link>
 
-          <div className="ac-card-sm">
-            <h3 className="mb-2 text-sm font-bold text-wood-500">ユーザ権限</h3>
-            <p className="mb-2 text-lg font-extrabold capitalize text-wood-800">{user.role}</p>
-            <p className="text-xs text-wood-400">
-              {user.role === 'admin' ? '管理者' : '標準ユーザ'}
-            </p>
-          </div>
+          <Link to="/likes" className="ac-card-sm block transition hover:shadow-ac">
+            <h3 className="mb-2 text-sm font-bold text-wood-500">いいねした店舗</h3>
+            <p className="mb-2 text-3xl font-extrabold text-bubble-500">{likeCount ?? '–'}</p>
+            <p className="text-xs text-wood-400">件</p>
+          </Link>
         </div>
 
         {/* 管理者専用メニュー */}
