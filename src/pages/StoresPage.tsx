@@ -12,6 +12,60 @@ import GrassBorder from '../components/decor/GrassBorder'
 
 type SortKey = 'name' | 'category'
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  ラーメン: '🍜',
+  中華: '🥟',
+  カフェ: '☕',
+  喫茶店: '☕',
+  雑貨: '🛍️',
+  和食: '🍱',
+  居酒屋: '🍶',
+  寿司: '🍣',
+  Sushi: '🍣',
+  焼肉: '🥩',
+  イタリアン: '🍝',
+  パン: '🥐',
+  Bakery: '🥐',
+  ベーカリー: '🥐',
+  カレー: '🍛',
+  スイーツ: '🍰',
+  デザート: '🍰',
+  バー: '🍸',
+  焼鳥: '🍢',
+}
+
+function getCategoryEmoji(category: string): string {
+  if (CATEGORY_EMOJI[category]) return CATEGORY_EMOJI[category]
+  const match = Object.entries(CATEGORY_EMOJI).find(([key]) => category.includes(key))
+  return match ? match[1] : '🏠'
+}
+
+function StoreThumbnail({ store }: { store: AdminStore }) {
+  const [imageFailed, setImageFailed] = useState(false)
+
+  if (store.thumbnail_url && !imageFailed) {
+    return (
+      <img
+        src={store.thumbnail_url}
+        alt={store.name}
+        loading="lazy"
+        onError={() => setImageFailed(true)}
+        className="h-14 w-14 shrink-0 rounded-2xl border-2 border-wood-200 object-cover shadow-ac-sm"
+      />
+    )
+  }
+
+  return (
+    <div
+      role="img"
+      aria-label={`${store.name}のイメージ`}
+      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 border-wood-200 bg-sand-100 text-2xl shadow-ac-sm"
+    >
+      {getCategoryEmoji(store.category)}
+    </div>
+  )
+}
+
 export default function StoresPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -147,13 +201,28 @@ export default function StoresPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/stores/${store.id}`)}
-                  className="text-left"
+                  className="flex items-center gap-3 text-left"
                 >
-                  <p className="font-bold text-wood-800 hover:underline">{store.name}</p>
-                  <p className="text-xs text-wood-400">
-                    {store.category}
-                    {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
-                  </p>
+                  <StoreThumbnail store={store} />
+                  <div>
+                    <p className="font-bold text-wood-800 hover:underline">{store.name}</p>
+                    <p className="text-xs text-wood-400">
+                      {store.category}
+                      {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
+                    </p>
+                    {(store.sub_area || (store.tags && store.tags.length > 0)) && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {store.sub_area && (
+                          <span className="ac-badge bg-sky-100 text-sky-700">{store.sub_area}</span>
+                        )}
+                        {store.tags?.slice(0, 3).map((tag) => (
+                          <span key={tag} className="ac-badge bg-leaf-100 text-leaf-700">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </button>
                 <div className="flex items-center gap-3">
                   {user && <LikeButton userId={user.id} storeId={store.id} initialCount={likeCounts[store.id] ?? 0} />}

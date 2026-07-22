@@ -18,6 +18,10 @@ export const generatePlanRequestSchema = z.object({
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(4000) }))
     .max(10)
     .optional(),
+  // Issue #135（オファーのプラン反映プレビュー）: 店舗管理者の「試す」ボタンからの
+  // 呼び出しであることを示すフラグ。trueの場合、Issue #136のplan_suggestions記録を
+  // スキップする（管理者の自己テストが「本日の提案回数」を水増ししてしまうのを防ぐ）
+  preview: z.boolean().optional(),
 })
 
 export const planStopSchema = z.object({
@@ -33,7 +37,8 @@ export const planStopSchema = z.object({
   open_time: z.string().nullable().optional(),
   close_time: z.string().nullable().optional(),
   crowd_note: z.string().nullable().optional(),
-  // オファー機能（要件定義書v2 S004）は未実装のため、Claudeには常にnullを返させる
+  // オファー機能（要件定義書v2 S004）: 対象店舗に現在時刻適用中のオファーがある場合のみ
+  // その内容が入る。無い場合はnull（promptBuilder.buildPlanSystemPrompt参照）
   offer_note: z.string().nullable().optional(),
   // Issue #123（U005拡張: プラン合計予算の概算表示と予算超過警告）向けの追加フィールド。
   // フロント側の予算計算に使う店舗の価格帯。既存フィールドと同様、後方互換のため任意

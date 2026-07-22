@@ -117,3 +117,86 @@ describe('StoresPage 検索・絞り込み・ソート', () => {
     expect(await screen.findByText('検索条件に一致する店舗がありません')).toBeTruthy()
   })
 })
+
+describe('StoresPage 店舗サムネイル表示', () => {
+  it('thumbnail_urlがある店舗は画像を表示する', async () => {
+    mockGet.mockImplementation((path: string) => {
+      if (path === '/api/stores') {
+        return Promise.resolve({
+          data: [
+            { ...STORES[0], thumbnail_url: 'https://example.com/photo.jpg' },
+            { ...STORES[1], thumbnail_url: null },
+          ],
+        })
+      }
+      if (path.includes('/likes/count')) return Promise.resolve({ count: 0 })
+      return Promise.reject(new Error(`unexpected path: ${path}`))
+    })
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: null,
+          permissions: [],
+          isLoading: false,
+          login: jest.fn(),
+          logout: jest.fn(),
+          isAuthenticated: false,
+          hasPermission: () => false,
+        }}
+      >
+        <MemoryRouter>
+          <StoresPage />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    )
+
+    const img = await screen.findByAltText('Charlie')
+    expect(img).toHaveAttribute('src', 'https://example.com/photo.jpg')
+  })
+
+  it('thumbnail_urlが無い店舗はカテゴリ絵文字のプレースホルダーを表示する', async () => {
+    setup()
+    await screen.findByText('Charlie')
+
+    // STORES にはいずれも thumbnail_url が無いため、絵文字プレースホルダー(role="img")が表示される
+    const placeholders = screen.getAllByRole('img', { name: /のイメージ/ })
+    expect(placeholders.length).toBe(STORES.length)
+  })
+
+  it('画像の読み込みに失敗した場合はプレースホルダーにフォールバックする', async () => {
+    mockGet.mockImplementation((path: string) => {
+      if (path === '/api/stores') {
+        return Promise.resolve({
+          data: [{ ...STORES[0], thumbnail_url: 'https://example.com/broken.jpg' }],
+        })
+      }
+      if (path.includes('/likes/count')) return Promise.resolve({ count: 0 })
+      return Promise.reject(new Error(`unexpected path: ${path}`))
+    })
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: null,
+          permissions: [],
+          isLoading: false,
+          login: jest.fn(),
+          logout: jest.fn(),
+          isAuthenticated: false,
+          hasPermission: () => false,
+        }}
+      >
+        <MemoryRouter>
+          <StoresPage />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    )
+
+    const img = await screen.findByAltText('Charlie')
+    fireEvent.error(img)
+
+    expect(await screen.findByRole('img', { name: 'Charlieのイメージ' })).toBeTruthy()
+    expect(screen.queryByAltText('Charlie')).toBeNull()
+  })
+})

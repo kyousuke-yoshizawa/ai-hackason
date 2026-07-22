@@ -7,6 +7,7 @@ import { storesRouter } from './routes/stores.js'
 import { usersRouter } from './routes/users.js'
 import { likesRouter, storeLikesRouter } from './routes/likes.js'
 import { reviewsRouter, storeReviewsRouter } from './routes/reviews.js'
+import { offersRouter } from './routes/offers.js'
 import { sendError } from '../backend/http/respond.js'
 
 export const app = express()
@@ -27,6 +28,7 @@ app.use('/api/stores', storeLikesRouter)
 app.use('/api/stores', storeReviewsRouter)
 app.use('/api/likes', likesRouter)
 app.use('/api/reviews', reviewsRouter)
+app.use('/api/offers', offersRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
