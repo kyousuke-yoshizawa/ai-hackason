@@ -21,6 +21,11 @@ const STORE: StoreForPrompt = {
   close_time: '21:00',
   price_min: 900,
   price_max: 1300,
+  tags: [],
+  closed_days: [],
+  last_order_time: null,
+  description: null,
+  sub_area: null,
 }
 
 beforeEach(() => {

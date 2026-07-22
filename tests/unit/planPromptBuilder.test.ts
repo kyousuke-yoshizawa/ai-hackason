@@ -19,6 +19,11 @@ const STORE_A: StoreContext = {
   close_time: '21:00',
   price_min: 900,
   price_max: 1300,
+  tags: [],
+  closed_days: [],
+  last_order_time: null,
+  description: null,
+  sub_area: null,
   distanceTag: 'near',
   rating: 4.2,
   crowdText: 'のんびり亭: 現在空いている（想定（事前設定））',
@@ -35,6 +40,11 @@ const STORE_B: StoreContext = {
   close_time: '22:00',
   price_min: 1200,
   price_max: 1800,
+  tags: [],
+  closed_days: [],
+  last_order_time: null,
+  description: null,
+  sub_area: null,
   distanceTag: 'far',
   rating: null,
   crowdText: 'つきみ座: 混雑情報なし',
@@ -90,5 +100,49 @@ describe('buildPlanPrompt', () => {
     const prompt = buildPlanPrompt({ message: 'カフェに行きたい' }, [STORE_A])
 
     expect(prompt).not.toContain('## 制約条件')
+  })
+
+  it('L.O.が設定されている店舗は営業時間表記にL.O.を付与する', () => {
+    const storeWithLastOrder: StoreContext = { ...STORE_A, last_order_time: '20:30' }
+    const prompt = buildPlanPrompt({ message: 'ランチしたい' }, [storeWithLastOrder])
+
+    expect(prompt).toContain('営業時間 11:00〜21:00（L.O. 20:30）')
+  })
+
+  it('L.O.未設定の店舗は（L.O. ...）を付与しない', () => {
+    const prompt = buildPlanPrompt({ message: 'ランチしたい' }, [STORE_A])
+
+    // 「## 指示」セクションには常にL.O.関連の一般的な指示文が含まれるため、
+    // 店舗行（営業時間の表記）にL.O.が付与されていないことをピンポイントで確認する
+    expect(prompt).toContain('営業時間 11:00〜21:00、')
+    expect(prompt).not.toContain('21:00（L.O.')
+  })
+
+  it('タグ・エリア・紹介文があればプロンプトに含める', () => {
+    const richStore: StoreContext = {
+      ...STORE_A,
+      tags: ['子連れOK', '屋内'],
+      sub_area: '商店街エリア',
+      description: 'のんびり過ごせる定食屋です。',
+    }
+    const prompt = buildPlanPrompt({ message: 'ランチしたい' }, [richStore])
+
+    expect(prompt).toContain('タグ: 子連れOK／屋内')
+    expect(prompt).toContain('エリア: 商店街エリア')
+    expect(prompt).toContain('のんびり過ごせる定食屋です。')
+  })
+
+  it('タグ・エリア・紹介文が無い店舗はそれらのラベルを含めない', () => {
+    const prompt = buildPlanPrompt({ message: 'ランチしたい' }, [STORE_A])
+
+    expect(prompt).not.toContain('タグ:')
+    expect(prompt).not.toContain('エリア:')
+  })
+
+  it('L.O.に関する入店タイミングの指示をプロンプトに含める', () => {
+    const prompt = buildPlanPrompt({ message: 'ランチしたい' }, [STORE_A])
+
+    expect(prompt).toContain('L.O.の30分前まで')
+    expect(prompt).toContain('閉店30分前以降の入店は避ける')
   })
 })

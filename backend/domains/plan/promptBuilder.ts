@@ -14,6 +14,11 @@ export interface StoreForPrompt {
   close_time: string | null
   price_min: number | null
   price_max: number | null
+  tags: string[]
+  closed_days: number[]
+  last_order_time: string | null
+  description: string | null
+  sub_area: string | null
 }
 
 export interface StoreContext extends StoreForPrompt {
@@ -110,15 +115,27 @@ function formatConstraints(request: GeneratePlanRequest): string {
 // Claude API呼び出しは1回に統合（要件定義書v2 確定事項）。意図解析・店舗照合・
 // スコアリング・プラン生成のすべてをこの1つのプロンプトに含める
 export function buildPlanPrompt(request: GeneratePlanRequest, stores: StoreContext[]): string {
+  // 定休日（closed_days）は「当日除外方式」（api/plan/generate.tsが呼び出し前に
+  // 該当店舗をフィルタで除外する）を採るため、店舗行には表示しない
   const storeLines = stores
-    .map(
-      (s) =>
+    .map((s) => {
+      const hours =
+        `営業時間 ${s.open_time ?? '不明'}〜${s.close_time ?? '不明'}` +
+        (s.last_order_time ? `（L.O. ${s.last_order_time}）` : '')
+      const tagsPart = s.tags.length > 0 ? `、タグ: ${s.tags.join('／')}` : ''
+      const areaPart = s.sub_area ? `、エリア: ${s.sub_area}` : ''
+      const descriptionPart = s.description ? `\n  ${s.description}` : ''
+
+      return (
         `- ${s.name}（${s.category}）: 町中心からの近さ=${DISTANCE_LABEL[s.distanceTag]}（参考スコアの算出のみに使用）、` +
-        `営業時間 ${s.open_time ?? '不明'}〜${s.close_time ?? '不明'}、` +
+        `${hours}、` +
         `価格帯 ¥${s.price_min ?? '?'}〜¥${s.price_max ?? '?'}、` +
-        `評価 ${s.rating !== null ? s.rating.toFixed(1) : '未評価'}、` +
-        `${s.crowdText}、参考スコア ${s.score.toFixed(2)}（店舗ID: ${s.id}）`
-    )
+        `評価 ${s.rating !== null ? s.rating.toFixed(1) : '未評価'}` +
+        `${tagsPart}${areaPart}、` +
+        `${s.crowdText}、参考スコア ${s.score.toFixed(2)}（店舗ID: ${s.id}）` +
+        descriptionPart
+      )
+    })
     .join('\n')
 
   const distanceTable = buildPairwiseDistanceTable(stores)
@@ -148,6 +165,7 @@ ${constraints ? `\n## 制約条件\n${constraints}` : ''}
 - 移動順序を決める際は「店舗間の距離感」を参照し、「近い」店舗同士を優先的に組み合わせてください。それらしい徒歩移動時間（例: 徒歩5分程度）を travel_note に生成してください。厳密な数値計算は不要です。
 - 参考スコアは距離感・評価・混雑度（合計85%: 35%/25%/25%）の加重合計にオファー加点（最大15%）を加えた、店舗単体の0〜1の目安です。各案の score（0〜1の1つの数値）は、選んだ店舗の参考スコアの単純平均程度を目安にしてください（複数店舗の参考スコアを合計しないこと）。
 - 各店舗の営業時間内に収まるようにプランを組んでください。
+- L.O.が設定されている店舗は、L.O.の30分前までに入店するプランにすること。L.O.未設定の店舗も閉店30分前以降の入店は避けること。
 - 出力は必ず以下のJSON形式のみとし、説明文やコードブロックのマークダウン記法は付けないでください。
 
 {

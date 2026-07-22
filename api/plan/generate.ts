@@ -7,6 +7,7 @@ import { generatePlanRequestSchema, generatePlanResponseSchema } from '../../bac
 import { buildPlanPrompt, buildStoreContexts, type StoreForPrompt } from '../../backend/domains/plan/promptBuilder.js'
 import { generatePlan } from '../../backend/domains/plan/claudeClient.js'
 import { STORE_PLAN_COLUMNS } from '../../backend/domains/stores/columns.js'
+import { getJstHourAndDay } from '../../backend/time.js'
 
 // デモ期間中に緩めたい場合、再デプロイのみで調整できるよう環境変数化
 const PLAN_RATE_LIMIT = Number(process.env.PLAN_RATE_LIMIT) || 10
@@ -48,9 +49,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return sendError(res, 404, 'no_stores', '店舗マスタが空です')
   }
 
+  // closed_days（0=日曜〜6=土曜、JSのDate.getDay()と同じ規約）に当日（JST基準）が含まれる
+  // 店舗は定休日のためClaudeに渡す前に除外する（プロンプト側には表示しない「当日除外方式」）。
+  // 実行環境のローカルタイムゾーンはUTCのため、getDay()を直接使うとJST日付境界でずれる
+  const { day: todayDayOfWeek } = getJstHourAndDay(new Date())
+  const openStores = (stores as StoreForPrompt[]).filter((store) => !(store.closed_days ?? []).includes(todayDayOfWeek))
+
+  if (openStores.length === 0) {
+    return sendError(res, 404, 'no_stores', '本日営業中の店舗がありません')
+  }
+
   const startedAt = Date.now()
   try {
-    const storeContexts = await buildStoreContexts(stores as StoreForPrompt[])
+    const storeContexts = await buildStoreContexts(openStores)
     const prompt = buildPlanPrompt(parsed.data, storeContexts)
     const { result: rawResponse, usage, model } = await generatePlan(prompt)
 

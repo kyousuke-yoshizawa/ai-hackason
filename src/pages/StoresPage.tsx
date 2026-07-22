@@ -217,6 +217,18 @@ export default function StoresPage() {
                       {store.category}
                       {store.open_time && store.close_time && ` ・ ${store.open_time} - ${store.close_time}`}
                     </p>
+                    {(store.sub_area || (store.tags && store.tags.length > 0)) && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {store.sub_area && (
+                          <span className="ac-badge bg-sky-100 text-sky-700">{store.sub_area}</span>
+                        )}
+                        {store.tags?.slice(0, 3).map((tag) => (
+                          <span key={tag} className="ac-badge bg-leaf-100 text-leaf-700">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </button>
                 <div className="flex items-center gap-3">

@@ -75,6 +75,11 @@ beforeEach(() => {
       close_time: '21:00',
       price_min: 900,
       price_max: 1300,
+      tags: [],
+      closed_days: [],
+      last_order_time: null,
+      description: null,
+      sub_area: null,
       deleted_at: null,
     },
   ])
@@ -104,6 +109,90 @@ describe('POST /api/plan/generate', () => {
 
     expect(res.statusCode).toBe(404)
     expect((res.body as { error: string }).error).toBe('no_stores')
+  })
+
+  it('全店舗が本日定休日の場合は404 no_storesを返す（当日除外方式）', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-22T03:00:00Z')) // JST水曜（day=3）
+    fakeClient.seed('stores', [
+      {
+        id: 'store-1',
+        name: 'のんびり亭',
+        category: '定食屋・ランチ',
+        x: -100,
+        y: 30,
+        open_time: '11:00',
+        close_time: '21:00',
+        price_min: 900,
+        price_max: 1300,
+        tags: [],
+        closed_days: [3],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+    ])
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(404)
+    expect((res.body as { error: string }).error).toBe('no_stores')
+    jest.useRealTimers()
+  })
+
+  it('本日定休日の店舗はプロンプトに含めず、営業中の店舗のみで生成する', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-22T03:00:00Z')) // JST水曜（day=3）
+    fakeClient.seed('stores', [
+      {
+        id: 'store-1',
+        name: 'のんびり亭',
+        category: '定食屋・ランチ',
+        x: -100,
+        y: 30,
+        open_time: '11:00',
+        close_time: '21:00',
+        price_min: 900,
+        price_max: 1300,
+        tags: [],
+        closed_days: [],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+      {
+        id: 'store-2',
+        name: 'つきみ座',
+        category: '映画館',
+        x: -180,
+        y: -50,
+        open_time: '10:00',
+        close_time: '22:00',
+        price_min: 1200,
+        price_max: 1800,
+        tags: [],
+        closed_days: [3],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+    ])
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_JSON,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const prompt = mockGeneratePlan.mock.calls[0][0] as string
+    expect(prompt).toContain('のんびり亭')
+    expect(prompt).not.toContain('つきみ座')
+    jest.useRealTimers()
   })
 
   it('Claude APIの応答が正しいJSONであれば200でプランを返す', async () => {

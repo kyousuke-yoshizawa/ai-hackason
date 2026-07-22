@@ -14,7 +14,21 @@ storesRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
   if (!parsed.success) {
     return zodError(res, parsed.error)
   }
-  const { name, category, x, y, open_time, close_time, price_min, price_max } = parsed.data
+  const {
+    name,
+    category,
+    x,
+    y,
+    open_time,
+    close_time,
+    price_min,
+    price_max,
+    tags,
+    closed_days,
+    last_order_time,
+    description,
+    sub_area,
+  } = parsed.data
 
   const { data, error } = await supabaseAdmin
     .from('stores')
@@ -27,6 +41,11 @@ storesRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
       close_time,
       price_min,
       price_max,
+      tags,
+      closed_days,
+      last_order_time,
+      description,
+      sub_area,
       created_by: req.authedUser!.id,
     })
     .select(STORE_COLUMNS)
@@ -86,6 +105,11 @@ storesRouter.put('/:id', requireAuth, requireAdminOrStoreManager(), async (req, 
     'close_time',
     'price_min',
     'price_max',
+    'tags',
+    'closed_days',
+    'last_order_time',
+    'description',
+    'sub_area',
   ])
   if (!updates) {
     return sendError(res, 400, 'no_updates', '更新内容がありません')
