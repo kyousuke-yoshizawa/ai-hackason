@@ -3,6 +3,8 @@ import { api, ApiError } from '../lib/api'
 import { reportCrowdLevel } from '../lib/crowd'
 import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
+import { CrowdPatternGrid } from './CrowdPatternGrid'
+import { Modal } from './Modal'
 import { StoreMediaPanel } from './StoreMediaPanel'
 import { SortableColumnLabel, SortDirection } from './SortableHeader'
 import type { CongestionLevel } from '../../shared/types/crowd'
@@ -39,6 +41,7 @@ export function StoreManagementPanel({
   const [formMode, setFormMode] = useState<'create' | AdminStore | null>(null)
   const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
   const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
+  const [patternStore, setPatternStore] = useState<AdminStore | null>(null)
 
   const loadStores = async () => {
     setIsLoading(true)
@@ -248,6 +251,12 @@ export function StoreManagementPanel({
                   メディア管理
                 </button>
                 <button
+                  onClick={() => setPatternStore(s)}
+                  className="font-bold text-amber-600 hover:underline"
+                >
+                  混雑パターン
+                </button>
+                <button
                   onClick={() => handleDelete(s)}
                   className="font-bold text-bubble-600 hover:underline"
                 >
@@ -288,6 +297,23 @@ export function StoreManagementPanel({
           onClose={() => setMediaStore(null)}
           onNotify={onNotify}
         />
+      )}
+
+      {patternStore && (
+        <Modal
+          title={`混雑パターン設定 - ${patternStore.name}`}
+          onClose={() => setPatternStore(null)}
+          maxWidth="max-w-4xl"
+        >
+          <CrowdPatternGrid
+            storeId={patternStore.id}
+            onSaved={() => {
+              onNotify(`${patternStore.name} の混雑パターンを保存しました`)
+              setPatternStore(null)
+            }}
+            onError={(message) => onNotify(message, 'error')}
+          />
+        </Modal>
       )}
     </div>
   )
