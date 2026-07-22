@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(auth|users|stores|likes|reviews|health)(/.*)?", "destination": "/api" },
+    { "source": "/api/(auth|users|stores|likes|reviews|health|reservations|errors)(/.*)?", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {

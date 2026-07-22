@@ -8,6 +8,8 @@ import { usersRouter } from './routes/users.js'
 import { likesRouter, storeLikesRouter } from './routes/likes.js'
 import { reviewsRouter, storeReviewsRouter } from './routes/reviews.js'
 import { offersRouter } from './routes/offers.js'
+import { reservationsRouter } from './routes/reservations.js'
+import { errorsRouter } from './routes/errors.js'
 import { sendError } from '../backend/http/respond.js'
 
 export const app = express()
@@ -29,6 +31,8 @@ app.use('/api/stores', storeReviewsRouter)
 app.use('/api/likes', likesRouter)
 app.use('/api/reviews', reviewsRouter)
 app.use('/api/offers', offersRouter)
+app.use('/api/reservations', reservationsRouter)
+app.use('/api/errors', errorsRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
