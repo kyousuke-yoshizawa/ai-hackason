@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { reportCrowdLevel } from '../lib/crowd'
+import { remainingMinutes } from '../lib/crowdLive'
 import { AdminStore, StoreForm } from './StoreForm'
 import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 import { CrowdPatternGrid } from './CrowdPatternGrid'
@@ -26,6 +27,19 @@ function CrowdStatusBadge({ level }: { level?: CongestionLevel | null }) {
   return <span className={`ac-badge ${CROWD_BADGE_CLASS[level]}`}>{CROWD_LEVEL_LABEL[level]}</span>
 }
 
+// ライブ混雑報告の残効時間・パターン由来の注記を表示する（Issue #134）
+function CrowdLiveIndicator({ store, now }: { store: AdminStore; now: Date }) {
+  const remaining = remainingMinutes(store.crowd_reported_at ?? null, now)
+
+  if (remaining !== null && remaining > 0) {
+    return <span className="text-[11px] font-bold text-sky-600">ライブ報告 あと{remaining}分有効</span>
+  }
+  if (!store.crowd_reported_at && store.crowd_level) {
+    return <span className="text-[11px] text-wood-400">事前パターンより</span>
+  }
+  return null
+}
+
 export function StoreManagementPanel({
   onNotify,
 }: {
@@ -44,6 +58,13 @@ export function StoreManagementPanel({
   const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
   const [patternStore, setPatternStore] = useState<AdminStore | null>(null)
   const [offerStore, setOfferStore] = useState<AdminStore | null>(null)
+  const [now, setNow] = useState(() => new Date())
+
+  // ライブ混雑報告の残効時間表示を更新するための1分間隔の再描画（Issue #134）
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   const loadStores = async () => {
     setIsLoading(true)
@@ -181,7 +202,7 @@ export function StoreManagementPanel({
         <p className="text-sm font-bold text-wood-500">読み込み中...</p>
       ) : (
         <div className="space-y-3">
-          <div className="hidden gap-4 px-4 text-xs font-bold text-wood-500 md:grid md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_2.3fr]">
+          <div className="hidden gap-4 px-4 text-xs font-bold text-wood-500 md:grid md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_1fr_2.3fr]">
             <SortableColumnLabel
               label="名前"
               sortKey="name"
@@ -204,13 +225,14 @@ export function StoreManagementPanel({
               onSort={handleSort}
             />
             <span>本日の混雑</span>
+            <span>本日の提案回数</span>
             <span>アクション</span>
           </div>
           {visibleStores.map((s) => (
             <div
               key={s.id}
               data-testid="store-row"
-              className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-wood-200 bg-sand-50 p-4 md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_2.3fr] md:items-center"
+              className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-wood-200 bg-sand-50 p-4 md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_1fr_2.3fr] md:items-center"
             >
               <p className="font-bold text-wood-800">{s.name}</p>
               <p>
@@ -220,7 +242,10 @@ export function StoreManagementPanel({
                 {s.open_time && s.close_time ? `${s.open_time} - ${s.close_time}` : '-'}
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <CrowdStatusBadge level={s.crowd_level} />
+                <div className="flex flex-col gap-0.5">
+                  <CrowdStatusBadge level={s.crowd_level} />
+                  <CrowdLiveIndicator store={s} now={now} />
+                </div>
                 <div className="flex flex-wrap gap-1.5 text-xs">
                   <button
                     onClick={() => handleReportCrowd(s, 'low')}
@@ -236,6 +261,9 @@ export function StoreManagementPanel({
                   </button>
                 </div>
               </div>
+              <p className="text-sm text-wood-600">
+                {s.today_suggestion_count ? `${s.today_suggestion_count}回` : '-'}
+              </p>
               <div className="flex flex-wrap gap-3 text-sm">
                 <button onClick={() => setFormMode(s)} className="font-bold text-leaf-600 hover:underline">
                   編集

@@ -34,6 +34,10 @@ export interface AdminStore {
   avg_rating?: number
   review_count?: number
   crowd_level?: CongestionLevel | null
+  // ライブ混雑報告（crowd_status由来）の報告時刻（Issue #134）。パターン由来・未報告はnull
+  crowd_reported_at?: string | null
+  // 当日0時JST以降にプラン生成候補へ含まれた回数（Issue #136）
+  today_suggestion_count?: number
   // 一覧APIのみが返す代表写真URL（Issue #132）。store_mediaが無い店舗はnull
   thumbnail_url?: string | null
   // 店舗属性の追加項目（Issue #126-130）
