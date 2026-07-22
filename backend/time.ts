@@ -25,3 +25,33 @@ export function getJstHourAndDay(date: Date): { hour: number; day: number } {
 
   return { hour, day: WEEKDAY_TO_INDEX[weekday] }
 }
+
+const JST_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+/**
+ * 「JSTの当日0時」に対応するUTC瞬間（Date）を返す。Issue #136（プラン提案回数の
+ * 当日集計）向け。実行環境のローカルタイムゾーンがUTCのため、単純に
+ * `new Date().setHours(0,0,0,0)` すると UTC 0時を JST の日付境界と取り違え、
+ * UTC 00:00〜08:59（JST 09:00〜17:59）の間は前日扱いになってしまう
+ * （getJstHourAndDay の説明と同種のUTC/JSTずれ）。必ずこの関数経由にすること。
+ */
+export function getJstMidnightUtc(date: Date): Date {
+  const parts = JST_DATE_FORMATTER.formatToParts(date)
+  const year = Number(parts.find((part) => part.type === 'year')?.value)
+  const month = Number(parts.find((part) => part.type === 'month')?.value)
+  const day = Number(parts.find((part) => part.type === 'day')?.value)
+
+  if (!year || !month || !day) {
+    throw new Error('failed to resolve JST date from date')
+  }
+
+  // JSTのY-M-D 00:00は、UTC上ではその日のUTC 00:00より9時間前（前日15:00 UTC）の瞬間
+  return new Date(Date.UTC(year, month - 1, day) - JST_OFFSET_MS)
+}

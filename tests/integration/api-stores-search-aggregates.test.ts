@@ -143,3 +143,69 @@ describe('GET /api/stores (Issue #132: thumbnail_url)', () => {
     expect(popular.thumbnail_url).toContain('store-popular/photo.png')
   })
 })
+
+// Issue #134: リアルタイム混雑上書きの残効時間表示のため、crowd_status由来（source==='live'）の
+// 場合のみcrowd_reported_atに報告時刻が入ることを検証する
+describe('GET /api/stores (Issue #134: crowd_reported_at)', () => {
+  it('returns crowd_reported_at as null when there is no crowd data at all', async () => {
+    const res = await request(app).get('/api/stores')
+
+    const quiet = res.body.data.find((s: { id: string }) => s.id === 'store-quiet')
+    expect(quiet.crowd_reported_at).toBeNull()
+  })
+
+  it('sets crowd_reported_at to the crowd_status updated_at when a fresh real-time report exists', async () => {
+    const reportedAt = new Date().toISOString()
+    fakeClient.seed('crowd_status', [{ store_id: 'store-popular', level: 'high', updated_at: reportedAt }])
+
+    const res = await request(app).get('/api/stores')
+
+    const popular = res.body.data.find((s: { id: string }) => s.id === 'store-popular')
+    expect(popular.crowd_reported_at).toBe(reportedAt)
+  })
+
+  it('returns crowd_reported_at as null when the level falls back to the hourly pattern (stale report)', async () => {
+    const staleTime = new Date(Date.now() - 60 * 60 * 1000).toISOString() // 1時間前（新鮮ウィンドウ外）
+    fakeClient.seed('crowd_status', [{ store_id: 'store-popular', level: 'high', updated_at: staleTime }])
+    fakeClient.seed('crowd_patterns', [
+      { store_id: 'store-popular', hour_of_day: new Date().getHours(), level: 'low' },
+    ])
+
+    const res = await request(app).get('/api/stores')
+
+    const popular = res.body.data.find((s: { id: string }) => s.id === 'store-popular')
+    expect(popular.crowd_level).toBe('low')
+    expect(popular.crowd_reported_at).toBeNull()
+  })
+})
+
+// Issue #136: 店舗ダッシュボードにプラン提案回数を表示するため、当日0時JST以降の
+// plan_suggestions件数がtoday_suggestion_countに正しく反映されることを検証する
+describe('GET /api/stores (Issue #136: today_suggestion_count)', () => {
+  it('returns 0 for a store with no plan_suggestions rows', async () => {
+    const res = await request(app).get('/api/stores')
+
+    const quiet = res.body.data.find((s: { id: string }) => s.id === 'store-quiet')
+    expect(quiet.today_suggestion_count).toBe(0)
+  })
+
+  it('counts only rows suggested since today (JST) midnight, per store', async () => {
+    fakeClient.seed('plan_suggestions', [
+      { id: 'sugg-1', store_id: 'store-popular', suggested_at: new Date().toISOString() },
+      { id: 'sugg-2', store_id: 'store-popular', suggested_at: new Date().toISOString() },
+      {
+        id: 'sugg-3',
+        store_id: 'store-popular',
+        suggested_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2日前（対象外）
+      },
+      { id: 'sugg-4', store_id: 'store-quiet', suggested_at: new Date().toISOString() },
+    ])
+
+    const res = await request(app).get('/api/stores')
+
+    const popular = res.body.data.find((s: { id: string }) => s.id === 'store-popular')
+    const quiet = res.body.data.find((s: { id: string }) => s.id === 'store-quiet')
+    expect(popular.today_suggestion_count).toBe(2)
+    expect(quiet.today_suggestion_count).toBe(1)
+  })
+})

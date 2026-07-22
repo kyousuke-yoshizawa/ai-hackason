@@ -12,10 +12,12 @@ import {
   type StoreForPrompt,
 } from '../../backend/domains/plan/promptBuilder.js'
 import { generatePlan, PlanGenerationError, PlanResponseParseError } from '../../backend/domains/plan/claudeClient.js'
+import { collectStoreIdsFromCandidates } from '../../backend/domains/plan/collectStoreIds.js'
 import { STORE_PLAN_COLUMNS } from '../../backend/domains/stores/columns.js'
 import { getJstHourAndDay } from '../../backend/time.js'
 import { MOCK_PLAN_RESPONSE } from '../../backend/domains/plan/mockResponse.js'
 import { listActiveOffers } from '../../backend/domains/offers/repository.js'
+import { recordPlanSuggestions } from '../../backend/domains/stores/planSuggestions.js'
 
 // デモ期間中に緩めたい場合、再デプロイのみで調整できるよう環境変数化
 const PLAN_RATE_LIMIT = Number(process.env.PLAN_RATE_LIMIT) || 10
@@ -117,6 +119,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!validated.success) {
       return zodError(res, validated.error, 502)
     }
+
+    // Issue #136（店舗ダッシュボードにプラン提案回数を表示）: 候補に含まれた店舗の
+    // 提案回数を記録する。recordPlanSuggestions自体が内部で例外を握るため、
+    // 失敗してもここから先のレスポンス返却には影響しない
+    await recordPlanSuggestions(collectStoreIdsFromCandidates(validated.data.candidates))
 
     // 要件定義書v2 8章「コスト管理」対応。DBテーブルは増やさず、Vercelログで集計する最小実装
     console.log(

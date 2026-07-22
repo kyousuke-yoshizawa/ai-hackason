@@ -309,6 +309,23 @@ describe('POST /api/plan/generate', () => {
     expect((res.body as { error: string; message: string }).message).toContain('混み合っています')
   })
 
+  // Issue #136: プラン生成成功時に候補内の店舗へplan_suggestionsを記録することを検証する
+  it('プラン生成成功時に候補stopsの店舗ごとにplan_suggestionsを1件ずつ記録する（Issue #136）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const rows = fakeClient.getRows('plan_suggestions')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].store_id).toBe('store-1')
+  })
+
   it('Claude API呼び出し自体が失敗した場合（未分類のエラー）は502 claude_api_errorを、内部のエラー詳細を含めずに返す', async () => {
     mockGeneratePlan.mockRejectedValue(new Error('ANTHROPIC_API_KEY が設定されていません'))
 
