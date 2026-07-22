@@ -6,6 +6,7 @@ import { CrowdAnalyticsDashboard } from './CrowdAnalyticsDashboard'
 import { CrowdPatternGrid } from './CrowdPatternGrid'
 import { Modal } from './Modal'
 import { StoreMediaPanel } from './StoreMediaPanel'
+import { StoreOfferPanel } from './StoreOfferPanel'
 import { SortableColumnLabel, SortDirection } from './SortableHeader'
 import type { CongestionLevel } from '../../shared/types/crowd'
 import { CROWD_LEVEL_LABEL } from '../../shared/types/crowd'
@@ -42,6 +43,7 @@ export function StoreManagementPanel({
   const [analyticsStore, setAnalyticsStore] = useState<AdminStore | null>(null)
   const [mediaStore, setMediaStore] = useState<AdminStore | null>(null)
   const [patternStore, setPatternStore] = useState<AdminStore | null>(null)
+  const [offerStore, setOfferStore] = useState<AdminStore | null>(null)
 
   const loadStores = async () => {
     setIsLoading(true)
@@ -257,6 +259,12 @@ export function StoreManagementPanel({
                   混雑パターン
                 </button>
                 <button
+                  onClick={() => setOfferStore(s)}
+                  className="font-bold text-purple-600 hover:underline"
+                >
+                  オファー
+                </button>
+                <button
                   onClick={() => handleDelete(s)}
                   className="font-bold text-bubble-600 hover:underline"
                 >
@@ -313,6 +321,12 @@ export function StoreManagementPanel({
             }}
             onError={(message) => onNotify(message, 'error')}
           />
+        </Modal>
+      )}
+
+      {offerStore && (
+        <Modal title={`オファー管理 - ${offerStore.name}`} onClose={() => setOfferStore(null)} maxWidth="max-w-2xl">
+          <StoreOfferPanel storeId={offerStore.id} onNotify={onNotify} />
         </Modal>
       )}
     </div>
