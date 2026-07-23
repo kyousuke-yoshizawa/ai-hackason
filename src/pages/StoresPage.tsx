@@ -1,16 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api, ApiError } from '../lib/api'
-import { getStoreLikeCount } from '../lib/likes'
+import { api } from '../lib/api'
+import { useApiQuery } from '../hooks/useApiQuery'
 import LikeButton from '../components/LikeButton'
 import ReservationModal from '../components/ReservationModal'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
+import { ErrorBanner } from '../components/ui/ErrorBanner'
+import { EmptyCard } from '../components/ui/EmptyCard'
 import type { AdminStore } from '../components/StoreForm'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
-import GrassBorder from '../components/decor/GrassBorder'
 
 type SortKey = 'name' | 'category'
+
+const EMPTY_STORES: AdminStore[] = []
 
 const CATEGORY_EMOJI: Record<string, string> = {
   ラーメン: '🍜',
@@ -69,28 +74,20 @@ function StoreThumbnail({ store }: { store: AdminStore }) {
 export default function StoresPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [stores, setStores] = useState<AdminStore[]>([])
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    data: storesData,
+    isLoading,
+    error,
+  } = useApiQuery(async () => (await api.get<{ data: AdminStore[] }>('/api/stores')).data, [], {
+    fallbackMessage: '店舗一覧の取得に失敗しました',
+  })
+  const stores = storesData ?? EMPTY_STORES
   const [reservingStore, setReservingStore] = useState<AdminStore | null>(null)
   const [draftSearchText, setDraftSearchText] = useState('')
   const [draftCategoryFilter, setDraftCategoryFilter] = useState('all')
   const [appliedSearchText, setAppliedSearchText] = useState('')
   const [appliedCategoryFilter, setAppliedCategoryFilter] = useState('all')
   const [sortKey, setSortKey] = useState<SortKey>('name')
-
-  useEffect(() => {
-    api
-      .get<{ data: AdminStore[] }>('/api/stores')
-      .then(async (res) => {
-        setStores(res.data)
-        const counts = await Promise.all(res.data.map((store) => getStoreLikeCount(store.id)))
-        setLikeCounts(Object.fromEntries(res.data.map((store, i) => [store.id, counts[i].count])))
-      })
-      .catch((err) => setError(err instanceof ApiError ? err.message : '店舗一覧の取得に失敗しました'))
-      .finally(() => setIsLoading(false))
-  }, [])
 
   const categories = useMemo(() => Array.from(new Set(stores.map((s) => s.category))), [stores])
 
@@ -123,20 +120,13 @@ export default function StoresPage() {
 
   return (
     <>
-      <header className="ac-header relative">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
-          <h1 className="text-xl font-extrabold">店舗一覧</h1>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="店舗一覧"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       <main className="relative mx-auto max-w-4xl px-4 py-8">
-        {error && (
-          <p className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-4 py-2 text-sm font-bold text-bubble-700">
-            {error}
-          </p>
-        )}
+        {error && <ErrorBanner message={error} />}
 
         <div className="flex flex-wrap gap-3 mb-6">
           <input
@@ -180,16 +170,11 @@ export default function StoresPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+          <LoadingText />
         ) : stores.length === 0 ? (
-          <div className="ac-card relative text-center text-wood-500">
-            <Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />
-            店舗がありません
-          </div>
+          <EmptyCard message="店舗がありません" decor={<Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />} />
         ) : visibleStores.length === 0 ? (
-          <div className="ac-card relative text-center text-wood-500">
-            検索条件に一致する店舗がありません
-          </div>
+          <EmptyCard message="検索条件に一致する店舗がありません" />
         ) : (
           <ul className="space-y-3">
             {visibleStores.map((store) => (
@@ -225,7 +210,9 @@ export default function StoresPage() {
                   </div>
                 </button>
                 <div className="flex items-center gap-3">
-                  {user && <LikeButton userId={user.id} storeId={store.id} initialCount={likeCounts[store.id] ?? 0} />}
+                  {user && (
+                    <LikeButton userId={user.id} storeId={store.id} initialCount={store.like_count ?? 0} />
+                  )}
                   <button
                     type="button"
                     onClick={() => setReservingStore(store)}

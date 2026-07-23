@@ -18,7 +18,9 @@
     "test:all": "npm run test && npm run test:e2e",
     "cron:dev": "tsx scripts/notifyCongestionCron.ts",
     "cron:dev:analytics": "tsx scripts/aggregateCrowdAnalyticsCron.ts",
-    "smoke:seed": "tsx scripts/smoke-check-seed.ts"
+    "smoke:seed": "tsx scripts/smoke-check-seed.ts",
+    "golden:intent": "tsx scripts/check-intent-golden.ts",
+    "measure:latency": "tsx scripts/measure-plan-latency.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",

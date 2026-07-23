@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api, ApiError } from '../lib/api'
+import { api } from '../lib/api'
 import { getStoreLikeCount } from '../lib/likes'
+import { useApiQuery } from '../hooks/useApiQuery'
 import LikeButton from '../components/LikeButton'
 import StoreReviewSection from '../components/StoreReviewSection'
 import ReservationModal from '../components/ReservationModal'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
 import type { AdminStore } from '../components/StoreForm'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
-import GrassBorder from '../components/decor/GrassBorder'
 
 // 0=日曜〜6=土曜（JSのDate.getDay()と同じ規約、Issue #127）
 const DAY_NAMES = ['日曜', '月曜', '火曜', '水曜', '木曜', '金曜', '土曜']
@@ -25,30 +27,26 @@ export default function StoreDetailPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [store, setStore] = useState<AdminStore | null>(null)
-  const [likeCount, setLikeCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isReserving, setIsReserving] = useState(false)
 
-  useEffect(() => {
-    if (!storeId) return
-
-    setIsLoading(true)
-    setError(null)
-    Promise.all([api.get<AdminStore>(`/api/stores/${storeId}`), getStoreLikeCount(storeId)])
-      .then(([storeData, likeResult]) => {
-        setStore(storeData)
-        setLikeCount(likeResult.count)
-      })
-      .catch((err) => setError(err instanceof ApiError ? err.message : '店舗情報の取得に失敗しました'))
-      .finally(() => setIsLoading(false))
-  }, [storeId])
+  const { data, isLoading, error } = useApiQuery(
+    async () => {
+      const [storeData, likeResult] = await Promise.all([
+        api.get<AdminStore>(`/api/stores/${storeId}`),
+        getStoreLikeCount(storeId!),
+      ])
+      return { store: storeData, likeCount: likeResult.count }
+    },
+    [storeId],
+    { enabled: !!storeId, fallbackMessage: '店舗情報の取得に失敗しました' }
+  )
+  const store = data?.store ?? null
+  const likeCount = data?.likeCount ?? 0
 
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center py-20">
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+        <LoadingText />
       </div>
     )
   }
@@ -73,20 +71,13 @@ export default function StoreDetailPage() {
 
   return (
     <>
-      <header className="ac-header relative">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-4">
-          <button
-            type="button"
-            onClick={() => navigate('/stores')}
-            className="ac-btn-ghost !px-3 !py-1.5 text-sm !text-white hover:!bg-white/20"
-          >
-            ← 店舗一覧に戻る
-          </button>
-          <h1 className="text-xl font-extrabold">店舗詳細</h1>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="店舗詳細"
+        backTo="/stores"
+        backLabel="← 店舗一覧に戻る"
+        backVariant="ghost"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       <main className="relative mx-auto max-w-4xl space-y-6 px-4 py-8">
         <Leaf className="absolute -top-2 right-2 h-9 w-9 rotate-12 opacity-70" />

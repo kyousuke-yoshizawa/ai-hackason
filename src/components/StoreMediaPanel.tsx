@@ -1,7 +1,11 @@
-import { ChangeEvent, DragEvent, useEffect, useState } from 'react'
+import { ChangeEvent, DragEvent, useState } from 'react'
 import { Modal } from './Modal'
 import { ApiError } from '../lib/api'
 import { deleteStoreMedia, getStoreMedia, StoreMedia, uploadStoreMedia } from '../lib/storeMedia'
+import { useApiQuery } from '../hooks/useApiQuery'
+import { LoadingText } from './ui/LoadingText'
+import { ErrorBanner } from './ui/ErrorBanner'
+import { EmptyCard } from './ui/EmptyCard'
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf']
 
@@ -16,39 +20,27 @@ export function StoreMediaPanel({
   onClose: () => void
   onNotify: (message: string, type?: 'success' | 'error') => void
 }) {
-  const [media, setMedia] = useState<StoreMedia[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const {
+    data: media,
+    isLoading,
+    error: loadError,
+    reload: loadMedia,
+  } = useApiQuery(async () => (await getStoreMedia(storeId)).data, [storeId])
   const [isUploading, setIsUploading] = useState(false)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadMedia = async () => {
-    setIsLoading(true)
-    try {
-      const res = await getStoreMedia(storeId)
-      setMedia(res.data)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'ファイル一覧の取得に失敗しました')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadMedia()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId])
+  const [operationError, setOperationError] = useState<string | null>(null)
+  const error = operationError ?? loadError
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
     const file = files[0]
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError('画像（PNG/JPEG/WebP/GIF）またはPDFのみアップロードできます')
+      setOperationError('画像（PNG/JPEG/WebP/GIF）またはPDFのみアップロードできます')
       return
     }
 
-    setError(null)
+    setOperationError(null)
     setIsUploading(true)
     try {
       await uploadStoreMedia(storeId, file)
@@ -56,7 +48,7 @@ export function StoreMediaPanel({
       await loadMedia()
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'アップロードに失敗しました'
-      setError(message)
+      setOperationError(message)
       onNotify(message, 'error')
     } finally {
       setIsUploading(false)
@@ -115,17 +107,16 @@ export function StoreMediaPanel({
       </div>
 
       {error && (
-        <p className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-3 py-2 text-sm font-bold text-bubble-700">
-          {error}
-        </p>
+        <ErrorBanner
+          message={error}
+          className="mb-4 rounded-2xl border-2 border-bubble-200 bg-bubble-50 px-3 py-2 text-sm font-bold text-bubble-700"
+        />
       )}
 
       {isLoading ? (
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
-      ) : media.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-wood-200 bg-sand-50/60 px-4 py-6 text-center text-sm text-wood-400">
-          ファイルがまだありません
-        </p>
+        <LoadingText />
+      ) : !media || media.length === 0 ? (
+        <EmptyCard variant="dashed" message="ファイルがまだありません" />
       ) : (
         <ul className="grid grid-cols-2 gap-3">
           {media.map((item) => (

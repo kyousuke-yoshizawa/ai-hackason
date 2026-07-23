@@ -1,4 +1,5 @@
-import { api, ApiError } from './api'
+import { api } from './api'
+import { toApiResult } from './toApiResult'
 import type { ApiResult } from '../types/social'
 import type { Reservation } from '../types/reservation'
 
@@ -13,34 +14,28 @@ export interface CreateReservationInput {
 export async function createReservation(
   input: CreateReservationInput
 ): Promise<ApiResult & { reservation?: Reservation }> {
-  try {
-    const reservation = await api.post<Reservation>('/api/reservations', {
+  const result = await toApiResult(
+    api.post<Reservation>('/api/reservations', {
       store_id: input.storeId,
       user_id: input.userId,
       reservation_date: input.reservationDate,
       reservation_time: input.reservationTime,
       party_size: input.partySize,
-    })
-    return { success: true, reservation }
-  } catch (error) {
-    return { success: false, message: error instanceof ApiError ? error.message : '予約に失敗しました' }
-  }
+    }),
+    '予約に失敗しました'
+  )
+  return result.success ? { success: true, reservation: result.data } : result
 }
 
 export async function getUserReservations(userId: string): Promise<ApiResult & { reservations: Reservation[] }> {
-  try {
-    const reservations = await api.get<Reservation[]>(`/api/reservations/user/${userId}`)
-    return { success: true, reservations }
-  } catch (error) {
-    return { success: false, message: error instanceof ApiError ? error.message : '予約一覧の取得に失敗しました', reservations: [] }
-  }
+  const result = await toApiResult(
+    api.get<Reservation[]>(`/api/reservations/user/${userId}`),
+    '予約一覧の取得に失敗しました'
+  )
+  return result.success ? { success: true, reservations: result.data } : { ...result, reservations: [] }
 }
 
 export async function cancelReservation(id: string): Promise<ApiResult & { reservation?: Reservation }> {
-  try {
-    const reservation = await api.put<Reservation>(`/api/reservations/${id}`, {})
-    return { success: true, reservation }
-  } catch (error) {
-    return { success: false, message: error instanceof ApiError ? error.message : 'キャンセルに失敗しました' }
-  }
+  const result = await toApiResult(api.put<Reservation>(`/api/reservations/${id}`, {}), 'キャンセルに失敗しました')
+  return result.success ? { success: true, reservation: result.data } : result
 }

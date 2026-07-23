@@ -13,6 +13,8 @@ import { CategorySelect } from './ui/CategorySelect'
 import { SortableColumnLabel } from './SortableHeader'
 import type { CongestionLevel } from '../../shared/types/crowd'
 import { CROWD_LEVEL_LABEL } from '../../shared/types/crowd'
+import { LoadingText } from './ui/LoadingText'
+import { EmptyCard } from './ui/EmptyCard'
 
 type StoreSortKey = 'name' | 'category' | 'open_time'
 type StoreFilters = { category: string }
@@ -176,7 +178,7 @@ export function StoreManagementPanel({
       </div>
 
       {isLoading ? (
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+        <LoadingText />
       ) : (
         <div className="space-y-3">
           <div className="hidden gap-4 px-4 text-xs font-bold text-wood-500 md:grid md:grid-cols-[2fr_1.2fr_1.5fr_1.6fr_1fr_2.3fr]">
@@ -279,9 +281,10 @@ export function StoreManagementPanel({
             </div>
           ))}
           {visibleStores.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-wood-200 bg-sand-50/60 px-4 py-6 text-center text-wood-400">
-              {stores.length === 0 ? '店舗がありません' : '検索条件に一致する店舗がありません'}
-            </div>
+            <EmptyCard
+              variant="dashed"
+              message={stores.length === 0 ? '店舗がありません' : '検索条件に一致する店舗がありません'}
+            />
           )}
         </div>
       )}

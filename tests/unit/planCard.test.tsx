@@ -1,7 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
+import type { ReactElement } from 'react'
 import PlanCard from '../../src/components/PlanCard'
 import type { PlanCandidate } from '../../src/types/plan'
+
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
 
 // Issue #96: プラン生成画面のプランカードが立ち寄り先を時系列順に表示し、
 // 移動メモ（travel_note）が読めることを検証する
@@ -39,7 +45,7 @@ describe('PlanCard', () => {
       ],
     }
 
-    render(<PlanCard candidate={candidate} />)
+    renderWithRouter(<PlanCard candidate={candidate} />)
 
     expect(screen.getByText('A案')).toBeTruthy()
     expect(screen.getByText('ランチと映画とカフェを楽しむプラン')).toBeTruthy()
@@ -60,7 +66,7 @@ describe('PlanCard', () => {
       stops: [],
     }
 
-    render(<PlanCard candidate={candidate} />)
+    renderWithRouter(<PlanCard candidate={candidate} />)
 
     expect(screen.getByText('立ち寄り先がありません')).toBeTruthy()
   })
@@ -90,7 +96,7 @@ describe('PlanCard - 詳細情報の表示', () => {
       ],
     }
 
-    render(<PlanCard candidate={candidate} />)
+    renderWithRouter(<PlanCard candidate={candidate} />)
 
     expect(screen.getByText('★4.2')).toBeTruthy()
     expect(screen.getByText('営業 11:00–21:00')).toBeTruthy()
@@ -120,7 +126,7 @@ describe('PlanCard - 詳細情報の表示', () => {
       ],
     }
 
-    render(<PlanCard candidate={candidate} />)
+    renderWithRouter(<PlanCard candidate={candidate} />)
 
     expect(screen.queryByTestId('plan-stop-chips')).toBeNull()
     expect(screen.queryByText(/^null$/)).toBeNull()
@@ -154,7 +160,7 @@ describe('PlanCard - 予約ボタン', () => {
   }
 
   it('storesに存在するstore_idのみ予約ボタンを表示する', () => {
-    render(
+    renderWithRouter(
       <PlanCard
         candidate={baseCandidate}
         stores={[{ id: 'store-1' }]}
@@ -167,7 +173,7 @@ describe('PlanCard - 予約ボタン', () => {
   })
 
   it('onReserveが渡されていない場合は予約ボタンを表示しない', () => {
-    render(<PlanCard candidate={baseCandidate} stores={[{ id: 'store-1' }, { id: 'store-hallucinated' }]} />)
+    renderWithRouter(<PlanCard candidate={baseCandidate} stores={[{ id: 'store-1' }, { id: 'store-hallucinated' }]} />)
 
     expect(screen.queryByRole('button', { name: '予約する' })).toBeNull()
   })
@@ -176,7 +182,7 @@ describe('PlanCard - 予約ボタン', () => {
     const user = userEvent.setup()
     const onReserve = jest.fn()
 
-    render(
+    renderWithRouter(
       <PlanCard
         candidate={baseCandidate}
         stores={[{ id: 'store-1' }]}
@@ -199,7 +205,7 @@ describe('PlanCard - 予約ボタン', () => {
     const user = userEvent.setup()
     const onReserve = jest.fn()
 
-    render(<PlanCard candidate={baseCandidate} stores={[{ id: 'store-1' }]} onReserve={onReserve} />)
+    renderWithRouter(<PlanCard candidate={baseCandidate} stores={[{ id: 'store-1' }]} onReserve={onReserve} />)
 
     await user.click(screen.getByRole('button', { name: '予約する' }))
 
@@ -232,7 +238,7 @@ describe('PlanCard - 予算サマリー', () => {
   it('価格情報がある場合は概算予算と「予算内」バッジを表示する（合計最大<=budget）', () => {
     const candidate = candidateWithPrices([{ price_min: 1000, price_max: 1500 }])
 
-    render(<PlanCard candidate={candidate} budget={1500} />)
+    renderWithRouter(<PlanCard candidate={candidate} budget={1500} />)
 
     expect(screen.getByText('💰 概算 ¥1000〜¥1500 / 1人')).toBeTruthy()
     expect(screen.getByText('予算内')).toBeTruthy()
@@ -242,7 +248,7 @@ describe('PlanCard - 予算サマリー', () => {
   it('合計最小がbudgetを超える場合は「予算オーバーの可能性」バッジを表示する', () => {
     const candidate = candidateWithPrices([{ price_min: 2000, price_max: 2500 }])
 
-    render(<PlanCard candidate={candidate} budget={1500} />)
+    renderWithRouter(<PlanCard candidate={candidate} budget={1500} />)
 
     expect(screen.getByText('予算オーバーの可能性')).toBeTruthy()
     expect(screen.queryByText('予算内')).toBeNull()
@@ -251,7 +257,7 @@ describe('PlanCard - 予算サマリー', () => {
   it('budget未設定の場合はどちらのバッジも表示しない', () => {
     const candidate = candidateWithPrices([{ price_min: 1000, price_max: 1500 }])
 
-    render(<PlanCard candidate={candidate} />)
+    renderWithRouter(<PlanCard candidate={candidate} />)
 
     expect(screen.queryByText('予算オーバーの可能性')).toBeNull()
     expect(screen.queryByText('予算内')).toBeNull()
@@ -263,7 +269,7 @@ describe('PlanCard - 予算サマリー', () => {
       { price_min: null, price_max: null },
     ])
 
-    render(<PlanCard candidate={candidate} budget={1500} />)
+    renderWithRouter(<PlanCard candidate={candidate} budget={1500} />)
 
     expect(screen.getByText('※一部店舗の価格不明')).toBeTruthy()
   })
@@ -271,7 +277,7 @@ describe('PlanCard - 予算サマリー', () => {
   it('全店舗の価格が不明な場合は概算予算行を表示しない（¥0〜¥0を出さない）', () => {
     const candidate = candidateWithPrices([{ price_min: null, price_max: null }])
 
-    render(<PlanCard candidate={candidate} budget={1500} />)
+    renderWithRouter(<PlanCard candidate={candidate} budget={1500} />)
 
     expect(screen.queryByTestId('plan-budget-summary')).toBeNull()
   })

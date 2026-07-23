@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { cancelReservation, getUserReservations } from '../lib/reservations'
+import { useApiQuery } from '../hooks/useApiQuery'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
+import { ErrorBanner } from '../components/ui/ErrorBanner'
+import { EmptyCard } from '../components/ui/EmptyCard'
 import type { AdminStore } from '../components/StoreForm'
 import type { Reservation } from '../types/reservation'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
-import GrassBorder from '../components/decor/GrassBorder'
 
 const STATUS_LABEL: Record<Reservation['status'], string> = {
   pending: '保留中',
@@ -16,29 +20,27 @@ const STATUS_LABEL: Record<Reservation['status'], string> = {
 
 export default function ReservationsListPage() {
   const { user } = useAuth()
-  const [reservations, setReservations] = useState<Reservation[]>([])
   const [storeNames, setStoreNames] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [operationError, setOperationError] = useState<string | null>(null)
 
-  const reload = useCallback(async () => {
-    if (!user) return
-    setIsLoading(true)
-    const result = await getUserReservations(user.id)
-    if (result.success) {
-      const sorted = [...result.reservations].sort((a, b) =>
+  const {
+    data: reservationsData,
+    isLoading,
+    error: loadError,
+    reload,
+  } = useApiQuery(
+    async () => {
+      const result = await getUserReservations(user!.id)
+      if (!result.success) throw new Error(result.message ?? '予約一覧の取得に失敗しました')
+      return [...result.reservations].sort((a, b) =>
         `${a.reservationDate}T${a.reservationTime}`.localeCompare(`${b.reservationDate}T${b.reservationTime}`)
       )
-      setReservations(sorted)
-    } else {
-      setError(result.message ?? '予約一覧の取得に失敗しました')
-    }
-    setIsLoading(false)
-  }, [user])
-
-  useEffect(() => {
-    reload()
-  }, [reload])
+    },
+    [user?.id],
+    { enabled: !!user, fallbackMessage: '予約一覧の取得に失敗しました' }
+  )
+  const reservations = reservationsData ?? []
+  const error = operationError ?? loadError
 
   useEffect(() => {
     api
@@ -63,7 +65,7 @@ export default function ReservationsListPage() {
 
     const result = await cancelReservation(reservation.id)
     if (!result.success) {
-      setError(result.message ?? 'キャンセルに失敗しました')
+      setOperationError(result.message ?? 'キャンセルに失敗しました')
       return
     }
     await reload()
@@ -71,28 +73,18 @@ export default function ReservationsListPage() {
 
   return (
     <>
-      <header className="ac-header">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <h1 className="text-xl font-extrabold">予約一覧</h1>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="予約一覧"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {error && (
-          <p className="mb-4 text-sm font-bold text-bubble-700 bg-bubble-50 border-2 border-bubble-200 rounded-2xl px-4 py-2">
-            {error}
-          </p>
-        )}
+        {error && <ErrorBanner message={error} />}
 
         {isLoading ? (
-          <p className="text-wood-500 text-sm font-bold">読み込み中...</p>
+          <LoadingText />
         ) : reservations.length === 0 ? (
-          <div className="ac-card relative text-center text-wood-500">
-            <Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />
-            まだ予約がありません
-          </div>
+          <EmptyCard message="まだ予約がありません" decor={<Leaf className="absolute -top-4 -left-4 h-9 w-9 -rotate-12 drop-shadow" />} />
         ) : (
           <ul className="space-y-3">
             {reservations.map((reservation) => (

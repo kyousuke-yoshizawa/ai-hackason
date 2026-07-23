@@ -1,5 +1,8 @@
-import type { PlanCandidate, PlanStop } from '../types/plan'
+import { Link } from 'react-router-dom'
+import { ScoreBadge } from './ScoreBadge'
+import { formatPlanAsText } from '../lib/planText'
 import { calculateBudgetSummary, getBudgetStatus } from '../lib/planBudget'
+import type { PlanCandidate, PlanStop } from '../types/plan'
 
 interface StoreRef {
   id: string
@@ -18,6 +21,10 @@ interface PlanCardProps {
   partySize?: number | null
   budget?: number | null
   onReserve?: (params: ReserveParams) => void
+  isBest?: boolean
+  isPinned?: boolean
+  onTogglePin?: () => void
+  onCopyResult?: (success: boolean) => void
 }
 
 // #97: rating/open_time・close_time/crowd_note/offer_noteはnull・空文字の場合は表示しない
@@ -44,7 +51,17 @@ function buildStopChips(stop: PlanStop): { key: string; label: string; className
   return chips
 }
 
-export default function PlanCard({ candidate, stores = [], partySize, budget, onReserve }: PlanCardProps) {
+export default function PlanCard({
+  candidate,
+  stores = [],
+  partySize,
+  budget,
+  onReserve,
+  isBest,
+  isPinned,
+  onTogglePin,
+  onCopyResult,
+}: PlanCardProps) {
   const sortedStops = [...candidate.stops].sort((a, b) => a.start_time.localeCompare(b.start_time))
 
   // #123: 価格が判明している立ち寄り先が1件もなければ概算行自体を出さない（¥0〜¥0の誤表示防止）
@@ -61,13 +78,50 @@ export default function PlanCard({ candidate, stores = [], partySize, budget, on
     })
   }
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(formatPlanAsText(candidate))
+      onCopyResult?.(true)
+    } catch {
+      onCopyResult?.(false)
+    }
+  }
+
+  const canCopy = typeof navigator !== 'undefined' && !!navigator.clipboard
+
   return (
-    <div className="ac-card" data-testid="plan-card">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <h3 className="text-lg font-extrabold text-wood-800">{candidate.label}</h3>
-        <span className="ac-btn-secondary !cursor-default !px-3 !py-1 text-xs">
-          スコア {candidate.score}
+    <div className="ac-card relative" data-testid="plan-card">
+      {isBest && (
+        <span className="absolute -top-3 right-4 ac-badge bg-yellow-400 text-wood-800 shadow-ac-sm">
+          ⭐ いちばんのおすすめ
         </span>
+      )}
+
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <h3 className="text-lg font-extrabold text-wood-800">{candidate.label}</h3>
+        <div className="flex items-center gap-2">
+          <ScoreBadge score={candidate.score} />
+          {onTogglePin && (
+            <button
+              type="button"
+              onClick={onTogglePin}
+              aria-label={isPinned ? 'ピン留めを解除' : 'このプランをピン留め'}
+              className={isPinned ? 'ac-btn-primary !px-3 !py-1 text-xs' : 'ac-btn-secondary !px-3 !py-1 text-xs'}
+            >
+              {isPinned ? '📌 解除' : '📌 ピン留め'}
+            </button>
+          )}
+          {canCopy && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              aria-label="プランをコピー"
+              className="ac-btn-secondary !px-3 !py-1 text-xs"
+            >
+              📋 コピー
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="mb-4 text-sm text-wood-500">{candidate.summary}</p>
@@ -98,9 +152,13 @@ export default function PlanCard({ candidate, stores = [], partySize, budget, on
             return (
               <li key={`${stop.store_id}-${index}`} className="ac-card-sm" data-testid="plan-stop">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-bold text-wood-800" data-testid="plan-stop-name">
+                  <Link
+                    to={`/stores/${stop.store_id}`}
+                    className="font-bold text-wood-800 underline-offset-2 hover:text-leaf-700 hover:underline"
+                    data-testid="plan-stop-name"
+                  >
                     {stop.store_name}
-                  </p>
+                  </Link>
                   <p className="text-xs font-bold text-leaf-600">
                     {stop.start_time} – {stop.end_time}
                   </p>
