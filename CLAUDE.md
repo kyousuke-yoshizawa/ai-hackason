@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **AI Hackathon 2026** — A 20-hour team project (Kyosuke + 3 members) building 「ことこと町」お出かけプラン AI アシスタント using React + TypeScript + Tailwind / Node.js + Express + Vercel Functions / Supabase PostgreSQL.
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
-- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media）+ Vercel Functions（`api/`, reservations/crowd/analytics/errors/cron/mail/plan）
+- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media/reservations/errors）+ Vercel Functions（`api/`, crowd/analytics/cron/mail/plan）
 - **AI**: Claude API（`@anthropic-ai/sdk`）によるお出かけプラン生成。`backend/domains/plan/`（`claudeClient.ts`/`promptBuilder.ts`/`scoring.ts`/`schema.ts`）+ `POST /api/plan/generate`（T12で実装。意図解析・店舗照合・スコアリング・プラン生成をAPI呼び出し1回に統合。UI画面は別タスク）
 - **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel (auto-deploy on main)
@@ -61,11 +61,12 @@ src/
 ├── main.tsx
 └── index.css
 
-server/                  # Express（auth/users/stores/media）。ローカル開発と
-                          #   Vercel本番の両方で使用（api/index.ts が re-export）
-api/                     # Vercel Functions（reservations/crowd/analytics/
-                          #   errors/cron/mail/plan）。api/_http/ に Vercel専用の
-                          #   HTTPアダプタ（requireAdmin/requireStoreAccess）
+server/                  # Express（auth/users/stores/media/reservations/errors）。
+                          #   ローカル開発とVercel本番の両方で使用
+                          #   （api/index.ts が re-export）
+api/                     # Vercel Functions（crowd/analytics/cron/mail/plan）。
+                          #   api/_http/ に Vercel専用のHTTPアダプタ
+                          #   （requireAdmin/requireStoreAccess/segments）
 backend/                 # api/ と server/ が共有するドメインロジック
                           #   db.ts（supabaseAdmin唯一の定義）
                           #   auth/authz.ts（認可: is_active + store_managers判定）
