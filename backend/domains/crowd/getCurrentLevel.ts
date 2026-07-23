@@ -1,5 +1,6 @@
 import { getCrowdPattern, getCurrentCrowdStatus } from './repository.js'
 import { CROWD_LEVEL_LABEL, type CongestionLevel } from './types.js'
+import { getJstHourAndDay } from '../../time.js'
 
 const FRESHNESS_WINDOW_MS = 30 * 60 * 1000 // 30分
 
@@ -25,7 +26,8 @@ export async function resolveCurrentCrowdLevel(
     return { level: status.level, source: 'live', updatedAt: status.updatedAt }
   }
 
-  const patternLevel = await getCrowdPattern(storeId, now.getHours())
+  const { hour, day } = getJstHourAndDay(now)
+  const patternLevel = await getCrowdPattern(storeId, hour, day)
   if (patternLevel) {
     return { level: patternLevel, source: 'pattern' }
   }

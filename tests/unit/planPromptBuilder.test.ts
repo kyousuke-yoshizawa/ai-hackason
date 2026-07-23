@@ -19,10 +19,17 @@ const STORE_A: StoreContext = {
   close_time: '21:00',
   price_min: 900,
   price_max: 1300,
+  tags: [],
+  closed_days: [],
+  last_order_time: null,
+  description: null,
+  sub_area: null,
+  offers: [],
   distanceTag: 'near',
   rating: 4.2,
   crowdText: 'のんびり亭: 現在空いている（想定（事前設定））',
   score: 0.82,
+  offerText: null,
 }
 
 const STORE_B: StoreContext = {
@@ -35,10 +42,17 @@ const STORE_B: StoreContext = {
   close_time: '22:00',
   price_min: 1200,
   price_max: 1800,
+  tags: [],
+  closed_days: [],
+  last_order_time: null,
+  description: null,
+  sub_area: null,
+  offers: [],
   distanceTag: 'far',
   rating: null,
   crowdText: 'つきみ座: 混雑情報なし',
   score: 0.5,
+  offerText: null,
 }
 
 describe('buildPlanSystemPrompt', () => {
@@ -65,6 +79,21 @@ describe('buildPlanSystemPrompt', () => {
     const prompt = buildPlanSystemPrompt([STORE_A])
 
     expect(prompt).toContain('合計しないこと')
+  })
+
+  it('プラン案数（2〜3案）と切り口を変える指示を含める（Issue #119）', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    expect(prompt).toContain('2〜3案')
+    expect(prompt).toContain('切り口')
+  })
+
+  it('各stopのprice_min・price_maxに店舗の価格帯を転記する指示を含める（Issue #123: プラン合計予算の概算表示と予算超過警告）', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    expect(prompt).toContain('price_min')
+    expect(prompt).toContain('price_max')
+    expect(prompt).toContain('価格帯')
   })
 
   it('現在日時（JST・曜日）をsystemプロンプトに含める（Issue #116）', () => {
@@ -122,5 +151,68 @@ describe('buildPlanUserTurn', () => {
     const turn = buildPlanUserTurn({ message: '子連れでのんびりしたい', start_time: '19:00' })
 
     expect(turn).toContain('19:00から')
+  })
+
+  it('L.O.が設定されている店舗は営業時間表記にL.O.を付与する', () => {
+    const storeWithLastOrder: StoreContext = { ...STORE_A, last_order_time: '20:30' }
+    const prompt = buildPlanSystemPrompt([storeWithLastOrder])
+
+    expect(prompt).toContain('営業時間 11:00〜21:00（L.O. 20:30）')
+  })
+
+  it('L.O.未設定の店舗は（L.O. ...）を付与しない', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    // 「## 指示」セクションには常にL.O.関連の一般的な指示文が含まれるため、
+    // 店舗行（営業時間の表記）にL.O.が付与されていないことをピンポイントで確認する
+    expect(prompt).toContain('営業時間 11:00〜21:00、')
+    expect(prompt).not.toContain('21:00（L.O.')
+  })
+
+  it('タグ・エリア・紹介文があればプロンプトに含める', () => {
+    const richStore: StoreContext = {
+      ...STORE_A,
+      tags: ['子連れOK', '屋内'],
+      sub_area: '商店街エリア',
+      description: 'のんびり過ごせる定食屋です。',
+    }
+    const prompt = buildPlanSystemPrompt([richStore])
+
+    expect(prompt).toContain('タグ: 子連れOK／屋内')
+    expect(prompt).toContain('エリア: 商店街エリア')
+    expect(prompt).toContain('のんびり過ごせる定食屋です。')
+  })
+
+  it('タグ・エリア・紹介文が無い店舗はそれらのラベルを含めない', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    expect(prompt).not.toContain('タグ:')
+    expect(prompt).not.toContain('エリア:')
+  })
+
+  // Issue #98（S004・オファー機能）
+  it('offerTextがある店舗はプロンプトにオファー内容を含める', () => {
+    const storeWithOffer: StoreContext = {
+      ...STORE_A,
+      offerText: '14-16時は狙い目！20%OFF（14:00〜16:00）',
+    }
+    const prompt = buildPlanSystemPrompt([storeWithOffer])
+
+    expect(prompt).toContain('オファー: 14-16時は狙い目！20%OFF（14:00〜16:00）')
+  })
+
+  it('offerTextが無い店舗は店舗一覧の行にオファー欄を含めない', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    // "## 指示"セクションのoffer_note転記に関する説明文自体に「オファー: ...」という
+    // 表記が含まれるため、店舗一覧の行フォーマット（`、オファー: `）に限定して確認する
+    expect(prompt).not.toContain('、オファー:')
+  })
+
+  it('L.O.に関する入店タイミングの指示をプロンプトに含める', () => {
+    const prompt = buildPlanSystemPrompt([STORE_A])
+
+    expect(prompt).toContain('L.O.の30分前まで')
+    expect(prompt).toContain('閉店30分前以降の入店は避ける')
   })
 })

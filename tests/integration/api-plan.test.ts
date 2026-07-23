@@ -63,8 +63,12 @@ function createMockRes() {
   return res as VercelResponse & { statusCode: number; body: unknown; headers: Record<string, string> }
 }
 
-function createReq(method: string, body: Record<string, unknown> = {}): VercelRequest {
-  return { method, body, headers: {}, query: {} } as unknown as VercelRequest
+function createReq(
+  method: string,
+  body: Record<string, unknown> = {},
+  headers: Record<string, string> = {},
+): VercelRequest {
+  return { method, body, headers, query: {} } as unknown as VercelRequest
 }
 
 beforeEach(() => {
@@ -81,6 +85,11 @@ beforeEach(() => {
       close_time: '21:00',
       price_min: 900,
       price_max: 1300,
+      tags: [],
+      closed_days: [],
+      last_order_time: null,
+      description: null,
+      sub_area: null,
       deleted_at: null,
     },
   ])
@@ -130,6 +139,90 @@ describe('POST /api/plan/generate', () => {
     expect((res.body as { error: string }).error).toBe('no_stores')
   })
 
+  it('全店舗が本日定休日の場合は404 no_storesを返す（当日除外方式）', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-22T03:00:00Z')) // JST水曜（day=3）
+    fakeClient.seed('stores', [
+      {
+        id: 'store-1',
+        name: 'のんびり亭',
+        category: '定食屋・ランチ',
+        x: -100,
+        y: 30,
+        open_time: '11:00',
+        close_time: '21:00',
+        price_min: 900,
+        price_max: 1300,
+        tags: [],
+        closed_days: [3],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+    ])
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'closed-days-test-1' }), res)
+
+    expect(res.statusCode).toBe(404)
+    expect((res.body as { error: string }).error).toBe('no_stores')
+    jest.useRealTimers()
+  })
+
+  it('本日定休日の店舗はプロンプトに含めず、営業中の店舗のみで生成する', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-22T03:00:00Z')) // JST水曜（day=3）
+    fakeClient.seed('stores', [
+      {
+        id: 'store-1',
+        name: 'のんびり亭',
+        category: '定食屋・ランチ',
+        x: -100,
+        y: 30,
+        open_time: '11:00',
+        close_time: '21:00',
+        price_min: 900,
+        price_max: 1300,
+        tags: [],
+        closed_days: [],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+      {
+        id: 'store-2',
+        name: 'つきみ座',
+        category: '映画館',
+        x: -180,
+        y: -50,
+        open_time: '10:00',
+        close_time: '22:00',
+        price_min: 1200,
+        price_max: 1800,
+        tags: [],
+        closed_days: [3],
+        last_order_time: null,
+        description: null,
+        sub_area: null,
+        deleted_at: null,
+      },
+    ])
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'closed-days-test-2' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const prompt = mockGeneratePlan.mock.calls[0][0] as string
+    expect(prompt).toContain('のんびり亭')
+    expect(prompt).not.toContain('つきみ座')
+    jest.useRealTimers()
+  })
+
   it('Claude APIの応答が正しいJSONであれば200でプランを返す', async () => {
     mockGeneratePlan.mockResolvedValue({
       result: VALID_CLAUDE_RESULT,
@@ -147,6 +240,79 @@ describe('POST /api/plan/generate', () => {
     const [system, messages] = mockGeneratePlan.mock.calls[0] as [string, { role: string; content: string }[]]
     expect(system).toContain('のんびり亭')
     expect(messages).toEqual([{ role: 'user', content: expect.stringContaining('ランチしたい') }])
+  })
+
+  it('Claude応答のstore_idが捏造でもstore_nameが正しければ補正して200を返す（Issue #120）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: {
+        intent: { desires: ['ランチ'], party_size: null, budget: null, time_limit: null },
+        candidates: [
+          {
+            label: '案A',
+            stops: [
+              {
+                store_id: 'typo-id-999', // 店舗マスタに実在しないID
+                store_name: 'のんびり亭', // 名前は正しい
+                start_time: '12:00',
+                end_time: '13:00',
+                travel_note: '徒歩5分',
+                reason: 'ランチに最適',
+              },
+            ],
+            score: 0.8,
+            summary: 'ランチプラン',
+          },
+        ],
+      },
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    // Issue #120のテスト専用のx-user-idでレート制限バケットを分離する（このファイルの
+    // 他のテストは無指定=キー'unknown'を共有しており、上限ちょうどの件数で運用されているため）
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'test-issue-120-reconcile' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const body = res.body as { candidates: { stops: { store_id: string; store_name: string }[] }[] }
+    expect(body.candidates).toHaveLength(1)
+    expect(body.candidates[0].stops[0].store_id).toBe('store-1')
+    expect(body.candidates[0].stops[0].store_name).toBe('のんびり亭')
+  })
+
+  it('全candidateのstopsが店舗マスタと照合できない場合は502 invalid_ai_responseを返す（Issue #120）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: {
+        intent: { desires: ['ランチ'], party_size: null, budget: null, time_limit: null },
+        candidates: [
+          {
+            label: '案A',
+            stops: [
+              {
+                store_id: 'ghost-id',
+                store_name: '存在しない店',
+                start_time: '12:00',
+                end_time: '13:00',
+                travel_note: '徒歩5分',
+                reason: 'ランチに最適',
+              },
+            ],
+            score: 0.8,
+            summary: 'ランチプラン',
+          },
+        ],
+      },
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    // Issue #120のテスト専用のx-user-idでレート制限バケットを分離する（このファイルの
+    // 他のテストは無指定=キー'unknown'を共有しており、上限ちょうどの件数で運用されているため）
+    await handler(createReq('POST', { message: 'ランチしたい' }, { 'x-user-id': 'test-issue-120-all-unresolvable' }), res)
+
+    expect(res.statusCode).toBe(502)
+    expect((res.body as { error: string }).error).toBe('invalid_ai_response')
   })
 
   it('historyを含むリクエストは過去のやり取りを今回の発話より先にmessagesとして転送する（U006）', async () => {
@@ -214,6 +380,42 @@ describe('POST /api/plan/generate', () => {
     expect(res.statusCode).toBe(502)
     expect((res.body as { error: string; message: string }).error).toBe('claude_api_error')
     expect((res.body as { error: string; message: string }).message).toContain('混み合っています')
+  })
+
+  // Issue #136: プラン生成成功時に候補内の店舗へplan_suggestionsを記録することを検証する
+  it('プラン生成成功時に候補stopsの店舗ごとにplan_suggestionsを1件ずつ記録する（Issue #136）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(createReq('POST', { message: 'ランチしたい' }), res)
+
+    expect(res.statusCode).toBe(200)
+    const rows = fakeClient.getRows('plan_suggestions')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].store_id).toBe('store-1')
+  })
+
+  // Issue #135: 店舗管理者のプレビュー呼び出し（preview: true）は、Issue #136の
+  // plan_suggestions記録を水増ししてしまうため記録しないことを検証する
+  it('preview: trueの場合はplan_suggestionsを記録しない（Issue #135）', async () => {
+    mockGeneratePlan.mockResolvedValue({
+      result: VALID_CLAUDE_RESULT,
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: 'claude-sonnet-5',
+    })
+
+    const res = createMockRes()
+    await handler(
+      createReq('POST', { message: 'ランチしたい', preview: true }, { 'x-user-id': 'preview-flag-test' }),
+      res,
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(fakeClient.getRows('plan_suggestions')).toHaveLength(0)
   })
 
   it('Claude API呼び出し自体が失敗した場合（未分類のエラー）は502 claude_api_errorを、内部のエラー詳細を含めずに返す', async () => {

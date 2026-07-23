@@ -8,11 +8,17 @@ import {
   buildPlanSystemPrompt,
   buildPlanUserTurn,
   buildStoreContexts,
+  type OfferForPrompt,
   type StoreForPrompt,
 } from '../../backend/domains/plan/promptBuilder.js'
 import { generatePlan, PlanGenerationError, PlanResponseParseError } from '../../backend/domains/plan/claudeClient.js'
+import { reconcileStops } from '../../backend/domains/plan/validateStops.js'
+import { collectStoreIdsFromCandidates } from '../../backend/domains/plan/collectStoreIds.js'
 import { STORE_PLAN_COLUMNS } from '../../backend/domains/stores/columns.js'
+import { getJstHourAndDay } from '../../backend/time.js'
 import { MOCK_PLAN_RESPONSE } from '../../backend/domains/plan/mockResponse.js'
+import { listActiveOffers } from '../../backend/domains/offers/repository.js'
+import { recordPlanSuggestions } from '../../backend/domains/stores/planSuggestions.js'
 
 // デモ期間中に緩めたい場合、再デプロイのみで調整できるよう環境変数化
 const PLAN_RATE_LIMIT = Number(process.env.PLAN_RATE_LIMIT) || 10
@@ -62,10 +68,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return sendError(res, 404, 'no_stores', '店舗マスタが空です')
   }
 
+  // now を1つに固定し、定休日判定・オファー適用判定・システムプロンプトの「現在日時」表示の
+  // 間でJST基準の「今」がずれないようにする
+  const now = new Date()
+
+  // closed_days（0=日曜〜6=土曜、JSのDate.getDay()と同じ規約）に当日（JST基準）が含まれる
+  // 店舗は定休日のためClaudeに渡す前に除外する（プロンプト側には表示しない「当日除外方式」）。
+  // 実行環境のローカルタイムゾーンはUTCのため、getDay()を直接使うとJST日付境界でずれる
+  const { day: todayDayOfWeek } = getJstHourAndDay(now)
+  const openStores = (stores as Array<Omit<StoreForPrompt, 'offers'>>).filter(
+    (store) => !(store.closed_days ?? []).includes(todayDayOfWeek),
+  )
+
+  if (openStores.length === 0) {
+    return sendError(res, 404, 'no_stores', '本日営業中の店舗がありません')
+  }
+
   const startedAt = Date.now()
   try {
-    const storeContexts = await buildStoreContexts(stores as StoreForPrompt[])
-    const systemPrompt = buildPlanSystemPrompt(storeContexts)
+    // オファー機能（要件定義書v2 S004）: 店舗ごとに問い合わせず、有効なオファーを一括取得して
+    // 店舗IDでグルーピングする（#105のN+1回避パターンに合わせる）
+    const activeOffers = await listActiveOffers()
+    const offersByStore = new Map<string, OfferForPrompt[]>()
+    for (const offer of activeOffers) {
+      const list = offersByStore.get(offer.store_id) ?? []
+      list.push({
+        description: offer.description,
+        start_time: offer.start_time,
+        end_time: offer.end_time,
+        weekdays_only: offer.weekdays_only,
+        is_active: offer.is_active,
+      })
+      offersByStore.set(offer.store_id, list)
+    }
+    const storesWithOffers: StoreForPrompt[] = openStores.map((store) => ({
+      ...store,
+      offers: offersByStore.get(store.id) ?? [],
+    }))
+
+    const storeContexts = await buildStoreContexts(storesWithOffers, now)
+    const systemPrompt = buildPlanSystemPrompt(storeContexts, now)
     // U006: セッション内の会話履歴（DB永続化なし）を過去ターンとして先頭に並べ、
     // 今回の要望を最後のuserメッセージとして追加する
     const messages = [
@@ -79,6 +121,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return zodError(res, validated.error, 502)
     }
 
+    // Issue #120（幻覚store_id対策）: zodはstore_id/store_nameの「形式」しか検証しないため、
+    // Claudeがtypo・自作したIDが店舗マスタに実在するかをここで照合・補正する
+    const { candidates, warnings } = reconcileStops(validated.data.candidates, stores as { id: string; name: string }[])
+    if (warnings.length > 0) {
+      console.warn(JSON.stringify({ evt: 'plan_stops_reconciled', warnings }))
+    }
+    if (candidates.length === 0) {
+      return sendError(res, 502, 'invalid_ai_response', 'プラン内の店舗情報を検証できませんでした')
+    }
+
+    // Issue #136（店舗ダッシュボードにプラン提案回数を表示）: 候補に含まれた店舗の
+    // 提案回数を記録する。recordPlanSuggestions自体が内部で例外を握るため、
+    // 失敗してもここから先のレスポンス返却には影響しない。
+    // Issue #135のプレビュー呼び出し（preview: true）は店舗管理者の自己テストであり、
+    // 実際のユーザー提案ではないため記録をスキップする。店舗IDは幻覚補正済みのcandidatesから
+    // 集計する（Claudeが自作したIDをそのまま記録しないため）
+    if (!parsed.data.preview) {
+      await recordPlanSuggestions(collectStoreIdsFromCandidates(candidates))
+    }
+
     // 要件定義書v2 8章「コスト管理」対応。DBテーブルは増やさず、Vercelログで集計する最小実装
     console.log(
       JSON.stringify({
@@ -87,11 +149,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         input_tokens: usage.inputTokens,
         output_tokens: usage.outputTokens,
         model,
-        candidates: validated.data.candidates.length,
+        candidates: candidates.length,
       })
     )
 
-    return res.status(200).json(validated.data)
+    return res.status(200).json({ ...validated.data, candidates })
   } catch (err) {
     console.log(
       JSON.stringify({

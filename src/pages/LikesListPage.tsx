@@ -8,6 +8,7 @@ import { LoadingText } from '../components/ui/LoadingText'
 import { EmptyCard } from '../components/ui/EmptyCard'
 import Cloud from '../components/decor/Cloud'
 import Flower from '../components/decor/Flower'
+import { CategorySelect } from '../components/ui/CategorySelect'
 
 type SortKey = 'newest' | 'oldest' | 'name'
 
@@ -83,18 +84,12 @@ export default function LikesListPage() {
           </select>
 
           {categories.length > 0 && (
-            <select
+            <CategorySelect
+              categories={categories}
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="ac-input !w-auto text-sm"
-            >
-              <option value="all">すべてのカテゴリ</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              onChange={setCategoryFilter}
+              className="text-sm"
+            />
           )}
         </div>
 

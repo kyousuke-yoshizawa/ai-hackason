@@ -1,45 +1,45 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { api, ApiError } from '../lib/api'
+import { useMasterTable } from '../hooks/useMasterTable'
 import { AdminUser, UserForm, UserFormValues } from './UserForm'
-import { SortableHeader, SortDirection } from './SortableHeader'
-import { useApiQuery } from '../hooks/useApiQuery'
+import { SortableHeader } from './SortableHeader'
 import { LoadingText } from './ui/LoadingText'
 
 type UserSortKey = 'email' | 'name' | 'role'
-type ActiveFilter = 'all' | 'active' | 'inactive'
-type RoleFilter = 'all' | AdminUser['role']
-
-const EMPTY_USERS: AdminUser[] = []
+type UserFilters = { role: string; active: string }
 
 export function UserManagementPanel({
   onNotify,
 }: {
   onNotify: (message: string, type?: 'success' | 'error') => void
 }) {
-  const [draftSearchText, setDraftSearchText] = useState('')
-  const [draftRoleFilter, setDraftRoleFilter] = useState<RoleFilter>('all')
-  const [draftActiveFilter, setDraftActiveFilter] = useState<ActiveFilter>('all')
-  const [appliedSearchText, setAppliedSearchText] = useState('')
-  const [appliedRoleFilter, setAppliedRoleFilter] = useState<RoleFilter>('all')
-  const [appliedActiveFilter, setAppliedActiveFilter] = useState<ActiveFilter>('all')
-  const [sortKey, setSortKey] = useState<UserSortKey>('name')
-  const [sortDir, setSortDir] = useState<SortDirection>('asc')
-  const [formMode, setFormMode] = useState<'create' | AdminUser | null>(null)
-
   const {
-    data: usersData,
+    items: users,
     isLoading,
-    error: loadError,
     reload: loadUsers,
-  } = useApiQuery(async () => (await api.get<{ data: AdminUser[] }>('/api/users?limit=100')).data, [], {
-    fallbackMessage: 'ユーザ一覧の取得に失敗しました',
+    draftSearchText,
+    setDraftSearchText,
+    appliedSearchText,
+    draftFilters,
+    setDraftFilter,
+    appliedFilters,
+    sortKey,
+    sortDir,
+    handleSort,
+    formMode,
+    setFormMode,
+    handleSearch,
+    handleClear,
+  } = useMasterTable<AdminUser, UserSortKey, UserFilters>({
+    fetchItems: async () => {
+      const res = await api.get<{ data: AdminUser[] }>('/api/users?limit=100')
+      return res.data
+    },
+    loadErrorMessage: 'ユーザ一覧の取得に失敗しました',
+    onNotify,
+    initialSortKey: 'name',
+    initialFilters: { role: 'all', active: 'all' },
   })
-  const users = usersData ?? EMPTY_USERS
-
-  useEffect(() => {
-    if (loadError) onNotify(loadError, 'error')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadError])
 
   const handleSubmit = async (values: UserFormValues) => {
     try {
@@ -68,38 +68,14 @@ export function UserManagementPanel({
     }
   }
 
-  const handleSort = (key: UserSortKey) => {
-    if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
-    }
-  }
-
-  const handleSearch = () => {
-    setAppliedSearchText(draftSearchText)
-    setAppliedRoleFilter(draftRoleFilter)
-    setAppliedActiveFilter(draftActiveFilter)
-  }
-
-  const handleClear = () => {
-    setDraftSearchText('')
-    setDraftRoleFilter('all')
-    setDraftActiveFilter('all')
-    setAppliedSearchText('')
-    setAppliedRoleFilter('all')
-    setAppliedActiveFilter('all')
-  }
-
   const visibleUsers = useMemo(() => {
     const text = appliedSearchText.trim().toLowerCase()
     const filtered = users.filter((u) => {
       const matchesText =
         text === '' || u.name.toLowerCase().includes(text) || u.email.toLowerCase().includes(text)
-      const matchesRole = appliedRoleFilter === 'all' || u.role === appliedRoleFilter
+      const matchesRole = appliedFilters.role === 'all' || u.role === appliedFilters.role
       const matchesActive =
-        appliedActiveFilter === 'all' || (appliedActiveFilter === 'active' ? u.is_active : !u.is_active)
+        appliedFilters.active === 'all' || (appliedFilters.active === 'active' ? u.is_active : !u.is_active)
       return matchesText && matchesRole && matchesActive
     })
 
@@ -109,7 +85,7 @@ export function UserManagementPanel({
       if (primary !== 0) return primary * dir
       return sortKey === 'name' ? 0 : a.name.localeCompare(b.name, 'ja')
     })
-  }, [users, appliedSearchText, appliedRoleFilter, appliedActiveFilter, sortKey, sortDir])
+  }, [users, appliedSearchText, appliedFilters, sortKey, sortDir])
 
   return (
     <div>
@@ -124,8 +100,8 @@ export function UserManagementPanel({
             className="ac-input !w-auto"
           />
           <select
-            value={draftRoleFilter}
-            onChange={(e) => setDraftRoleFilter(e.target.value as RoleFilter)}
+            value={draftFilters.role}
+            onChange={(e) => setDraftFilter('role', e.target.value)}
             className="ac-input !w-auto"
           >
             <option value="all">すべてのロール</option>
@@ -134,8 +110,8 @@ export function UserManagementPanel({
             <option value="user">user</option>
           </select>
           <select
-            value={draftActiveFilter}
-            onChange={(e) => setDraftActiveFilter(e.target.value as ActiveFilter)}
+            value={draftFilters.active}
+            onChange={(e) => setDraftFilter('active', e.target.value)}
             className="ac-input !w-auto"
           >
             <option value="all">すべての状態</option>
