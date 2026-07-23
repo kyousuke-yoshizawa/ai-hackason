@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
-import { api, ApiError } from '../lib/api'
+import { useState } from 'react'
+import { api } from '../lib/api'
 import { Modal } from './Modal'
+import { useApiQuery } from '../hooks/useApiQuery'
+import { LoadingText } from './ui/LoadingText'
 import { CROWD_LEVEL_LABEL, type CongestionLevel } from '../../shared/types/crowd'
 
 interface CrowdAnalyticsRow {
@@ -98,33 +100,20 @@ export function CrowdAnalyticsDashboard({
   onClose: () => void
 }) {
   const [rangeDays, setRangeDays] = useState<number>(7)
-  const [rows, setRows] = useState<CrowdAnalyticsRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const res = await api.get<{ data: CrowdAnalyticsRow[] }>(
-          `/api/analytics/crowd/${storeId}?days=${rangeDays}`,
-        )
-        if (!cancelled) setRows(res.data)
-      } catch (err) {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : '混雑分析データの取得に失敗しました')
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    }
-
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [storeId, rangeDays])
+  const {
+    data: rowsData,
+    isLoading,
+    error,
+  } = useApiQuery(
+    async () =>
+      (
+        await api.get<{ data: CrowdAnalyticsRow[] }>(`/api/analytics/crowd/${storeId}?days=${rangeDays}`)
+      ).data,
+    [storeId, rangeDays],
+    { fallbackMessage: '混雑分析データの取得に失敗しました' }
+  )
+  const rows = rowsData ?? []
 
   const averageLevel = computeAverageLevel(rows)
   const mostCrowded = computeMostCrowded(rows)
@@ -150,7 +139,7 @@ export function CrowdAnalyticsDashboard({
       </div>
 
       {isLoading ? (
-        <p className="text-sm font-bold text-wood-500">読み込み中...</p>
+        <LoadingText />
       ) : error ? (
         <p className="text-sm font-bold text-bubble-600">{error}</p>
       ) : rows.length === 0 ? (

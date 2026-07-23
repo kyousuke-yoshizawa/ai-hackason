@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getUserLikes } from '../lib/likes'
+import { useApiQuery } from '../hooks/useApiQuery'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingText } from '../components/ui/LoadingText'
+import { EmptyCard } from '../components/ui/EmptyCard'
 import Cloud from '../components/decor/Cloud'
 import Flower from '../components/decor/Flower'
-import GrassBorder from '../components/decor/GrassBorder'
 import { CategorySelect } from '../components/ui/CategorySelect'
 
 type SortKey = 'newest' | 'oldest' | 'name'
@@ -17,39 +20,30 @@ interface LikedStoreRow {
   likedAt: string
 }
 
+const EMPTY_ROWS: LikedStoreRow[] = []
+
 export default function LikesListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [rows, setRows] = useState<LikedStoreRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>('newest')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
 
-  useEffect(() => {
-    if (!user) return
-
-    let cancelled = false
-    setIsLoading(true)
-
-    getUserLikes(user.id).then((result) => {
-      if (cancelled) return
-      if (result.success) {
-        const mapped = result.likes.map((row) => ({
-          likeId: row.id,
-          storeId: row.store_id,
-          storeName: row.stores?.name ?? '（店舗情報なし）',
-          category: row.stores?.category ?? null,
-          likedAt: row.created_at,
-        }))
-        setRows(mapped)
-      }
-      setIsLoading(false)
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [user])
+  const { data: rowsData, isLoading } = useApiQuery<LikedStoreRow[]>(
+    async () => {
+      const result = await getUserLikes(user!.id)
+      if (!result.success) return []
+      return result.likes.map((row) => ({
+        likeId: row.id,
+        storeId: row.store_id,
+        storeName: row.stores?.name ?? '（店舗情報なし）',
+        category: row.stores?.category ?? null,
+        likedAt: row.created_at,
+      }))
+    },
+    [user?.id],
+    { enabled: !!user }
+  )
+  const rows = rowsData ?? EMPTY_ROWS
 
   const categories = useMemo(
     () => Array.from(new Set(rows.map((r) => r.category).filter((c): c is string => !!c))),
@@ -69,13 +63,10 @@ export default function LikesListPage() {
 
   return (
     <div className="relative overflow-hidden">
-      <header className="ac-header">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <h1 className="text-xl font-extrabold">いいね一覧</h1>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="いいね一覧"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       <Flower className="absolute right-8 top-28 h-10 w-10 opacity-80 md:right-20" />
       <Flower className="absolute left-6 top-1/2 h-8 w-8 opacity-70" color="#ffd07d" center="#ff8fb8" />
@@ -103,11 +94,9 @@ export default function LikesListPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-wood-500 text-sm font-bold">読み込み中...</p>
+          <LoadingText />
         ) : visibleRows.length === 0 ? (
-          <div className="ac-card text-center text-wood-500">
-            まだいいねした店舗がありません
-          </div>
+          <EmptyCard message="まだいいねした店舗がありません" />
         ) : (
           <ul className="space-y-3">
             {visibleRows.map((row) => (

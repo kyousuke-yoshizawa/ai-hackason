@@ -3,6 +3,7 @@ import { api, ApiError } from '../lib/api'
 import { useMasterTable } from '../hooks/useMasterTable'
 import { AdminUser, UserForm, UserFormValues } from './UserForm'
 import { SortableHeader } from './SortableHeader'
+import { LoadingText } from './ui/LoadingText'
 
 type UserSortKey = 'email' | 'name' | 'role'
 type UserFilters = { role: string; active: string }
@@ -130,7 +131,7 @@ export function UserManagementPanel({
       </div>
 
       {isLoading ? (
-        <p className="text-sm font-bold text-wood-400">読み込み中...</p>
+        <LoadingText className="text-sm font-bold text-wood-400" />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-y-2 text-sm">

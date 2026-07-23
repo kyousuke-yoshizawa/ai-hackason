@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { PageHeader } from '../components/ui/PageHeader'
 import { getUserReservations } from '../lib/reservations'
 import { getUserLikes } from '../lib/likes'
 import Cloud from '../components/decor/Cloud'
 import Leaf from '../components/decor/Leaf'
-import GrassBorder from '../components/decor/GrassBorder'
 
 export default function Dashboard() {
   const { user, hasPermission } = useAuth()
@@ -33,17 +33,13 @@ export default function Dashboard() {
   return (
     <>
       {/* ヘッダー */}
-      <header className="ac-header">
-        <Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />
-        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-4">
-          <Leaf className="h-9 w-9" color="#dff1cf" />
-          <div>
-            <h1 className="text-xl font-extrabold">ことこと町</h1>
-            <p className="text-xs font-bold text-leaf-100">お出かけプラン ダッシュボード</p>
-          </div>
-        </div>
-        <GrassBorder className="absolute -bottom-[5px] left-0 h-2 w-full" color="#eef9ff" />
-      </header>
+      <PageHeader
+        title="ことこと町"
+        subtitle="お出かけプラン ダッシュボード"
+        icon={<Leaf className="h-9 w-9" color="#dff1cf" />}
+        maxWidth="max-w-7xl"
+        decor={<Cloud className="absolute right-6 top-2 h-8 w-16 opacity-30" />}
+      />
 
       {/* メインコンテンツ */}
       <main className="mx-auto max-w-7xl px-4 py-8">

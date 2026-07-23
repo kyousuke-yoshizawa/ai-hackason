@@ -11,7 +11,7 @@
   "crons": [
     {
       "path": "/api/cron/notify-congestion",
-      "schedule": "*/30 0-12 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/aggregate-crowd-analytics",
