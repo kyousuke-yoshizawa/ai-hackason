@@ -318,10 +318,14 @@ See `.github/workflows/sync-notion.yml` for PR → Notion sync pipeline.
 
 **Vercel Cron（`vercel.json` の `crons`）は UTC で解釈される。** JST（日本時間）表記のまま書くと実行時刻が9時間ずれる（既知の過去バグ、`docs/architecture-audit/refactoring-handbook.md` T18 参照）。
 
-| 用途 | JST（意図） | `vercel.json`（UTC 表記） |
-|---|---|---|
-| 混雑通知（30分おき・営業時間中） | 9:00–21:30 | `*/30 0-12 * * *` |
-| 混雑分析集計（毎日・営業終了後） | 23:00 | `0 14 * * *` |
+**2026-07-16、Vercel Pro試用の失効に伴いHobbyプランへ自動移行。Hobbyプランのcronは「1日1回まで」の制限があり、より頻繁な式はデプロイ作成時点で拒否される（本番デプロイそのものが失敗する）。** これにより30分おきの混雑通知はVercel Cronで維持できなくなったため、GitHub Actions の `schedule`（`.github/workflows/notify-congestion-cron.yml`）に移行した。混雑分析集計（1日1回）は引き続きVercel Cronのまま。
+
+| 用途 | JST（意図） | スケジュール定義（UTC 表記） | 実行元 |
+|---|---|---|---|
+| 混雑通知（30分おき・営業時間中） | 9:00–21:30 | `*/30 0-12 * * *` | GitHub Actions（`.github/workflows/notify-congestion-cron.yml`。`CRON_SECRET` をリポジトリSecretsに登録が必要） |
+| 混雑分析集計（毎日・営業終了後） | 23:00 | `0 14 * * *` | Vercel Cron（`vercel.json` の `crons`） |
+
+GitHub Actions の `schedule` も UTC 解釈な点はVercel Cronと同じ（上記UTC表記はそのまま流用できる）。ただしGitHub Actionsのscheduleはベストエフォートであり、負荷状況によっては実行が遅延・スキップされうるため、Vercel Cronほどの時刻精度は保証されない。
 
 ローカル開発用の `scripts/*.ts`（`npm run cron:dev` / `cron:dev:analytics`）は `node-cron` の `timezone: 'Asia/Tokyo'` オプションで JST のまま実行されるため、上記の変換は不要。
 

@@ -1,6 +1,9 @@
 {
   "rewrites": [
     { "source": "/api/(auth|users|stores|likes|reviews|health)(/.*)?", "destination": "/api" },
+    { "source": "/api/reservations(/.*)?", "destination": "/api/reservations" },
+    { "source": "/api/crowd(/.*)?", "destination": "/api/crowd" },
+    { "source": "/api/errors(/.*)?", "destination": "/api/errors" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
@@ -9,10 +12,6 @@
     }
   },
   "crons": [
-    {
-      "path": "/api/cron/notify-congestion",
-      "schedule": "*/30 0-12 * * *"
-    },
     {
       "path": "/api/cron/aggregate-crowd-analytics",
       "schedule": "0 14 * * *"

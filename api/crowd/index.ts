@@ -1,19 +1,82 @@
-// ⚠️ このファイルの GET ハンドラ（メールリンクからの着地ページ）は HTML を返す設計
+// ⚠️ report ハンドラの非POST分岐（メールリンクからの着地ページ）は HTML を返す設計
 // のため、統一エラー契約（{error, message} の JSON）の対象外として意図的に現状維持する
 // （docs/architecture-audit/refactoring-handbook.md T09）。POST ハンドラのみ JSON 契約に統一する。
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { resolveCurrentCrowdLevel } from '../../backend/domains/crowd/getCurrentLevel.js'
+import { listCrowdPatterns, replaceCrowdPatterns, upsertCrowdStatus, insertCrowdHistory } from '../../backend/domains/crowd/repository.js'
+import { requireStoreAccess } from '../_http/requireStoreAccess.js'
+import { requireMethod } from '../../backend/http/method.js'
+import { sendError, zodError } from '../../backend/http/respond.js'
+import { putCrowdPatternsBodySchema, reportCrowdBodySchema } from '../../backend/domains/crowd/schema.js'
 import { verifyLinkToken, type LinkTokenPayload } from '../../backend/domains/email/linkToken.js'
 import { getNotificationById, markNotificationLinkUsed } from '../../backend/domains/email/repository.js'
-import { upsertCrowdStatus, insertCrowdHistory } from '../../backend/domains/crowd/repository.js'
-import { requireStoreAccess } from '../_http/requireStoreAccess.js'
 import { CROWD_LEVEL_LABEL, type CongestionLevel } from '../../backend/domains/crowd/types.js'
-import { reportCrowdBodySchema } from '../../backend/domains/crowd/schema.js'
-import { zodError } from '../../backend/http/respond.js'
+import { getPathSegments } from '../_http/segments.js'
 
 const VALID_LEVELS = Object.keys(CROWD_LEVEL_LABEL) as CongestionLevel[]
 
+// GET /api/crowd/current/:store_id — 直近30分以内のリアルタイム報告があれば優先し、
+// 無ければ時間帯別の事前設定パターン（crowd_patterns）を返す。
+async function handleCurrent(req: VercelRequest, res: VercelResponse, storeIdSegment: string | undefined) {
+  if (typeof storeIdSegment !== 'string') {
+    sendError(res, 400, 'validation_error', 'store_id is required')
+    return
+  }
+  const storeId = storeIdSegment
+
+  const result = await resolveCurrentCrowdLevel(storeId)
+  return res.status(200).json(result)
+}
+
+// GET /api/crowd/patterns/:store_id — 店舗の曜日×時間帯パターン設定を取得（店舗管理者 or admin のみ）
+//   存在する行のみを返す（7×24の欠損マス目は補完しない）。
+// PUT /api/crowd/patterns/:store_id — 店舗のパターン設定を渡された内容で全件置き換える
+//   body: [{ day_of_week: number|null, hour_of_day: number, level: 'low'|'medium'|'high' }, ...]
+async function handlePatterns(req: VercelRequest, res: VercelResponse, storeIdSegment: string | undefined) {
+  if (!requireMethod(req, res, ['GET', 'PUT'])) return
+
+  if (typeof storeIdSegment !== 'string') {
+    sendError(res, 400, 'validation_error', 'store_id is required')
+    return
+  }
+  const storeId = storeIdSegment
+
+  if (req.method === 'GET') {
+    const userId = await requireStoreAccess(req, res, storeId)
+    if (!userId) return
+
+    const patterns = await listCrowdPatterns(storeId)
+    return res.status(200).json(
+      patterns.map((pattern) => ({
+        day_of_week: pattern.dayOfWeek,
+        hour_of_day: pattern.hourOfDay,
+        level: pattern.level,
+      })),
+    )
+  }
+
+  const parsed = putCrowdPatternsBodySchema.safeParse(req.body)
+  if (!parsed.success) {
+    return zodError(res, parsed.error)
+  }
+
+  const userId = await requireStoreAccess(req, res, storeId)
+  if (!userId) return
+
+  await replaceCrowdPatterns(
+    storeId,
+    parsed.data.map((entry) => ({
+      dayOfWeek: entry.day_of_week,
+      hourOfDay: entry.hour_of_day,
+      level: entry.level,
+    })),
+  )
+
+  return res.status(200).json({ storeId, count: parsed.data.length })
+}
+
 // POST /api/crowd/report { store_id, level } （store_manager もしくは admin が認証ヘッダ x-user-id 付きで直接報告する場合）
-async function handlePost(req: VercelRequest, res: VercelResponse) {
+async function handleReportPost(req: VercelRequest, res: VercelResponse) {
   const parsed = reportCrowdBodySchema.safeParse(req.body)
   if (!parsed.success) {
     return zodError(res, parsed.error)
@@ -44,9 +107,9 @@ function renderResultPage(status: number, title: string, message: string) {
 
 // GET  /api/crowd/report?store_id=XXX&level=Y&token=ZZZZ — メール本文の3ボタンからの1回限りリンク
 // POST /api/crowd/report { store_id, level } — 店舗管理者/adminが直接報告する場合
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handleReport(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
-    return handlePost(req, res)
+    return handleReportPost(req, res)
   }
 
   const { store_id: storeId, level, token } = req.query
@@ -98,4 +161,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `混雑状況「${CROWD_LEVEL_LABEL[level as CongestionLevel]}」を記録しました。`,
   )
   return res.status(page.status).setHeader('Content-Type', 'text/html; charset=utf-8').send(page.html)
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const segments = getPathSegments(req, '/api/crowd')
+
+  if (segments[0] === 'current' && segments.length <= 2) {
+    return handleCurrent(req, res, segments[1])
+  }
+
+  if (segments[0] === 'patterns' && segments.length <= 2) {
+    return handlePatterns(req, res, segments[1])
+  }
+
+  if (segments.length === 1 && segments[0] === 'report') {
+    return handleReport(req, res)
+  }
+
+  return sendError(res, 404, 'not_found', 'route not found')
 }

@@ -8,8 +8,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import createHandler from '../../api/reservations/index'
-import cancelHandler from '../../api/reservations/[id]'
-import availabilityHandler from '../../api/reservations/availability'
+import cancelHandler from '../../api/reservations/index'
+import availabilityHandler from '../../api/reservations/index'
 import { validateReservationRequest } from '../../backend/domains/reservations/validation'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
@@ -29,15 +29,15 @@ function createMockRes() {
 }
 
 function createPostReq(body: Record<string, unknown>): VercelRequest {
-  return { method: 'POST', body, headers: {}, query: {} } as unknown as VercelRequest
+  return { method: 'POST', body, headers: {}, query: {}, url: '/api/reservations' } as unknown as VercelRequest
 }
 
 function createPutReq(id: string, headers: Record<string, string> = {}): VercelRequest {
-  return { method: 'PUT', query: { id }, headers, body: {} } as unknown as VercelRequest
+  return { method: 'PUT', query: {}, headers, body: {}, url: `/api/reservations/${id}` } as unknown as VercelRequest
 }
 
 function createGetReq(query: Record<string, string>): VercelRequest {
-  return { method: 'GET', query, headers: {} } as unknown as VercelRequest
+  return { method: 'GET', query, headers: {}, url: '/api/reservations/availability' } as unknown as VercelRequest
 }
 
 const NOW = new Date('2026-07-13T10:00:00')

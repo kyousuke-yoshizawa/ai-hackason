@@ -1,0 +1,41 @@
+# notify-congestion-cron.yml
+# 混雑通知（30分おき・営業時間中）を叩くワークフロー。
+#
+# 背景:
+#   Vercel Pro試用が失効しHobbyプランへ移行（2026-07-16）。Hobbyプランのcronは
+#   「1日1回まで」という制限があり、30分おきのVercel Cronはデプロイ作成時点で
+#   拒否され、本番デプロイ自体が失敗し続けていた（PR #180 status check参照）。
+#   混雑通知の頻度は維持したいため、Vercel Cronの代わりにGitHub Actions
+#   scheduleで同じ頻度（*/30 0-12 * * * = JST 9:00-21:30, 30分おき）を維持する。
+#   詳細はCLAUDE.mdの「Cron スケジュール（UTC/JST 変換に注意）」節を参照。
+#
+# 注意:
+#   GitHub Actions の schedule はベストエフォートであり、負荷状況によっては
+#   実行が遅延・スキップされることがある。Vercel Cronほどの時刻精度は保証されない。
+#
+# 事前準備:
+#   以下のSecretをリポジトリに登録しておくこと（Settings → Secrets and
+#   variables → Actions）。Vercel側に設定済みの CRON_SECRET と同じ値にすること。
+#   - CRON_SECRET
+#
+# 配置場所: .github/workflows/notify-congestion-cron.yml としてリポジトリ直下に配置する
+
+name: Notify Congestion Cron
+
+on:
+  schedule:
+    - cron: '*/30 0-12 * * *'
+  workflow_dispatch:
+
+jobs:
+  notify-congestion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call notify-congestion endpoint
+        run: |
+          curl -sf -X GET "https://ai-hackason.vercel.app/api/cron/notify-congestion" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "混雑通知cronの呼び出しに失敗しました。CRON_SECRET（リポジトリSecrets）がVercel側の値と一致しているか確認してください。"

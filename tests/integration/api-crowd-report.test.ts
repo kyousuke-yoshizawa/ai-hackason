@@ -10,7 +10,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import { generateLinkToken } from '../../backend/domains/email/linkToken'
-import handler from '../../api/crowd/report'
+import handler from '../../api/crowd/index'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 
@@ -29,14 +29,14 @@ function createMockRes() {
 }
 
 function createMockReq(query: Record<string, string>): VercelRequest {
-  return { query } as unknown as VercelRequest
+  return { query, url: '/api/crowd/report' } as unknown as VercelRequest
 }
 
 function createMockPostReq(
   body: Record<string, unknown>,
   headers: Record<string, string> = {},
 ): VercelRequest {
-  return { method: 'POST', body, headers, query: {} } as unknown as VercelRequest
+  return { method: 'POST', body, headers, query: {}, url: '/api/crowd/report' } as unknown as VercelRequest
 }
 
 function createMockJsonRes() {
