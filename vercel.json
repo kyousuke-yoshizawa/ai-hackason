@@ -1,9 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/(auth|users|stores|likes|reviews|health)(/.*)?", "destination": "/api" },
-    { "source": "/api/reservations(/.*)?", "destination": "/api/reservations" },
+    { "source": "/api/(auth|users|stores|likes|reviews|health|reservations|errors)(/.*)?", "destination": "/api" },
     { "source": "/api/crowd(/.*)?", "destination": "/api/crowd" },
-    { "source": "/api/errors(/.*)?", "destination": "/api/errors" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
