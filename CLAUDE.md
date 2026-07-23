@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **AI Hackathon 2026** — A 20-hour team project (Kyosuke + 3 members) building 「ことこと町」お出かけプラン AI アシスタント using React + TypeScript + Tailwind / Node.js + Express + Vercel Functions / Supabase PostgreSQL.
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
-- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media）+ Vercel Functions（`api/`, reservations/crowd/analytics/errors/cron/mail/plan）
+- **Backend**: Node.js + Express（`server/`, ローカル & auth/users/stores/media/reservations/errors）+ Vercel Functions（`api/`, crowd/analytics/cron/mail/plan）
 - **AI**: Claude API（`@anthropic-ai/sdk`）によるお出かけプラン生成。`backend/domains/plan/`（`claudeClient.ts`/`promptBuilder.ts`/`scoring.ts`/`schema.ts`）+ `POST /api/plan/generate`（T12で実装。意図解析・店舗照合・スコアリング・プラン生成をAPI呼び出し1回に統合。UI画面は別タスク）
 - **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel (auto-deploy on main)
@@ -61,11 +61,12 @@ src/
 ├── main.tsx
 └── index.css
 
-server/                  # Express（auth/users/stores/media）。ローカル開発と
-                          #   Vercel本番の両方で使用（api/index.ts が re-export）
-api/                     # Vercel Functions（reservations/crowd/analytics/
-                          #   errors/cron/mail/plan）。api/_http/ に Vercel専用の
-                          #   HTTPアダプタ（requireAdmin/requireStoreAccess）
+server/                  # Express（auth/users/stores/media/reservations/errors）。
+                          #   ローカル開発とVercel本番の両方で使用
+                          #   （api/index.ts が re-export）
+api/                     # Vercel Functions（crowd/analytics/cron/mail/plan）。
+                          #   api/_http/ に Vercel専用のHTTPアダプタ
+                          #   （requireAdmin/requireStoreAccess/segments）
 backend/                 # api/ と server/ が共有するドメインロジック
                           #   db.ts（supabaseAdmin唯一の定義）
                           #   auth/authz.ts（認可: is_active + store_managers判定）
@@ -318,17 +319,16 @@ See `.github/workflows/sync-notion.yml` for PR → Notion sync pipeline.
 
 **Vercel Cron（`vercel.json` の `crons`）は UTC で解釈される。** JST（日本時間）表記のまま書くと実行時刻が9時間ずれる（既知の過去バグ、`docs/architecture-audit/refactoring-handbook.md` T18 参照）。
 
-| 用途 | JST（意図） | `vercel.json`（UTC 表記） |
-|---|---|---|
-| 混雑通知（本来は30分おき・営業時間中） | 9:00–21:30 | ~~`*/30 0-12 * * *`~~ → **暫定 `0 0 * * *`（1日1回・JST 9:00）** |
-| 混雑分析集計（毎日・営業終了後） | 23:00 | `0 14 * * *` |
+**2026-07-16、Vercel Pro試用の失効に伴いHobbyプランへ自動移行。Hobbyプランのcronは「1日1回まで」の制限があり、より頻繁な式はデプロイ作成時点で拒否される（本番デプロイそのものが失敗する）。** これにより30分おきの混雑通知はVercel Cronで維持できなくなったため、GitHub Actions の `schedule`（`.github/workflows/notify-congestion-cron.yml`）に移行した。混雑分析集計（1日1回）は引き続きVercel Cronのまま。
+
+| 用途 | JST（意図） | スケジュール定義（UTC 表記） | 実行元 |
+|---|---|---|---|
+| 混雑通知（30分おき・営業時間中） | 9:00–21:30 | `*/30 0-12 * * *` | GitHub Actions（`.github/workflows/notify-congestion-cron.yml`。`CRON_SECRET` をリポジトリSecretsに登録が必要） |
+| 混雑分析集計（毎日・営業終了後） | 23:00 | `0 14 * * *` | Vercel Cron（`vercel.json` の `crons`） |
+
+GitHub Actions の `schedule` も UTC 解釈な点はVercel Cronと同じ（上記UTC表記はそのまま流用できる）。ただしGitHub Actionsのscheduleはベストエフォートであり、負荷状況によっては実行が遅延・スキップされうるため、Vercel Cronほどの時刻精度は保証されない。
 
 ローカル開発用の `scripts/*.ts`（`npm run cron:dev` / `cron:dev:analytics`）は `node-cron` の `timezone: 'Asia/Tokyo'` オプションで JST のまま実行されるため、上記の変換は不要。
-
-⚠️ **暫定対応（2026-07-16、PR #169）**: Vercel Hobbyプランはcronを「1日1回まで」しか許可しておらず（[Cron Jobs Usage & Pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing)）、30分おきの`notify-congestion`がこの制限に抵触してデプロイが失敗するようになったため、暫定的に1日1回（JST 9:00・営業開始時刻）に変更した。
-
-- **影響**: 店舗責任者への混雑報告メールが1日1回になり、`crowd_status`の鮮度（直近30分以内）を満たす機会が激減する。結果として、混雑度表示・プラン生成AIが参照する混雑度はほぼ常に時間帯別の想定パターン（`crowd_patterns`）へフォールバックし、リアルタイム性が実質失われる
-- **恒久対応は未決定**：①Vercel Proプランへのアップグレード、②別方式（GitHub Actions等）への移行のいずれかを検討する必要がある。担当（佐藤・Issue #24/#25/#26）およびKyosukeとの相談が必要
 
 ## Documentation & References
 

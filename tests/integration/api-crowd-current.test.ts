@@ -7,7 +7,7 @@ jest.mock('../../backend/db', () => {
 import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
 import { resolveCurrentCrowdLevel, formatCrowdLevelForPrompt } from '../../backend/domains/crowd/getCurrentLevel'
-import handler from '../../api/crowd/current/[store_id]'
+import handler from '../../api/crowd/index'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
@@ -76,7 +76,7 @@ describe('GET /api/crowd/current/:store_id (TC-110-02)', () => {
     ])
     const res = createMockRes()
 
-    await handler({ query: { store_id: 'store-1' } } as unknown as VercelRequest, res)
+    await handler({ query: {}, url: '/api/crowd/current/store-1' } as unknown as VercelRequest, res)
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toMatchObject({ level: 'medium', source: 'live' })
@@ -85,7 +85,7 @@ describe('GET /api/crowd/current/:store_id (TC-110-02)', () => {
   it('rejects requests without store_id', async () => {
     const res = createMockRes()
 
-    await handler({ query: {} } as unknown as VercelRequest, res)
+    await handler({ query: {}, url: '/api/crowd/current' } as unknown as VercelRequest, res)
 
     expect(res.statusCode).toBe(400)
   })

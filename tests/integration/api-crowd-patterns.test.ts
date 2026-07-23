@@ -7,7 +7,7 @@ jest.mock('../../backend/db', () => {
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../backend/db'
 import type { FakeSupabaseClient } from '../testUtils/fakeSupabase'
-import handler from '../../api/crowd/patterns/[store_id]'
+import handler from '../../api/crowd/index'
 
 const fakeClient = supabaseAdmin as unknown as FakeSupabaseClient
 
@@ -32,7 +32,8 @@ function createMockReq(
 ): VercelRequest {
   return {
     method,
-    query: { store_id: storeId },
+    query: {},
+    url: `/api/crowd/patterns/${storeId}`,
     body: options.body,
     headers: options.userId ? { 'x-user-id': options.userId } : {},
   } as unknown as VercelRequest
